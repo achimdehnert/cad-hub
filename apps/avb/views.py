@@ -22,18 +22,17 @@ from django.views.generic import (
 )
 
 from .models import (
-from apps.ifc.models import IFCModel
     Award,
     Bid,
     Bidder,
     BidPosition,
     ConstructionProject,
     CostEstimate,
-    # IFCModel moved to ifc app
     ProjectMilestone,
     Tender,
     TenderPosition,
 )
+from apps.ifc.models import IFCModel
 
 
 # =============================================================================
