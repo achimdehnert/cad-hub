@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Willkommen{% endblock %}
+
+{% block content %}
+<div class="text-center py-20">
+    <h1 class="text-5xl font-bold text-gray-900 mb-4">nl2cad.de</h1>
+    <p class="text-xl text-gray-600 mb-8">
+        IFC/DXF-Analyse, Brandschutz und Ausschreibungsmanagement
+    </p>
+    <a href="{% url 'login' %}"
+       class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition">
+        Jetzt starten
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-2">IFC-Analyse</h3>
+        <p class="text-gray-600">
+            Upload und automatische Auswertung von IFC-Dateien.
+            Geschosse, Räume, DIN 277 Klassifizierung.
+        </p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-2">Brandschutz</h3>
+        <p class="text-gray-600">
+            Prüfungen dokumentieren, Mängel erfassen,
+            Symbole und Regelwerke verwalten.
+        </p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-2">AVB</h3>
+        <p class="text-gray-600">
+            Ausschreibungen, Vergabe und Bauausführung.
+            Kostenermittlung und GAEB-Export.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+# Core
+Django>=5.1,<5.2
+gunicorn>=22.0,<23.0
+psycopg2-binary>=2.9,<3.0
+
+# Celery
+celery>=5.4,<6.0
+redis>=5.0,<6.0
+
+# CAD/BIM
+ezdxf>=0.19,<1.0
+ifcopenshell>=0.8.0
+
+# HTTP
+httpx>=0.27,<1.0
+requests>=2.32,<3.0
+
+# Excel / Export
+openpyxl>=3.1,<4.0
+
+# AI (LLM fallback)
+openai>=1.0,<2.0
+
+# Rendering
+matplotlib>=3.9,<4.0
+
+# Async support
+asgiref>=3.8,<4.0
+
+# Dev / Test
+pytest>=8.0,<9.0
+pytest-django>=4.8,<5.0
+ruff>=0.5,<1.0
