@@ -1,1 +1,3 @@
-"""Export services: excel_exporter, gaeb_exporter."""
+"""Export services: export_service."""
+from .export_service import RaumbuchExportService
+__all__ = ["RaumbuchExportService"]
