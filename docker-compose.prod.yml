@@ -13,6 +13,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - cad_hub_network
     restart: "no"
     deploy:
       restart_policy:
@@ -37,6 +39,8 @@ services:
         condition: service_completed_successfully
       db:
         condition: service_healthy
+    networks:
+      - cad_hub_network
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"]
@@ -64,6 +68,10 @@ services:
         condition: service_completed_successfully
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cad_hub_network
     restart: unless-stopped
     deploy:
       resources:
@@ -77,9 +85,12 @@ services:
 
   db:
     image: postgres:16-alpine
+    shm_size: 128m
     volumes:
       - pgdata:/var/lib/postgresql/data
     env_file: .env.prod
+    networks:
+      - cad_hub_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -101,6 +112,8 @@ services:
     command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
     volumes:
       - redis_data:/data
+    networks:
+      - cad_hub_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -122,3 +135,8 @@ volumes:
     name: cad_hub_pgdata
   redis_data:
     name: cad_hub_redis_data
+
+networks:
+  cad_hub_network:
+    name: cad_hub_network
+    driver: bridge
