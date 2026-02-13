@@ -27,7 +27,7 @@ from .models import (
     Bidder,
     BidPosition,
     ConstructionProject,
-    CostEstimate,
+    CostEstimateEntry,
     ProjectMilestone,
     Tender,
     TenderPosition,
