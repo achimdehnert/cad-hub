@@ -1,9 +1,241 @@
 """IFC URL configuration."""
 from django.urls import path
 
+from . import views
+from . import views_analysis
+from . import views_nl2cad
+
 app_name = "ifc"
 
-urlpatterns: list = [
-    # Dashboard, projects, models, rooms, etc.
-    # Will be populated from bfagent/apps/cad_hub/urls.py
+urlpatterns = [
+    # Dashboard
+    path("", views.DashboardView.as_view(), name="dashboard"),
+    # Projekte
+    path(
+        "projects/",
+        views.ProjectListView.as_view(),
+        name="project_list",
+    ),
+    path(
+        "project/<uuid:pk>/",
+        views.ProjectDetailView.as_view(),
+        name="project_detail",
+    ),
+    path(
+        "project/create/",
+        views.ProjectCreateView.as_view(),
+        name="project_create",
+    ),
+    path(
+        "project/<uuid:pk>/edit/",
+        views.ProjectUpdateView.as_view(),
+        name="project_edit",
+    ),
+    path(
+        "project/<uuid:pk>/delete/",
+        views.ProjectDeleteView.as_view(),
+        name="project_delete",
+    ),
+    # Modelle
+    path(
+        "model/<uuid:pk>/",
+        views.ModelDetailView.as_view(),
+        name="model_detail",
+    ),
+    path(
+        "model/<uuid:pk>/viewer/",
+        views.ModelViewerView.as_view(),
+        name="model_viewer",
+    ),
+    path(
+        "model/<uuid:pk>/content/",
+        views.IFCContentOverviewView.as_view(),
+        name="ifc_content_overview",
+    ),
+    path(
+        "model/<uuid:pk>/delete/",
+        views.ModelDeleteView.as_view(),
+        name="model_delete",
+    ),
+    path(
+        "project/<uuid:project_id>/upload/",
+        views.ModelUploadView.as_view(),
+        name="model_upload",
+    ),
+    path(
+        "project/<uuid:project_id>/cad-upload/",
+        views.CADUploadView.as_view(),
+        name="cad_upload",
+    ),
+    # Räume
+    path(
+        "model/<uuid:model_id>/rooms/",
+        views.RoomListView.as_view(),
+        name="room_list",
+    ),
+    path(
+        "room/<uuid:pk>/",
+        views.RoomDetailView.as_view(),
+        name="room_detail",
+    ),
+    # Fenster, Türen, Wände, Decken
+    path(
+        "model/<uuid:model_id>/windows/",
+        views.WindowListView.as_view(),
+        name="window_list",
+    ),
+    path(
+        "model/<uuid:model_id>/doors/",
+        views.DoorListView.as_view(),
+        name="door_list",
+    ),
+    path(
+        "model/<uuid:model_id>/walls/",
+        views.WallListView.as_view(),
+        name="wall_list",
+    ),
+    path(
+        "model/<uuid:model_id>/slabs/",
+        views.SlabListView.as_view(),
+        name="slab_list",
+    ),
+    # Flächen
+    path(
+        "model/<uuid:model_id>/areas/",
+        views.AreaSummaryView.as_view(),
+        name="area_summary",
+    ),
+    path(
+        "model/<uuid:model_id>/woflv/",
+        views.WoFlVSummaryView.as_view(),
+        name="woflv_summary",
+    ),
+    # Export
+    path(
+        "model/<uuid:model_id>/export/",
+        views.ExportRaumbuchView.as_view(),
+        name="export_raumbuch",
+    ),
+    path(
+        "model/<uuid:model_id>/export/woflv/",
+        views.ExportWoFlVView.as_view(),
+        name="export_woflv",
+    ),
+    path(
+        "model/<uuid:model_id>/export/gaeb/",
+        views.ExportGAEBView.as_view(),
+        name="export_gaeb",
+    ),
+    path(
+        "model/<uuid:model_id>/export/x83/",
+        views.ExportX83View.as_view(),
+        name="export_x83",
+    ),
+    # NL2CAD
+    path(
+        "nl2cad/",
+        views_nl2cad.NL2CADView.as_view(),
+        name="nl2cad",
+    ),
+    path(
+        "nl2cad/upload/",
+        views_nl2cad.NL2CADUploadView.as_view(),
+        name="nl2cad_upload",
+    ),
+    path(
+        "nl2cad/query/",
+        views_nl2cad.NL2CADQueryView.as_view(),
+        name="nl2cad_query",
+    ),
+    path(
+        "nl2cad/rooms/",
+        views_nl2cad.NL2CADRoomsView.as_view(),
+        name="nl2cad_rooms",
+    ),
+    path(
+        "nl2cad/massen/",
+        views_nl2cad.NL2CADMassenView.as_view(),
+        name="nl2cad_massen",
+    ),
+    path(
+        "nl2cad/gaeb/",
+        views_nl2cad.NL2CADGAEBExportView.as_view(),
+        name="nl2cad_gaeb",
+    ),
+    path(
+        "nl2cad/learn/",
+        views_nl2cad.NL2CADLearnView.as_view(),
+        name="nl2cad_learn",
+    ),
+    path(
+        "nl2cad/use-cases/",
+        views_nl2cad.NL2CADUseCasesView.as_view(),
+        name="nl2cad_use_cases",
+    ),
+    path(
+        "nl2cad/classifier/",
+        views_nl2cad.NL2CADClassifierView.as_view(),
+        name="nl2cad_classifier",
+    ),
+    # Analysis
+    path(
+        "analysis/",
+        views_analysis.AnalysisDashboardView.as_view(),
+        name="analysis_dashboard",
+    ),
+    path(
+        "analyze/",
+        views_analysis.FormatAnalyzerView.as_view(),
+        name="format_analyzer",
+    ),
+    path(
+        "analyze/api/",
+        views_analysis.FormatAnalyzeAPIView.as_view(),
+        name="format_analyze_api",
+    ),
+    path(
+        "dxf-quality/",
+        views_analysis.DXFQualityView.as_view(),
+        name="dxf_quality",
+    ),
+    path(
+        "dxf-quality/api/",
+        views_analysis.DXFQualityAPIView.as_view(),
+        name="dxf_quality_api",
+    ),
+    path(
+        "model/<uuid:pk>/dxf-quality/",
+        views_analysis.DXFQualityModelView.as_view(),
+        name="dxf_quality_model",
+    ),
+    path(
+        "nl-query/",
+        views_analysis.NL2CADQueryView.as_view(),
+        name="nl_query",
+    ),
+    path(
+        "nl-query/api/",
+        views_analysis.NL2CADQueryAPIView.as_view(),
+        name="nl_query_api",
+    ),
+    path(
+        "model/<uuid:pk>/query/",
+        views_analysis.NL2CADModelQueryView.as_view(),
+        name="nl_query_model",
+    ),
+    path(
+        "batch-analyze/",
+        views_analysis.BatchAnalyzeView.as_view(),
+        name="batch_analyze",
+    ),
+    path(
+        "batch-analyze/api/",
+        views_analysis.BatchAnalyzeAPIView.as_view(),
+        name="batch_analyze_api",
+    ),
+    path(
+        "formats/",
+        views_analysis.SupportedFormatsView.as_view(),
+        name="supported_formats",
+    ),
 ]
