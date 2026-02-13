@@ -71,7 +71,7 @@
         </div>
         
         <div class="col-md-6 col-lg-3 col-xl-2">
-            <a href="{% url 'cad_hub:dxf_viewer' %}" class="card h-100 text-decoration-none hover-shadow">
+            <a href="{% url 'dxf:dxf_viewer' %}" class="card h-100 text-decoration-none hover-shadow">
                 <div class="card-body text-center">
                     <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                         <i class="bi bi-eye text-secondary fs-3"></i>
@@ -83,7 +83,7 @@
         </div>
         
         <div class="col-md-6 col-lg-3 col-xl-2">
-            <a href="{% url 'cad_hub:format_analyzer' %}" class="card h-100 text-decoration-none hover-shadow">
+            <a href="{% url 'ifc:format_analyzer' %}" class="card h-100 text-decoration-none hover-shadow">
                 <div class="card-body text-center">
                     <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                         <i class="bi bi-file-earmark-code text-primary fs-3"></i>
@@ -95,7 +95,7 @@
         </div>
         
         <div class="col-md-6 col-lg-3 col-xl-2">
-            <a href="{% url 'cad_hub:dxf_quality' %}" class="card h-100 text-decoration-none hover-shadow">
+            <a href="{% url 'ifc:dxf_quality' %}" class="card h-100 text-decoration-none hover-shadow">
                 <div class="card-body text-center">
                     <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                         <i class="bi bi-check2-circle text-success fs-3"></i>
@@ -107,7 +107,7 @@
         </div>
         
         <div class="col-md-6 col-lg-3 col-xl-2">
-            <a href="{% url 'cad_hub:nl2cad_query' %}" class="card h-100 text-decoration-none hover-shadow">
+            <a href="{% url 'ifc:nl2cad_query' %}" class="card h-100 text-decoration-none hover-shadow">
                 <div class="card-body text-center">
                     <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                         <i class="bi bi-chat-dots text-info fs-3"></i>
@@ -119,7 +119,7 @@
         </div>
         
         <div class="col-md-6 col-lg-3 col-xl-2">
-            <a href="{% url 'cad_hub:batch_analyze' %}" class="card h-100 text-decoration-none hover-shadow">
+            <a href="{% url 'ifc:batch_analyze' %}" class="card h-100 text-decoration-none hover-shadow">
                 <div class="card-body text-center">
                     <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                         <i class="bi bi-collection text-warning fs-3"></i>
@@ -137,13 +137,13 @@
             <h5 class="mb-0">
                 <i class="bi bi-clock-history"></i> Letzte Projekte
             </h5>
-            <a href="{% url 'cad_hub:project_create' %}" class="btn btn-warning btn-sm">
+            <a href="{% url 'ifc:project_create' %}" class="btn btn-warning btn-sm">
                 <i class="bi bi-plus"></i> Neues Projekt
             </a>
         </div>
         <div class="list-group list-group-flush">
             {% for project in recent_projects %}
-            <a href="{% url 'cad_hub:project_detail' project.pk %}" 
+            <a href="{% url 'ifc:project_detail' project.pk %}" 
                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                 <div>
                     <h6 class="mb-1">{{ project.name }}</h6>
@@ -154,7 +154,7 @@
             {% empty %}
             <div class="list-group-item text-center py-5">
                 <p class="text-muted mb-2">Noch keine Projekte vorhanden</p>
-                <a href="{% url 'cad_hub:project_create' %}" class="btn btn-warning">
+                <a href="{% url 'ifc:project_create' %}" class="btn btn-warning">
                     <i class="bi bi-plus"></i> Erstes Projekt erstellen
                 </a>
             </div>

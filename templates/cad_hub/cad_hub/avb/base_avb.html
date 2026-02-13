@@ -96,25 +96,25 @@
     <ul class="nav nav-pills">
         <li class="nav-item">
             <a class="nav-link {% if 'avb_project' in request.resolver_match.url_name %}active{% endif %}" 
-               href="{% url 'cad_hub:avb_project_list' %}">
+               href="{% url 'avb:project_list' %}">
                 <i class="bi bi-building me-1"></i> Bauprojekte
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {% if 'tender' in request.resolver_match.url_name %}active{% endif %}" 
-               href="{% url 'cad_hub:tender_list' %}">
+               href="{% url 'avb:tender_list' %}">
                 <i class="bi bi-file-earmark-text me-1"></i> Ausschreibungen
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {% if 'bidder' in request.resolver_match.url_name %}active{% endif %}" 
-               href="{% url 'cad_hub:bidder_list' %}">
+               href="{% url 'avb:bidder_list' %}">
                 <i class="bi bi-people me-1"></i> Bieter
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {% if 'bid' in request.resolver_match.url_name and 'bidder' not in request.resolver_match.url_name %}active{% endif %}" 
-               href="{% url 'cad_hub:tender_list' %}?status=submission">
+               href="{% url 'avb:tender_list' %}?status=submission">
                 <i class="bi bi-inbox me-1"></i> Angebote
             </a>
         </li>

@@ -11,10 +11,10 @@
         <p class="text-muted mb-0">Version {{ model.version }} • {{ model.ifc_schema|default:"IFC" }}</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{% url 'cad_hub:ifc_content_overview' model.pk %}" class="btn btn-primary btn-sm">
+        <a href="{% url 'ifc:ifc_content_overview' model.pk %}" class="btn btn-primary btn-sm">
             <i class="bi bi-file-earmark-bar-graph"></i> IFC Inhalte
         </a>
-        <a href="{% url 'cad_hub:room_list' model.id %}" class="btn btn-secondary btn-sm">
+        <a href="{% url 'ifc:room_list' model.id %}" class="btn btn-secondary btn-sm">
             <i class="bi bi-grid-3x3"></i> Raumliste
         </a>
         
@@ -25,23 +25,23 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li>
-                    <a class="dropdown-item" href="{% url 'cad_hub:export_raumbuch' model.id %}">
+                    <a class="dropdown-item" href="{% url 'ifc:export_raumbuch' model.id %}">
                         <i class="bi bi-file-earmark-spreadsheet"></i> Raumbuch Excel
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="{% url 'cad_hub:export_woflv' model.id %}">
+                    <a class="dropdown-item" href="{% url 'ifc:export_woflv' model.id %}">
                         <i class="bi bi-house"></i> WoFlV Wohnfläche
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item" href="{% url 'cad_hub:export_gaeb' model.id %}?format=xml">
+                    <a class="dropdown-item" href="{% url 'ifc:export_gaeb' model.id %}?format=xml">
                         <i class="bi bi-file-code"></i> GAEB X84 XML
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="{% url 'cad_hub:export_gaeb' model.id %}?format=excel">
+                    <a class="dropdown-item" href="{% url 'ifc:export_gaeb' model.id %}?format=excel">
                         <i class="bi bi-file-earmark-excel"></i> GAEB Excel
                     </a>
                 </li>
@@ -108,7 +108,7 @@
     </div>
     <div class="list-group list-group-flush">
         {% for floor in floors %}
-        <a href="{% url 'cad_hub:room_list' model.id %}?floor={{ floor.id }}" 
+        <a href="{% url 'ifc:room_list' model.id %}?floor={{ floor.id }}" 
            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-warning rounded-circle p-1">&nbsp;</span>

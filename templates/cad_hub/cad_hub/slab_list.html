@@ -11,7 +11,7 @@
                 {{ total_area|floatformat:1 }} m² • {{ total_volume|floatformat:1 }} m³
             </p>
         </div>
-        <a href="{% url 'cad_hub:ifc_content_overview' model.pk %}"
+        <a href="{% url 'ifc:ifc_content_overview' model.pk %}"
            class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-white text-sm">
             ← Zurück zur Übersicht
         </a>
@@ -37,7 +37,7 @@
             <button type="submit" class="bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded text-white">
                 Filtern
             </button>
-            <a href="{% url 'cad_hub:slab_list' model.pk %}" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white">
+            <a href="{% url 'ifc:slab_list' model.pk %}" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white">
                 Zurücksetzen
             </a>
         </form>

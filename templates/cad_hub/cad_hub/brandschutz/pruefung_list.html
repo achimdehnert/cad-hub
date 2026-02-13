@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'cad_hub:brandschutz:pruefung_create' %}" 
+<a href="{% url 'brandschutz:pruefung_create' %}" 
    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center gap-2">
     ➕ Neue Prüfung
 </a>
@@ -34,7 +34,7 @@
             🔍 Filtern
         </button>
         {% if search_query or current_status %}
-        <a href="{% url 'cad_hub:brandschutz:pruefung_list' %}" class="text-slate-400 hover:text-white">
+        <a href="{% url 'brandschutz:pruefung_list' %}" class="text-slate-400 hover:text-white">
             ✕ Filter zurücksetzen
         </a>
         {% endif %}
@@ -58,7 +58,7 @@
             {% for pruefung in pruefungen %}
             <tr class="hover:bg-slate-700/50 transition">
                 <td class="px-4 py-4">
-                    <a href="{% url 'cad_hub:brandschutz:pruefung_detail' pruefung.pk %}" class="block">
+                    <a href="{% url 'brandschutz:pruefung_detail' pruefung.pk %}" class="block">
                         <div class="font-medium text-white hover:text-blue-400">{{ pruefung.titel }}</div>
                         <div class="text-sm text-slate-400">{{ pruefung.projekt_name }}</div>
                     </a>
@@ -85,16 +85,16 @@
                 <td class="px-4 py-4 text-slate-400 text-sm">{{ pruefung.pruef_datum|date:"d.m.Y" }}</td>
                 <td class="px-4 py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
-                        <a href="{% url 'cad_hub:brandschutz:pruefung_detail' pruefung.pk %}" 
+                        <a href="{% url 'brandschutz:pruefung_detail' pruefung.pk %}" 
                            class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm">
                             👁️
                         </a>
-                        <a href="{% url 'cad_hub:brandschutz:report_html' pruefung.pk %}" 
+                        <a href="{% url 'brandschutz:report_html' pruefung.pk %}" 
                            class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm"
                            target="_blank">
                             📊
                         </a>
-                        <a href="{% url 'cad_hub:brandschutz:pruefung_edit' pruefung.pk %}" 
+                        <a href="{% url 'brandschutz:pruefung_edit' pruefung.pk %}" 
                            class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm">
                             ✏️
                         </a>
@@ -106,7 +106,7 @@
                 <td colspan="6" class="px-4 py-12 text-center text-slate-500">
                     <div class="text-4xl mb-2">📋</div>
                     <div>Keine Prüfungen gefunden</div>
-                    <a href="{% url 'cad_hub:brandschutz:pruefung_create' %}" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">
+                    <a href="{% url 'brandschutz:pruefung_create' %}" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">
                         → Erste Prüfung erstellen
                     </a>
                 </td>

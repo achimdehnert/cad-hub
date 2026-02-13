@@ -89,7 +89,7 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = IFCProject
     template_name = "cad_hub/project_form.html"
     fields = ["name"]
-    success_url = reverse_lazy("cad_hub:project_list")
+    success_url = reverse_lazy("ifc:project_list")
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -104,7 +104,7 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
     fields = ["name"]
 
     def get_success_url(self):
-        return reverse_lazy("cad_hub:project_detail", kwargs={"pk": self.object.pk})
+        return reverse_lazy("ifc:project_detail", kwargs={"pk": self.object.pk})
 
     def form_valid(self, form):
         messages.success(self.request, f'Projekt "{form.instance.name}" erfolgreich aktualisiert.')
@@ -116,7 +116,7 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 
     model = IFCProject
     template_name = "cad_hub/project_confirm_delete.html"
-    success_url = reverse_lazy("cad_hub:project_list")
+    success_url = reverse_lazy("ifc:project_list")
 
     def delete(self, request, *args, **kwargs):
         project = self.get_object()
@@ -245,7 +245,7 @@ class ModelUploadView(CreateView):
         return response
 
     def get_success_url(self):
-        return reverse_lazy("cad_hub:model_detail", kwargs={"pk": self.object.pk})
+        return reverse_lazy("ifc:model_detail", kwargs={"pk": self.object.pk})
 
 
 class CADUploadView(LoginRequiredMixin, TemplateView):
@@ -274,14 +274,14 @@ class CADUploadView(LoginRequiredMixin, TemplateView):
 
         if not uploaded_file:
             messages.error(request, "Keine Datei ausgewählt.")
-            return redirect("cad_hub:cad_upload", project_id=project.pk)
+            return redirect("ifc:cad_upload", project_id=project.pk)
 
         # Dateiendung prüfen
         file_ext = uploaded_file.name.split(".")[-1].lower()
 
         if file_ext not in ["dwg", "dxf", "pdf", "x83", "x84"]:
             messages.error(request, f"Format .{file_ext} wird nicht unterstützt.")
-            return redirect("cad_hub:cad_upload", project_id=project.pk)
+            return redirect("ifc:cad_upload", project_id=project.pk)
 
         # Placeholder: In Zukunft MCP Backend Integration
         messages.info(
@@ -290,7 +290,7 @@ class CADUploadView(LoginRequiredMixin, TemplateView):
             f"Konvertierung zu IFC folgt in zukünftiger Version.",
         )
 
-        return redirect("cad_hub:project_detail", pk=project.pk)
+        return redirect("ifc:project_detail", pk=project.pk)
 
 
 class ModelDeleteView(LoginRequiredMixin, DeleteView):
@@ -300,7 +300,7 @@ class ModelDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "cad_hub/model_confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy("cad_hub:project_detail", kwargs={"pk": self.object.project.pk})
+        return reverse_lazy("ifc:project_detail", kwargs={"pk": self.object.project.pk})
 
     def delete(self, request, *args, **kwargs):
         model = self.get_object()
@@ -411,7 +411,7 @@ class ExportRaumbuchView(View):
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
         export_type = request.GET.get("type", "raumbuch")
 
-        from .services.export_service import RaumbuchExportService
+        from apps.export.services.export_service import RaumbuchExportService
 
         service = RaumbuchExportService()
 

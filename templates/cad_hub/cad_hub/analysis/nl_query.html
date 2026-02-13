@@ -11,7 +11,7 @@
         <p class="text-muted mb-0">Stellen Sie Fragen zu Ihren CAD-Daten in natürlicher Sprache</p>
     </div>
     <div class="col-auto">
-        <a href="{% url 'cad_hub:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'ifc:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Zurück
         </a>
     </div>
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         
         try {
-            const response = await fetch('{% url "cad_hub:nl_query_api" %}', {
+            const response = await fetch('{% url "ifc:nl_query_api" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

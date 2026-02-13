@@ -623,7 +623,7 @@ function handleFile(file) {
     const formData = new FormData();
     formData.append('file', file);
     
-    fetch('{% url "cad_hub:dxf_upload" %}', {
+    fetch('{% url "dxf:dxf_upload" %}', {
         method: 'POST',
         body: formData,
         headers: {

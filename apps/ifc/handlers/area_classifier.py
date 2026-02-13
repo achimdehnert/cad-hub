@@ -310,7 +310,7 @@ class AreaClassifier:
         try:
             # Versuche zuerst den existierenden LLM-Client
             try:
-                from apps.bfagent.services.llm_client import generate_text
+                from apps.core.services.llm_client import generate_text
             except ImportError:
                 # Fallback: Direkter OpenAI-Aufruf
                 import os

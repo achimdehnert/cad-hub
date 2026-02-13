@@ -11,7 +11,7 @@
         <p class="text-muted mb-0">Maßketten und Schnittdarstellungen analysieren</p>
     </div>
     <div class="col-auto">
-        <a href="{% url 'cad_hub:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'ifc:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Zurück
         </a>
     </div>
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultSection.classList.add('d-none');
         
         try {
-            const response = await fetch('{% url "cad_hub:dxf_quality_api" %}', {
+            const response = await fetch('{% url "ifc:dxf_quality_api" %}', {
                 method: 'POST',
                 body: formData,
                 headers: { 'X-CSRFToken': '{{ csrf_token }}' }

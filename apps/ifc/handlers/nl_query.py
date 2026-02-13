@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     CADHandlerError,
@@ -265,7 +265,7 @@ class NLQueryHandler(BaseCADHandler):
     def _parse_with_llm(self, query: str) -> ParsedQuery:
         """LLM-basierte Query-Analyse (Fallback)."""
         try:
-            from apps.bfagent.services.llm_client import generate_text
+            from apps.core.services.llm_client import generate_text
             
             prompt = f"""Analysiere diese CAD-bezogene Anfrage und extrahiere:
 1. Intent (room_list, room_area, total_area, layer_info, entity_count, dimension_info, door_count, window_count, quality_check, export, unknown)

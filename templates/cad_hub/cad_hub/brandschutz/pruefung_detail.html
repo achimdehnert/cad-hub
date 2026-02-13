@@ -3,7 +3,7 @@
 
 {% block breadcrumb_extra %}
 <li><span class="mx-2">/</span></li>
-<li><a href="{% url 'cad_hub:brandschutz:pruefung_list' %}" class="hover:text-white">Prüfungen</a></li>
+<li><a href="{% url 'brandschutz:pruefung_list' %}" class="hover:text-white">Prüfungen</a></li>
 <li><span class="mx-2">/</span></li>
 <li class="text-white">{{ pruefung.titel|truncatewords:3 }}</li>
 {% endblock %}
@@ -31,18 +31,18 @@
         </button>
         <div x-show="open" @click.away="open = false" 
              class="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10">
-            <a href="{% url 'cad_hub:brandschutz:report_html' pruefung.pk %}" target="_blank"
+            <a href="{% url 'brandschutz:report_html' pruefung.pk %}" target="_blank"
                class="block px-4 py-2 hover:bg-slate-700 text-slate-300">📄 HTML Report</a>
-            <a href="{% url 'cad_hub:brandschutz:report_pdf' pruefung.pk %}"
+            <a href="{% url 'brandschutz:report_pdf' pruefung.pk %}"
                class="block px-4 py-2 hover:bg-slate-700 text-slate-300">📕 PDF Export</a>
-            <a href="{% url 'cad_hub:brandschutz:report_excel' pruefung.pk %}"
+            <a href="{% url 'brandschutz:report_excel' pruefung.pk %}"
                class="block px-4 py-2 hover:bg-slate-700 text-slate-300">📊 Excel Export</a>
-            <a href="{% url 'cad_hub:brandschutz:report_json' pruefung.pk %}"
+            <a href="{% url 'brandschutz:report_json' pruefung.pk %}"
                class="block px-4 py-2 hover:bg-slate-700 text-slate-300">📋 JSON Export</a>
         </div>
     </div>
     
-    <a href="{% url 'cad_hub:brandschutz:pruefung_edit' pruefung.pk %}" 
+    <a href="{% url 'brandschutz:pruefung_edit' pruefung.pk %}" 
        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
         ✏️ Bearbeiten
     </a>
@@ -96,7 +96,7 @@
                         {% for mangel in kategorie_maengel %}
                         <div id="mangel-{{ mangel.pk }}" 
                              class="flex items-start gap-3 p-3 bg-slate-700/50 rounded-lg {% if mangel.behoben %}opacity-60{% endif %}">
-                            <button hx-post="{% url 'cad_hub:brandschutz:mangel_toggle' mangel.pk %}"
+                            <button hx-post="{% url 'brandschutz:mangel_toggle' mangel.pk %}"
                                     hx-target="#mangel-{{ mangel.pk }}"
                                     hx-swap="outerHTML"
                                     class="mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center
@@ -157,11 +157,11 @@
                                 </div>
                                 <div class="flex gap-1">
                                     {% if symbol.status == 'vorgeschlagen' %}
-                                    <button hx-post="{% url 'cad_hub:brandschutz:symbol_approve' symbol.pk %}"
+                                    <button hx-post="{% url 'brandschutz:symbol_approve' symbol.pk %}"
                                             hx-vals='{"action": "genehmigt"}'
                                             hx-target="#symbol-{{ symbol.pk }}"
                                             class="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-xs">✓</button>
-                                    <button hx-post="{% url 'cad_hub:brandschutz:symbol_approve' symbol.pk %}"
+                                    <button hx-post="{% url 'brandschutz:symbol_approve' symbol.pk %}"
                                             hx-vals='{"action": "abgelehnt"}'
                                             hx-target="#symbol-{{ symbol.pk }}"
                                             class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">✕</button>
@@ -244,7 +244,7 @@
         <div class="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-4">
             <h3 class="font-semibold text-white mb-2">🔍 Neu analysieren</h3>
             <p class="text-sm text-red-200 mb-3">CAD-Datei erneut auf Brandschutz prüfen</p>
-            <a href="{% url 'cad_hub:brandschutz:analyse_pruefung' pruefung.pk %}"
+            <a href="{% url 'brandschutz:analyse_pruefung' pruefung.pk %}"
                class="block w-full px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-center text-white font-medium">
                 Analyse starten →
             </a>

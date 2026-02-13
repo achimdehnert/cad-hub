@@ -9,7 +9,7 @@
         <h4 class="mb-1"><i class="bi bi-file-earmark-text text-primary"></i> Ausschreibungen</h4>
         <p class="text-muted mb-0">Leistungsverzeichnisse verwalten und Angebote einholen</p>
     </div>
-    <a href="{% url 'cad_hub:tender_create' %}" class="btn btn-primary">
+    <a href="{% url 'avb:tender_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Neue Ausschreibung
     </a>
 </div>
@@ -115,7 +115,7 @@
                 {% for tender in tenders %}
                 <tr>
                     <td>
-                        <a href="{% url 'cad_hub:tender_detail' pk=tender.pk %}">
+                        <a href="{% url 'avb:tender_detail' pk=tender.pk %}">
                             <code>{{ tender.tender_number }}</code>
                         </a>
                     </td>
@@ -158,16 +158,16 @@
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'cad_hub:tender_detail' pk=tender.pk %}">
+                                <li><a class="dropdown-item" href="{% url 'avb:tender_detail' pk=tender.pk %}">
                                     <i class="bi bi-eye"></i> Details
                                 </a></li>
                                 {% if tender.bids.count > 0 %}
-                                <li><a class="dropdown-item" href="{% url 'cad_hub:price_comparison' pk=tender.pk %}">
+                                <li><a class="dropdown-item" href="{% url 'avb:price_comparison' pk=tender.pk %}">
                                     <i class="bi bi-bar-chart"></i> Preisspiegel
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'cad_hub:export_tender_gaeb' pk=tender.pk %}">
+                                <li><a class="dropdown-item" href="{% url 'avb:export_tender_gaeb' pk=tender.pk %}">
                                     <i class="bi bi-download"></i> GAEB Export
                                 </a></li>
                             </ul>
@@ -181,7 +181,7 @@
                             <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
                             <h5 class="mt-3">Keine Ausschreibungen</h5>
                             <p class="text-muted">Erstellen Sie Ihre erste Ausschreibung aus einem IFC-Modell</p>
-                            <a href="{% url 'cad_hub:tender_create' %}" class="btn btn-primary">
+                            <a href="{% url 'avb:tender_create' %}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg"></i> Ausschreibung erstellen
                             </a>
                         </div>

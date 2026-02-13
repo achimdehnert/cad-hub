@@ -22,13 +22,14 @@ from django.views.generic import (
 )
 
 from .models import (
+from apps.ifc.models import IFCModel
     Award,
     Bid,
     Bidder,
     BidPosition,
     ConstructionProject,
     CostEstimate,
-    IFCModel,
+    # IFCModel moved to ifc app
     ProjectMilestone,
     Tender,
     TenderPosition,
@@ -100,7 +101,7 @@ class ConstructionProjectCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse("cad_hub:avb_project_detail", kwargs={"pk": self.object.pk})
+        return reverse("avb:project_detail", kwargs={"pk": self.object.pk})
 
 
 class ConstructionProjectUpdateView(LoginRequiredMixin, UpdateView):
@@ -115,7 +116,7 @@ class ConstructionProjectUpdateView(LoginRequiredMixin, UpdateView):
     ]
     
     def get_success_url(self):
-        return reverse("cad_hub:avb_project_detail", kwargs={"pk": self.object.pk})
+        return reverse("avb:project_detail", kwargs={"pk": self.object.pk})
 
 
 # =============================================================================
@@ -198,7 +199,7 @@ class TenderCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse("cad_hub:tender_detail", kwargs={"pk": self.object.pk})
+        return reverse("avb:tender_detail", kwargs={"pk": self.object.pk})
 
 
 class TenderFromIFCView(LoginRequiredMixin, View):
@@ -227,10 +228,10 @@ class TenderFromIFCView(LoginRequiredMixin, View):
                 request,
                 f"Ausschreibung '{tender.tender_number}' mit {tender.positions.count()} Positionen erstellt."
             )
-            return redirect("cad_hub:tender_detail", pk=tender.pk)
+            return redirect("avb:tender_detail", pk=tender.pk)
         except Exception as e:
             messages.error(request, f"Fehler: {e}")
-            return redirect("cad_hub:model_detail", pk=model_id)
+            return redirect("ifc:model_detail", pk=model_id)
 
 
 class TenderPublishView(LoginRequiredMixin, View):
@@ -248,7 +249,7 @@ class TenderPublishView(LoginRequiredMixin, View):
             tender.save()
             messages.success(request, "Ausschreibung veröffentlicht.")
         
-        return redirect("cad_hub:tender_detail", pk=pk)
+        return redirect("avb:tender_detail", pk=pk)
 
 
 # =============================================================================
@@ -299,7 +300,7 @@ class BidderCreateView(LoginRequiredMixin, CreateView):
     ]
     
     def get_success_url(self):
-        return reverse("cad_hub:bidder_detail", kwargs={"pk": self.object.pk})
+        return reverse("avb:bidder_detail", kwargs={"pk": self.object.pk})
 
 
 # =============================================================================
@@ -354,7 +355,7 @@ class BidCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse("cad_hub:tender_detail", kwargs={"pk": self.kwargs["tender_id"]})
+        return reverse("avb:tender_detail", kwargs={"pk": self.kwargs["tender_id"]})
 
 
 class BidReceiveView(LoginRequiredMixin, UpdateView):
@@ -375,7 +376,7 @@ class BidReceiveView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse("cad_hub:bid_detail", kwargs={"pk": self.object.pk})
+        return reverse("avb:bid_detail", kwargs={"pk": self.object.pk})
 
 
 # =============================================================================
@@ -474,7 +475,7 @@ class AwardCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse("cad_hub:tender_detail", kwargs={"pk": self.kwargs["tender_id"]})
+        return reverse("avb:tender_detail", kwargs={"pk": self.kwargs["tender_id"]})
 
 
 # =============================================================================

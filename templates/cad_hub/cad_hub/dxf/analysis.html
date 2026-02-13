@@ -310,7 +310,7 @@
                 <button class="btn btn-primary" onclick="exportJSON()">
                     <i class="bi bi-download"></i> Export JSON
                 </button>
-                <a href="{% url 'cad_hub:dxf_viewer' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'dxf:dxf_viewer' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-eye"></i> Zum Viewer
                 </a>
             </div>
@@ -366,7 +366,7 @@ function handleFile(file) {
     const formData = new FormData();
     formData.append('file', file);
     
-    fetch('{% url "cad_hub:dxf_analyze_upload" %}', {
+    fetch('{% url "dxf:dxf_analyze_upload" %}', {
         method: 'POST',
         body: formData,
         headers: { 'X-CSRFToken': '{{ csrf_token }}' }

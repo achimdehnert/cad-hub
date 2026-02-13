@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,
@@ -291,7 +291,7 @@ class PDFLageplanHandler(BaseCADHandler):
         """Extrahiert fehlende Daten mit LLM."""
         try:
             try:
-                from apps.bfagent.services.llm_client import generate_text
+                from apps.core.services.llm_client import generate_text
             except ImportError:
                 import os
                 import openai

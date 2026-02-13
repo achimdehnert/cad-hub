@@ -5,11 +5,11 @@
     </div>
     <div class="flex gap-1">
         {% if symbol.status == 'vorgeschlagen' %}
-        <button hx-post="{% url 'cad_hub:brandschutz:symbol_approve' symbol.pk %}"
+        <button hx-post="{% url 'brandschutz:symbol_approve' symbol.pk %}"
                 hx-vals='{"action": "genehmigt"}'
                 hx-target="#symbol-{{ symbol.pk }}"
                 class="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-xs">✓</button>
-        <button hx-post="{% url 'cad_hub:brandschutz:symbol_approve' symbol.pk %}"
+        <button hx-post="{% url 'brandschutz:symbol_approve' symbol.pk %}"
                 hx-vals='{"action": "abgelehnt"}'
                 hx-target="#symbol-{{ symbol.pk }}"
                 class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">✕</button>

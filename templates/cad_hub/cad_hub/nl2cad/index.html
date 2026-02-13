@@ -323,7 +323,7 @@ function analyzeFile(file) {
     const formData = new FormData();
     formData.append('file', file);
     
-    fetch('{% url "cad_hub:nl2cad_upload" %}', {
+    fetch('{% url "ifc:nl2cad_upload" %}', {
         method: 'POST',
         body: formData,
         headers: { 'X-CSRFToken': '{{ csrf_token }}' }
@@ -441,7 +441,7 @@ function sendQuery() {
     formData.append('query', query);
     if (currentFile) formData.append('file', currentFile);
     
-    fetch('{% url "cad_hub:nl2cad_query" %}', {
+    fetch('{% url "ifc:nl2cad_query" %}', {
         method: 'POST',
         body: formData,
         headers: { 'X-CSRFToken': '{{ csrf_token }}' }
@@ -496,7 +496,7 @@ function formatIntent(intent) {
 function learnIntent(intent) {
     if (!lastUnknownQuery) return;
     
-    fetch('{% url "cad_hub:nl2cad_learn" %}', {
+    fetch('{% url "ifc:nl2cad_learn" %}', {
         method: 'POST',
         body: JSON.stringify({ query: lastUnknownQuery, intent: intent }),
         headers: { 
@@ -527,7 +527,7 @@ function exportGAEB() {
     const formData = new FormData();
     formData.append('file', currentFile);
     
-    fetch('{% url "cad_hub:nl2cad_gaeb" %}', {
+    fetch('{% url "ifc:nl2cad_gaeb" %}', {
         method: 'POST',
         body: formData,
         headers: { 'X-CSRFToken': '{{ csrf_token }}' }

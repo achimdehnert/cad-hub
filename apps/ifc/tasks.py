@@ -1,4 +1,4 @@
-# apps/cad_hub/tasks.py
+# apps/ifc/tasks.py
 """
 Background Tasks für IFC Verarbeitung
 
@@ -9,13 +9,15 @@ Nutzt BauCAD Hub MCP Patterns für:
 """
 import logging
 from pathlib import Path
+from celery import shared_task
 
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
 
-def process_ifc_upload(model_id: str):
+@shared_task(bind=True, max_retries=3)
+def process_ifc_upload(self, model_id: str):
     """
     Verarbeitet einen IFC-Upload.
 

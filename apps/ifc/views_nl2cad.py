@@ -20,7 +20,7 @@ from .handlers import (
     RoomAnalysisHandler,
     MassenHandler,
 )
-from .handlers.base import CADHandlerPipeline
+from apps.core.handlers.base import CADHandlerPipeline
 from .handlers.nl_learning import get_learning_store
 from .handlers.use_case_tracker import get_use_case_tracker
 from .handlers.area_classifier import get_area_classifier, AreaCategory

@@ -12,7 +12,7 @@
         </h2>
         <p class="text-muted mb-0">{{ model.project.name }} • Version {{ model.version }}</p>
     </div>
-    <a href="{% url 'cad_hub:model_detail' model.pk %}" class="btn btn-secondary btn-sm">
+    <a href="{% url 'ifc:model_detail' model.pk %}" class="btn btn-secondary btn-sm">
         <i class="bi bi-arrow-left"></i> Zurück zum Modell
     </a>
 </div>
@@ -116,7 +116,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-grid-3x3 text-warning"></i> Räume ({{ stats.rooms }})</h6>
-                <a href="{% url 'cad_hub:room_list' model.pk %}" class="btn btn-sm btn-outline-warning">
+                <a href="{% url 'ifc:room_list' model.pk %}" class="btn btn-sm btn-outline-warning">
                     Alle <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -138,7 +138,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-window text-info"></i> Fenster ({{ stats.windows }})</h6>
-                <a href="{% url 'cad_hub:window_list' model.pk %}" class="btn btn-sm btn-outline-info">
+                <a href="{% url 'ifc:window_list' model.pk %}" class="btn btn-sm btn-outline-info">
                     Alle <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -164,7 +164,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-door-open text-success"></i> Türen ({{ stats.doors }})</h6>
-                <a href="{% url 'cad_hub:door_list' model.pk %}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'ifc:door_list' model.pk %}" class="btn btn-sm btn-outline-success">
                     Alle <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -188,7 +188,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-bricks text-primary"></i> Wände ({{ stats.walls }})</h6>
-                <a href="{% url 'cad_hub:wall_list' model.pk %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'ifc:wall_list' model.pk %}" class="btn btn-sm btn-outline-primary">
                     Alle <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -213,7 +213,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-layers-half text-danger"></i> Decken ({{ stats.slabs }})</h6>
-                <a href="{% url 'cad_hub:slab_list' model.pk %}" class="btn btn-sm btn-outline-danger">
+                <a href="{% url 'ifc:slab_list' model.pk %}" class="btn btn-sm btn-outline-danger">
                     Alle <i class="bi bi-arrow-right"></i>
                 </a>
             </div>

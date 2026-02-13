@@ -1,7 +1,7 @@
 <!-- templates/cad_hub/brandschutz/partials/mangel_row.html -->
 <div id="mangel-{{ mangel.pk }}" 
      class="flex items-start gap-3 p-3 bg-slate-700/50 rounded-lg {% if mangel.behoben %}opacity-60{% endif %} animate-in">
-    <button hx-post="{% url 'cad_hub:brandschutz:mangel_toggle' mangel.pk %}"
+    <button hx-post="{% url 'brandschutz:mangel_toggle' mangel.pk %}"
             hx-target="#mangel-{{ mangel.pk }}"
             hx-swap="outerHTML"
             class="mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center

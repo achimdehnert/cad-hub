@@ -51,7 +51,7 @@
 
         <form method="post" class="flex gap-3">
             {% csrf_token %}
-            <a href="{% url 'cad_hub:project_detail' object.project.pk %}"
+            <a href="{% url 'ifc:project_detail' object.project.pk %}"
                class="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-center font-medium transition-colors">
                 Abbrechen
             </a>

@@ -15,7 +15,7 @@
             <tbody>
                 {% for room in rooms %}
                 <tr style="cursor: pointer;"
-                    hx-get="{% url 'cad_hub:room_detail' room.pk %}"
+                    hx-get="{% url 'ifc:room_detail' room.pk %}"
                     hx-target="#room-detail-panel"
                     hx-swap="innerHTML">
                     <td><code class="text-warning">{{ room.number }}</code></td>
@@ -43,7 +43,7 @@
     <ul class="pagination pagination-sm justify-content-center mb-0">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <button class="page-link" hx-get="{% url 'cad_hub:room_list' ifc_model.id %}?page={{ page_obj.previous_page_number }}"
+            <button class="page-link" hx-get="{% url 'ifc:room_list' ifc_model.id %}?page={{ page_obj.previous_page_number }}"
                     hx-target="#room-table-container" hx-include="[name='floor'], [name='usage']">←</button>
         </li>
         {% endif %}
@@ -52,14 +52,14 @@
             <li class="page-item active"><span class="page-link">{{ num }}</span></li>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
             <li class="page-item">
-                <button class="page-link" hx-get="{% url 'cad_hub:room_list' ifc_model.id %}?page={{ num }}"
+                <button class="page-link" hx-get="{% url 'ifc:room_list' ifc_model.id %}?page={{ num }}"
                         hx-target="#room-table-container" hx-include="[name='floor'], [name='usage']">{{ num }}</button>
             </li>
             {% endif %}
         {% endfor %}
         {% if page_obj.has_next %}
         <li class="page-item">
-            <button class="page-link" hx-get="{% url 'cad_hub:room_list' ifc_model.id %}?page={{ page_obj.next_page_number }}"
+            <button class="page-link" hx-get="{% url 'ifc:room_list' ifc_model.id %}?page={{ page_obj.next_page_number }}"
                     hx-target="#room-table-container" hx-include="[name='floor'], [name='usage']">→</button>
         </li>
         {% endif %}

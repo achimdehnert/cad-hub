@@ -185,7 +185,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         try:
             # Try to use the bfagent LLM client
             if self.llm_client is None:
-                from apps.bfagent.services.llm_client import generate_text
+                from apps.core.services.llm_client import generate_text
                 response = generate_text(
                     prompt=description,
                     system_prompt=self.SYSTEM_PROMPT,

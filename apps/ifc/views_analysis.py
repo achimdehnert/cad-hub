@@ -52,7 +52,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
 from .models import IFCModel, Room, Door, Window, Floor
-from .services.mcp_bridge import (
+from apps.core.services.mcp_bridge.mcp_bridge import (
     get_mcp_bridge,
     CADFormat,
     AnalysisResult,
@@ -531,28 +531,28 @@ class AnalysisDashboardView(LoginRequiredMixin, TemplateView):
                 "name": "Format-Analyse",
                 "description": "CAD-Dateien analysieren (IFC, DXF, IGES, FBX, ...)",
                 "icon": "bi-file-earmark-code",
-                "url": "cad_hub:format_analyzer",
+                "url": "ifc:format_analyzer",
                 "color": "primary",
             },
             {
                 "name": "DXF Qualität",
                 "description": "Maßketten und Schnittdarstellungen prüfen",
                 "icon": "bi-rulers",
-                "url": "cad_hub:dxf_quality",
+                "url": "ifc:dxf_quality",
                 "color": "warning",
             },
             {
                 "name": "CAD Assistent",
                 "description": "Fragen in natürlicher Sprache stellen",
                 "icon": "bi-chat-dots",
-                "url": "cad_hub:nl_query",
+                "url": "ifc:nl_query",
                 "color": "success",
             },
             {
                 "name": "Batch-Analyse",
                 "description": "Mehrere Dateien gleichzeitig analysieren",
                 "icon": "bi-collection",
-                "url": "cad_hub:batch_analyze",
+                "url": "ifc:batch_analyze",
                 "color": "info",
             },
         ]

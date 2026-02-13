@@ -2,7 +2,7 @@
 {% extends "cad_hub/brandschutz/base_brandschutz.html" %}
 
 {% block page_actions %}
-<a href="{% url 'cad_hub:brandschutz:pruefung_create' %}" 
+<a href="{% url 'brandschutz:pruefung_create' %}" 
    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center gap-2">
     ➕ Neue Prüfung
 </a>
@@ -42,13 +42,13 @@
     <div class="bg-slate-800 rounded-xl border border-slate-700">
         <div class="p-4 border-b border-slate-700 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-white">📋 Letzte Prüfungen</h2>
-            <a href="{% url 'cad_hub:brandschutz:pruefung_list' %}" class="text-sm text-blue-400 hover:text-blue-300">
+            <a href="{% url 'brandschutz:pruefung_list' %}" class="text-sm text-blue-400 hover:text-blue-300">
                 Alle anzeigen →
             </a>
         </div>
         <div class="divide-y divide-slate-700">
             {% for pruefung in letzte_pruefungen %}
-            <a href="{% url 'cad_hub:brandschutz:pruefung_detail' pruefung.pk %}" 
+            <a href="{% url 'brandschutz:pruefung_detail' pruefung.pk %}" 
                class="block p-4 hover:bg-slate-700/50 transition">
                 <div class="flex items-center justify-between">
                     <div>
@@ -101,7 +101,7 @@
                                 {% else %}bg-orange-900 text-orange-300{% endif %}">
                                 {{ mangel.schweregrad|upper }}
                             </span>
-                            <a href="{% url 'cad_hub:brandschutz:pruefung_detail' mangel.pruefung.pk %}" 
+                            <a href="{% url 'brandschutz:pruefung_detail' mangel.pruefung.pk %}" 
                                class="text-xs text-slate-400 hover:text-white">
                                 {{ mangel.pruefung.titel|truncatewords:3 }}
                             </a>
@@ -121,19 +121,19 @@
 
 <!-- Quick Actions -->
 <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <a href="{% url 'cad_hub:brandschutz:analyse' %}" 
+    <a href="{% url 'brandschutz:analyse' %}" 
        class="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-6 hover:from-red-500 hover:to-orange-500 transition">
         <div class="text-2xl mb-2">📐</div>
         <div class="text-lg font-semibold text-white">CAD-Analyse</div>
         <div class="text-sm text-red-200">DXF/IFC auf Brandschutz prüfen</div>
     </a>
-    <a href="{% url 'cad_hub:brandschutz:regelwerk_list' %}" 
+    <a href="{% url 'brandschutz:regelwerk_list' %}" 
        class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 hover:from-blue-500 hover:to-indigo-500 transition">
         <div class="text-2xl mb-2">📋</div>
         <div class="text-lg font-semibold text-white">Regelwerke</div>
         <div class="text-sm text-blue-200">ASR, DIN, MBO, ATEX...</div>
     </a>
-    <a href="{% url 'cad_hub:brandschutz:pruefung_list' %}?status=maengel" 
+    <a href="{% url 'brandschutz:pruefung_list' %}?status=maengel" 
        class="bg-gradient-to-r from-yellow-600 to-amber-600 rounded-xl p-6 hover:from-yellow-500 hover:to-amber-500 transition">
         <div class="text-2xl mb-2">🔧</div>
         <div class="text-lg font-semibold text-white">Mängelbehebung</div>

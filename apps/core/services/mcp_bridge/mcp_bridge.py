@@ -12,7 +12,7 @@ Implementiert die 4 Hauptszenarien:
 4. Multi-Format Batch-Analyse
 
 Usage:
-    from apps.cad_hub.services.mcp_bridge import CADMCPBridge, get_mcp_bridge
+    # Legacy import removed — this IS the mcp_bridge module
     
     bridge = get_mcp_bridge()
     result = await bridge.analyze_file("/path/to/model.ifc")
@@ -592,7 +592,7 @@ class CADMCPBridge:
     
     async def _query_from_model(self, question: str, model_id: UUID) -> NLQueryResult:
         """Query basierend auf einem Django Model"""
-        from apps.cad_hub.models import IFCModel, Room, Door, Window
+        from apps.ifc.models import IFCModel, Room, Door, Window
         
         question_lower = question.lower()
         

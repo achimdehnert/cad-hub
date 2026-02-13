@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Optional
 from pathlib import Path
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,

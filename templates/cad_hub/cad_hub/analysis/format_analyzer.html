@@ -11,7 +11,7 @@
         <p class="text-muted mb-0">CAD-Dateien hochladen und automatisch analysieren</p>
     </div>
     <div class="col-auto">
-        <a href="{% url 'cad_hub:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'ifc:analysis_dashboard' %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Zurück
         </a>
     </div>
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultCard.classList.add('d-none');
         document.getElementById('progress-text').textContent = `Analysiere ${file.name}...`;
         
-        fetch('{% url "cad_hub:format_analyze_api" %}', {
+        fetch('{% url "ifc:format_analyze_api" %}', {
             method: 'POST',
             body: formData,
             headers: {

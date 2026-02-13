@@ -22,10 +22,10 @@
                 </option>
                 {% endfor %}
             </select>
-            <a href="{% url 'cad_hub:window_list' model.pk %}" class="btn btn-outline-secondary btn-sm">
+            <a href="{% url 'ifc:window_list' model.pk %}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-counterclockwise"></i> Reset
             </a>
-            <a href="{% url 'cad_hub:ifc_content_overview' model.pk %}" class="btn btn-secondary btn-sm">
+            <a href="{% url 'ifc:ifc_content_overview' model.pk %}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Übersicht
             </a>
         </div>

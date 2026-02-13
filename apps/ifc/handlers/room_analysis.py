@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     CADHandlerError,

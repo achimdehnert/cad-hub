@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Union
 import tempfile
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     CADHandlerError,

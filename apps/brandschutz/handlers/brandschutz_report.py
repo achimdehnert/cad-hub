@@ -23,7 +23,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,

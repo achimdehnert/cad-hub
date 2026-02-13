@@ -14,7 +14,7 @@
         <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
             <!-- Filter -->
             <select name="floor" class="form-select form-select-sm" style="width: auto; min-width: 140px;"
-                    hx-get="{% url 'cad_hub:room_list' ifc_model.id %}"
+                    hx-get="{% url 'ifc:room_list' ifc_model.id %}"
                     hx-target="#room-table-container"
                     hx-include="[name='usage'], [name='q']">
                 <option value="">Alle Geschosse</option>
@@ -25,7 +25,7 @@
                 {% endfor %}
             </select>
             <select name="usage" class="form-select form-select-sm" style="width: auto; min-width: 140px;"
-                    hx-get="{% url 'cad_hub:room_list' ifc_model.id %}"
+                    hx-get="{% url 'ifc:room_list' ifc_model.id %}"
                     hx-target="#room-table-container"
                     hx-include="[name='floor'], [name='q']">
                 <option value="">Alle Nutzungen</option>
@@ -39,10 +39,10 @@
                     <i class="bi bi-download"></i> Export
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'cad_hub:export_raumbuch' ifc_model.id %}?type=raumbuch">
+                    <li><a class="dropdown-item" href="{% url 'ifc:export_raumbuch' ifc_model.id %}?type=raumbuch">
                         <i class="bi bi-file-earmark-spreadsheet"></i> Raumbuch (Excel)
                     </a></li>
-                    <li><a class="dropdown-item" href="{% url 'cad_hub:export_raumbuch' ifc_model.id %}?type=din277">
+                    <li><a class="dropdown-item" href="{% url 'ifc:export_raumbuch' ifc_model.id %}?type=din277">
                         <i class="bi bi-rulers"></i> DIN 277 Flächen
                     </a></li>
                 </ul>
@@ -53,7 +53,7 @@
 
 <!-- Flächen Summary -->
 <div id="area-summary" class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4"
-     hx-get="{% url 'cad_hub:area_summary' ifc_model.id %}"
+     hx-get="{% url 'ifc:area_summary' ifc_model.id %}"
      hx-trigger="load"
      hx-swap="innerHTML">
     {% for i in "12345" %}

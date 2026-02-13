@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,
@@ -338,7 +338,7 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
         """Extrahiert komplexe Informationen mit LLM."""
         try:
             try:
-                from apps.bfagent.services.llm_client import generate_text
+                from apps.core.services.llm_client import generate_text
             except ImportError:
                 import os
                 import openai

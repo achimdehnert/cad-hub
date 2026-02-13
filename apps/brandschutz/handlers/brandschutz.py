@@ -23,7 +23,7 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Optional
 
-from .base import (
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,

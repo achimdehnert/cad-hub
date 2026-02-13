@@ -8,7 +8,7 @@
     <h2 class="h4 fw-bold">
         <i class="bi bi-folder text-warning"></i> IFC Projekte
     </h2>
-    <a href="{% url 'cad_hub:project_create' %}" class="btn btn-warning">
+    <a href="{% url 'ifc:project_create' %}" class="btn btn-warning">
         <i class="bi bi-plus"></i> Neues Projekt
     </a>
 </div>
@@ -17,7 +17,7 @@
     <div class="row g-4">
         {% for project in projects %}
         <div class="col-md-6 col-lg-4">
-            <a href="{% url 'cad_hub:project_detail' project.pk %}" class="text-decoration-none">
+            <a href="{% url 'ifc:project_detail' project.pk %}" class="text-decoration-none">
                 <div class="card card-stat h-100">
                     <div class="card-body">
                         <h5 class="card-title text-dark">{{ project.name }}</h5>
@@ -69,7 +69,7 @@
     <div class="card">
         <div class="card-body text-center py-5">
             <p class="text-muted mb-3">Noch keine Projekte vorhanden.</p>
-            <a href="{% url 'cad_hub:project_create' %}" class="btn btn-warning">
+            <a href="{% url 'ifc:project_create' %}" class="btn btn-warning">
                 <i class="bi bi-plus"></i> Erstes Projekt erstellen
             </a>
         </div>
