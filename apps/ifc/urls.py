@@ -3,6 +3,8 @@ from django.urls import path
 
 from . import views
 from . import views_analysis
+from . import views_components
+from . import views_export
 from . import views_nl2cad
 
 app_name = "ifc"
@@ -81,22 +83,22 @@ urlpatterns = [
     # Fenster, Türen, Wände, Decken
     path(
         "model/<uuid:model_id>/windows/",
-        views.WindowListView.as_view(),
+        views_components.WindowListView.as_view(),
         name="window_list",
     ),
     path(
         "model/<uuid:model_id>/doors/",
-        views.DoorListView.as_view(),
+        views_components.DoorListView.as_view(),
         name="door_list",
     ),
     path(
         "model/<uuid:model_id>/walls/",
-        views.WallListView.as_view(),
+        views_components.WallListView.as_view(),
         name="wall_list",
     ),
     path(
         "model/<uuid:model_id>/slabs/",
-        views.SlabListView.as_view(),
+        views_components.SlabListView.as_view(),
         name="slab_list",
     ),
     # Flächen
@@ -113,22 +115,22 @@ urlpatterns = [
     # Export
     path(
         "model/<uuid:model_id>/export/",
-        views.ExportRaumbuchView.as_view(),
+        views_export.ExportRaumbuchView.as_view(),
         name="export_raumbuch",
     ),
     path(
         "model/<uuid:model_id>/export/woflv/",
-        views.ExportWoFlVView.as_view(),
+        views_export.ExportWoFlVView.as_view(),
         name="export_woflv",
     ),
     path(
         "model/<uuid:model_id>/export/gaeb/",
-        views.ExportGAEBView.as_view(),
+        views_export.ExportGAEBView.as_view(),
         name="export_gaeb",
     ),
     path(
         "model/<uuid:model_id>/export/x83/",
-        views.ExportX83View.as_view(),
+        views_export.ExportX83View.as_view(),
         name="export_x83",
     ),
     # NL2CAD
