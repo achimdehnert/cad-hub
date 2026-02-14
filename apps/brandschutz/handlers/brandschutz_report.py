@@ -17,7 +17,6 @@ Inhalte:
 """
 import json
 import logging
-from dataclasses import dataclass, field
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -29,29 +28,10 @@ from apps.core.handlers.base import (
     HandlerStatus,
 )
 
+from .brandschutz_models import BerichtKonfiguration
+
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class BerichtKonfiguration:
-    """Konfiguration für Berichtserstellung."""
-    titel: str = "Brandschutz-Prüfbericht"
-    projekt_name: str = ""
-    etage: str = ""
-    pruefer: str = ""
-    datum: str = ""
-    
-    # Inhalte
-    mit_zusammenfassung: bool = True
-    mit_maengelliste: bool = True
-    mit_symboluebersicht: bool = True
-    mit_fluchtweganalyse: bool = True
-    mit_regelwerkreferenzen: bool = True
-    mit_empfehlungen: bool = True
-    mit_grafiken: bool = True
-    
-    # Ausgabeformat
-    format: str = "pdf"  # pdf, excel, json, html
 
 
 class BrandschutzReportHandler(BaseCADHandler):

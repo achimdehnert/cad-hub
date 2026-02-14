@@ -30,86 +30,13 @@ from apps.core.handlers.base import (
 logger = logging.getLogger(__name__)
 
 
-class SymbolTyp(Enum):
-    """Brandschutz-Symboltypen nach DIN EN ISO 7010."""
-    # Rettungszeichen (grün)
-    NOTAUSGANG = "E001"           # Notausgang
-    NOTAUSGANG_LINKS = "E001-L"   # Notausgang links
-    NOTAUSGANG_RECHTS = "E001-R"  # Notausgang rechts
-    SAMMELSTELLE = "E007"         # Sammelstelle
-    ERSTE_HILFE = "E003"          # Erste Hilfe
-    
-    # Brandschutzzeichen (rot)
-    FEUERLOESCHER = "F001"        # Feuerlöscher
-    LOESCHDECKE = "F002"          # Löschdecke
-    FEUERLEITER = "F003"          # Feuerleiter
-    BRANDMELDER = "F005"          # Brandmelder
-    WANDHYDRANT = "F002"          # Löschschlauch
-    
-    # Warnzeichen (gelb)
-    WARNUNG_FEUER = "W021"        # Feuergefährliche Stoffe
-    WARNUNG_EX = "W021"           # Explosionsgefahr
-    
-    # Sonstige
-    RAUCHMELDER = "RM"            # Rauchmelder (kein ISO)
-    SPRINKLER = "SP"              # Sprinkler
-    RWA = "RWA"                   # Rauch-Wärme-Abzug
-    FLUCHTWEG_PFEIL = "FW"        # Fluchtweg-Richtungspfeil
+from .brandschutz_models import (
+    PlatzierungsRegel,
+    SymbolInsertionResult,
+    SymbolPlatzierung,
+    SymbolTyp,
+)
 
-
-@dataclass
-class PlatzierungsRegel:
-    """Regel für Symbol-Platzierung."""
-    symbol_typ: SymbolTyp
-    max_abstand_m: float = 0.0      # Max Abstand zwischen Symbolen
-    max_flaeche_m2: float = 0.0     # Max Fläche pro Symbol
-    min_anzahl: int = 0              # Mindestanzahl
-    an_tueren: bool = False          # An Türen platzieren
-    an_fluchtwegen: bool = False     # Entlang Fluchtwegen
-    an_richtungswechsel: bool = False  # Bei Richtungswechseln
-    regelwerk: str = ""
-
-
-@dataclass
-class SymbolPlatzierung:
-    """Vorgeschlagene Symbol-Platzierung."""
-    symbol_typ: str
-    position_x: float
-    position_y: float
-    rotation: float = 0.0
-    layer: str = "Brandschutz_Symbole"
-    begruendung: str = ""
-    prioritaet: int = 1  # 1=kritisch, 2=empfohlen, 3=optional
-    
-    def to_dict(self) -> dict:
-        return asdict(self)
-
-
-@dataclass
-class SymbolInsertionResult:
-    """Ergebnis der Symbol-Analyse und -Einfügung."""
-    vorgeschlagene_symbole: list[SymbolPlatzierung] = field(default_factory=list)
-    eingefuegte_symbole: list[SymbolPlatzierung] = field(default_factory=list)
-    warnungen: list[str] = field(default_factory=list)
-    
-    # Statistik
-    feuerloescher_fehlen: int = 0
-    rauchmelder_fehlen: int = 0
-    fluchtweg_schilder_fehlen: int = 0
-    
-    def to_dict(self) -> dict:
-        return {
-            "vorgeschlagene_symbole": [s.to_dict() for s in self.vorgeschlagene_symbole],
-            "eingefuegte_symbole": [s.to_dict() for s in self.eingefuegte_symbole],
-            "warnungen": self.warnungen,
-            "statistik": {
-                "feuerloescher_fehlen": self.feuerloescher_fehlen,
-                "rauchmelder_fehlen": self.rauchmelder_fehlen,
-                "fluchtweg_schilder_fehlen": self.fluchtweg_schilder_fehlen,
-                "gesamt_vorgeschlagen": len(self.vorgeschlagene_symbole),
-                "gesamt_eingefuegt": len(self.eingefuegte_symbole),
-            }
-        }
 
 
 class BrandschutzSymbolHandler(BaseCADHandler):
