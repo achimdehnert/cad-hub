@@ -1,12 +1,5 @@
-"""Tenant-aware manager for multi-tenancy query filtering."""
-import uuid
+"""Tenant-aware manager: re-export from django_tenancy (ADR-035)."""
 
-from django.db import models
+from django_tenancy.managers import TenantAwareManager
 
-
-class TenantAwareManager(models.Manager):
-    """Manager that provides tenant-scoped querysets."""
-
-    def for_tenant(self, tenant_id: uuid.UUID) -> models.QuerySet:
-        """Filter queryset by tenant_id."""
-        return self.filter(tenant_id=tenant_id)
+__all__ = ["TenantAwareManager"]

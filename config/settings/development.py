@@ -15,5 +15,5 @@ DATABASES = {
 # Disable tenant middleware in dev (optional)
 MIDDLEWARE = [
     m for m in MIDDLEWARE  # noqa: F405
-    if m != "apps.core.middleware.SubdomainTenantMiddleware"
+    if m != "django_tenancy.middleware.SubdomainTenantMiddleware"
 ]

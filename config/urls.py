@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from apps.core.healthz import liveness, readiness
+from django_tenancy.healthz import liveness, readiness
 
 from . import views
 

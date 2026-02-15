@@ -1,7 +1,7 @@
 """Core admin: Organization and Membership."""
 from django.contrib import admin
 
-from .models import Membership, Organization
+from django_tenancy.models import Membership, Organization
 
 
 class MembershipInline(admin.TabularInline):
