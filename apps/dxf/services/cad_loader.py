@@ -11,14 +11,11 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-from .analyzer.dxf_analyzer import (
-    AnalysisReport,
-    DWGConverter,
-    DXFAnalyzer,
-    FloorPlanAnalyzer,
-    TechnicalDrawingAnalyzer,
-)
+from .analyzer.analyzer_models import AnalysisReport
+from .analyzer.dwg_converter import DWGConverterService as DWGConverter
+from .analyzer.dxf_analyzer import DXFAnalyzer
 from .analyzer.dxf_renderer import DXFRendererService
+from .analyzer.specialized_analyzers import FloorPlanAnalyzer, TechnicalDrawingAnalyzer
 
 logger = logging.getLogger(__name__)
 
