@@ -29,10 +29,28 @@ Daten aus dem Modell abzurufen. Gib Flächen in m² und Längen in m an.
 Wenn du Daten abrufst, fasse die Ergebnisse verständlich zusammen."""
 
 
+def _get_session_backend():
+    """Returns RedisSessionBackend in production, InMemory in dev."""
+    from django.conf import settings as django_settings
+
+    redis_url = getattr(django_settings, "REDIS_URL", None)
+    if redis_url:
+        try:
+            import redis.asyncio as aioredis
+            from chat_agent.session import RedisSessionBackend
+
+            client = aioredis.from_url(redis_url, decode_responses=True)
+            return RedisSessionBackend(client, prefix="cad:chat:", ttl_seconds=86400)
+        except ImportError:
+            pass
+
+    from chat_agent.session import InMemorySessionBackend
+    return InMemorySessionBackend()
+
+
 def _get_agent(model_id: str):
     """Erstellt einen ChatAgent für ein IFC-Modell (lazy import)."""
     from chat_agent.agent import ChatAgent
-    from chat_agent.session import InMemorySessionBackend
     from creative_services.core.llm_client import LLMClient, LLMConfig, LLMProvider
 
     from .toolkit import CADToolkit
@@ -48,7 +66,7 @@ def _get_agent(model_id: str):
     return ChatAgent(
         toolkit=toolkit,
         completion=llm,
-        session_backend=InMemorySessionBackend(),
+        session_backend=_get_session_backend(),
         system_prompt=CAD_SYSTEM_PROMPT,
     )
 

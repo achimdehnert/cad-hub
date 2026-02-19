@@ -18,3 +18,6 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Redis (for Chat-Agent session backend)
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/1")
