@@ -33,7 +33,7 @@ services:
     command: ["web"]
     env_file: .env.prod
     ports:
-      - "127.0.0.1:8094:8000"
+      - "0.0.0.0:8094:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
