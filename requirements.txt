@@ -1,6 +1,8 @@
 # Core
 Django>=5.1,<5.2
 django-tenancy @ git+https://github.com/achimdehnert/platform.git@main#subdirectory=packages/django-tenancy
+chat-agent @ git+https://github.com/achimdehnert/platform.git@main#subdirectory=packages/chat-agent
+creative-services @ git+https://github.com/achimdehnert/platform.git@main#subdirectory=packages/creative-services
 gunicorn>=22.0,<23.0
 psycopg2-binary>=2.9,<3.0
 

@@ -3,6 +3,7 @@ from django.urls import path
 
 from . import views
 from . import views_analysis
+from . import views_chat
 from . import views_components
 from . import views_export
 from . import views_nl2cad
@@ -239,5 +240,16 @@ urlpatterns = [
         "formats/",
         views_analysis.SupportedFormatsView.as_view(),
         name="supported_formats",
+    ),
+    # Chat
+    path(
+        "model/<uuid:model_id>/chat/",
+        views_chat.ChatView.as_view(),
+        name="chat",
+    ),
+    path(
+        "chat/api/",
+        views_chat.ChatAPIView.as_view(),
+        name="chat_api",
     ),
 ]

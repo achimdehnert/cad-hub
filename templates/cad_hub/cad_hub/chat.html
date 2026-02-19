@@ -1,0 +1,238 @@
+{% extends "cad_hub/base_cad.html" %}
+
+{% block title %}CAD Chat{% if ifc_model %} — {{ ifc_model }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1">
+            <i class="bi bi-chat-dots"></i> CAD Assistent
+        </h2>
+        {% if ifc_model %}
+        <p class="text-muted mb-0">{{ ifc_model }} &mdash; KI-gestützte Abfragen</p>
+        {% else %}
+        <p class="text-muted mb-0">Stellen Sie Fragen zu Ihren IFC-Modellen</p>
+        {% endif %}
+    </div>
+    {% if ifc_model %}
+    <a href="{% url 'ifc:model_detail' ifc_model.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Zurück zum Modell
+    </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <!-- Chat Panel -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+                <i class="bi bi-robot"></i>
+                <span class="fw-semibold">Chat</span>
+                <span class="badge bg-white text-primary ms-auto" id="session-badge">Neue Sitzung</span>
+            </div>
+
+            <!-- Message History -->
+            <div class="card-body p-3" id="chat-messages"
+                 style="height: 480px; overflow-y: auto; background: #f8f9fa;">
+                <div class="text-center text-muted py-5" id="chat-empty">
+                    <i class="bi bi-chat-square-dots fs-1 d-block mb-2 opacity-50"></i>
+                    <p class="mb-1">Stellen Sie eine Frage zu Ihrem IFC-Modell.</p>
+                    <small>Beispiel: „Wie viele Räume hat das EG?" oder „Zeige alle tragenden Wände."</small>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="card-footer p-2">
+                <form id="chat-form" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" id="session-id" value="{{ session_id }}">
+                    <input type="hidden" id="model-id" value="{{ ifc_model.pk|default:'' }}">
+                    <input type="text" id="chat-input" class="form-control"
+                           placeholder="Ihre Frage zum IFC-Modell…"
+                           autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary px-3" id="send-btn">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar: Quick Queries -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-lightning"></i> Schnellabfragen
+            </div>
+            <div class="card-body p-2">
+                {% for q in quick_queries %}
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="{{ q }}">
+                    {{ q }}
+                </button>
+                {% empty %}
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="Gib mir eine Zusammenfassung des Modells.">
+                    Modell-Zusammenfassung
+                </button>
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="Wie viele Räume hat das Modell und wie groß ist die Gesamtfläche?">
+                    Raumanzahl &amp; Fläche
+                </button>
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="Zeige alle tragenden Außenwände.">
+                    Tragende Außenwände
+                </button>
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="Wie viele Fenster und Türen gibt es im Erdgeschoss?">
+                    Fenster &amp; Türen EG
+                </button>
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start mb-1 quick-query"
+                        data-query="Welche Räume haben die Nutzungskategorie NF1.1?">
+                    Wohnräume (NF1.1)
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if ifc_model %}
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-info-circle"></i> Modell-Info
+            </div>
+            <div class="card-body small">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Modell</dt>
+                    <dd class="col-7">{{ ifc_model }}</dd>
+                    <dt class="col-5 text-muted">Schema</dt>
+                    <dd class="col-7">{{ ifc_model.ifc_schema|default:"—" }}</dd>
+                    <dt class="col-5 text-muted">Status</dt>
+                    <dd class="col-7">
+                        <span class="badge bg-{% if ifc_model.status == 'ready' %}success{% else %}secondary{% endif %}">
+                            {{ ifc_model.get_status_display }}
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('chat-messages');
+    const empty = document.getElementById('chat-empty');
+    const sendBtn = document.getElementById('send-btn');
+    const sessionId = document.getElementById('session-id').value;
+    const modelId = document.getElementById('model-id').value;
+    const apiUrl = "{% url 'ifc:chat_api' %}";
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    function appendMessage(role, text, meta) {
+        if (empty) empty.style.display = 'none';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'd-flex mb-3 ' + (role === 'user' ? 'justify-content-end' : 'justify-content-start');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'rounded-3 px-3 py-2 ' + (
+            role === 'user'
+                ? 'bg-primary text-white'
+                : role === 'error'
+                    ? 'bg-danger text-white'
+                    : 'bg-white border shadow-sm text-dark'
+        );
+        bubble.style.maxWidth = '80%';
+        bubble.style.whiteSpace = 'pre-wrap';
+        bubble.textContent = text;
+
+        if (meta && role === 'assistant') {
+            const small = document.createElement('div');
+            small.className = 'text-muted mt-1';
+            small.style.fontSize = '0.7rem';
+            small.textContent = meta;
+            bubble.appendChild(small);
+        }
+
+        wrapper.appendChild(bubble);
+        messages.appendChild(wrapper);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function appendTyping() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'd-flex mb-3 justify-content-start';
+        wrapper.id = 'typing-indicator';
+        wrapper.innerHTML = '<div class="bg-white border shadow-sm rounded-3 px-3 py-2">'
+            + '<span class="spinner-grow spinner-grow-sm text-secondary me-1"></span>'
+            + '<span class="spinner-grow spinner-grow-sm text-secondary me-1" style="animation-delay:.15s"></span>'
+            + '<span class="spinner-grow spinner-grow-sm text-secondary" style="animation-delay:.3s"></span>'
+            + '</div>';
+        messages.appendChild(wrapper);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeTyping() {
+        const t = document.getElementById('typing-indicator');
+        if (t) t.remove();
+    }
+
+    async function sendMessage(text) {
+        appendMessage('user', text);
+        appendTyping();
+        sendBtn.disabled = true;
+        input.disabled = true;
+
+        try {
+            const resp = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    message: text,
+                    session_id: sessionId,
+                    model_id: modelId,
+                }),
+            });
+            const data = await resp.json();
+            removeTyping();
+
+            if (data.error && !data.content) {
+                appendMessage('error', 'Fehler: ' + data.error);
+            } else {
+                const meta = data.tool_calls_made
+                    ? `${data.tool_calls_made} Tool-Aufruf(e) · ${data.rounds} Runde(n)`
+                    : null;
+                appendMessage('assistant', data.content || '(Keine Antwort)', meta);
+            }
+        } catch (err) {
+            removeTyping();
+            appendMessage('error', 'Verbindungsfehler: ' + err.message);
+        } finally {
+            sendBtn.disabled = false;
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        sendMessage(text);
+    });
+
+    document.querySelectorAll('.quick-query').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            sendMessage(btn.dataset.query);
+        });
+    });
+})();
+</script>
+{% endblock %}
