@@ -9,8 +9,8 @@ Nutzt BauCAD Hub MCP Patterns für:
 """
 import logging
 from pathlib import Path
-from celery import shared_task
 
+from celery import shared_task
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,6 @@ Enums and dataclasses for IFC parsing results.
 """
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class RoomType(Enum):
@@ -59,7 +58,7 @@ class ParsedRoom:
     height: float = 0.0
     volume: float = 0.0
     perimeter: float = 0.0
-    floor_guid: Optional[str] = None
+    floor_guid: str | None = None
     room_type: RoomType = RoomType.UNKNOWN
     properties: dict = field(default_factory=dict)
 
@@ -79,9 +78,9 @@ class ParsedWindow:
     width: float = 0.0
     height: float = 0.0
     area: float = 0.0
-    floor_guid: Optional[str] = None
+    floor_guid: str | None = None
     material: str = ""
-    u_value: Optional[float] = None
+    u_value: float | None = None
     properties: dict = field(default_factory=dict)
 
 
@@ -95,7 +94,7 @@ class ParsedDoor:
     width: float = 0.0
     height: float = 0.0
     door_type: str = ""
-    floor_guid: Optional[str] = None
+    floor_guid: str | None = None
     material: str = ""
     fire_rating: str = ""
     properties: dict = field(default_factory=dict)
@@ -113,7 +112,7 @@ class ParsedWall:
     gross_area: float = 0.0
     net_area: float = 0.0
     volume: float = 0.0
-    floor_guid: Optional[str] = None
+    floor_guid: str | None = None
     is_external: bool = False
     is_load_bearing: bool = False
     material: str = ""
@@ -130,7 +129,7 @@ class ParsedSlab:
     thickness: float = 0.0
     volume: float = 0.0
     perimeter: float = 0.0
-    floor_guid: Optional[str] = None
+    floor_guid: str | None = None
     material: str = ""
 
 
@@ -141,13 +140,13 @@ class IFCParseResult:
     schema: str = ""
     application: str = ""
     project_name: str = ""
-    floors: List[ParsedFloor] = field(default_factory=list)
-    rooms: List[ParsedRoom] = field(default_factory=list)
-    windows: List[ParsedWindow] = field(default_factory=list)
-    doors: List[ParsedDoor] = field(default_factory=list)
-    walls: List[ParsedWall] = field(default_factory=list)
-    slabs: List[ParsedSlab] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    floors: list[ParsedFloor] = field(default_factory=list)
+    rooms: list[ParsedRoom] = field(default_factory=list)
+    windows: list[ParsedWindow] = field(default_factory=list)
+    doors: list[ParsedDoor] = field(default_factory=list)
+    walls: list[ParsedWall] = field(default_factory=list)
+    slabs: list[ParsedSlab] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     @property
     def total_area(self) -> float:

@@ -6,7 +6,6 @@ Extracted from bfagent/apps/bfagent/services/llm_client.py.
 """
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ def generate_text(
     model: str = "",
     max_tokens: int = 2000,
     temperature: float = 0.7,
-) -> Optional[str]:
+) -> str | None:
     """Generate text using OpenAI API.
 
     Args:

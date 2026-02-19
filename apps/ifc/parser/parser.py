@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from collections.abc import Iterator
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any
 
 import ifcopenshell
 import ifcopenshell.geom
@@ -175,7 +176,7 @@ class IfcCompleteParser:
         if not self.file_path.exists():
             raise FileNotFoundError(f"IFC-Datei nicht gefunden: {self.file_path}")
 
-        self.ifc: Optional[ifcopenshell.file] = None
+        self.ifc: ifcopenshell.file | None = None
         self._unit_scale: float = 1.0
 
     def parse(self) -> ParsedProject:
@@ -426,7 +427,7 @@ class IfcCompleteParser:
 
             yield parsed
 
-    def _extract_space_number(self, space: Any) -> Optional[str]:
+    def _extract_space_number(self, space: Any) -> str | None:
         """Extrahiert die Raumnummer."""
         # Erst direkt am Element
         if hasattr(space, "Tag") and space.Tag:
@@ -477,7 +478,6 @@ class IfcCompleteParser:
     def _apply_space_properties(self, parsed: ParsedSpace) -> None:
         """Überträgt Standard-Properties in die Space-Felder."""
         for prop in parsed.properties:
-            pset = prop.pset_name
             name = prop.name
             value = prop.value
 
@@ -552,7 +552,7 @@ class IfcCompleteParser:
             elif name in ("FloorSlipResistance", "FinishFloorRating"):
                 parsed.finish_floor_rating = str(value)
 
-    def _get_space_boundaries(self, space: Any) -> List[str]:
+    def _get_space_boundaries(self, space: Any) -> list[str]:
         """Ermittelt die IDs der begrenzenden Elemente."""
         boundary_ids = []
 
@@ -568,7 +568,7 @@ class IfcCompleteParser:
 
         return boundary_ids
 
-    def _get_space_openings(self, space: Any) -> Tuple[List[str], List[str]]:
+    def _get_space_openings(self, space: Any) -> tuple[list[str], list[str]]:
         """Ermittelt Türen und Fenster im Raum."""
         door_ids = []
         window_ids = []
@@ -1035,7 +1035,7 @@ class IfcCompleteParser:
         else:
             return "unknown"
 
-    def _get_unit_for_type(self, qty_type: str) -> Optional[str]:
+    def _get_unit_for_type(self, qty_type: str) -> str | None:
         """Gibt die Standard-Einheit für einen Quantity-Typ zurück."""
         units = {
             "area": "m²",
@@ -1056,7 +1056,7 @@ class IfcCompleteParser:
             return bool(value)
         return False
 
-    def _to_decimal(self, value: Any) -> Optional[Decimal]:
+    def _to_decimal(self, value: Any) -> Decimal | None:
         """Konvertiert zu Decimal."""
         if value is None:
             return None
@@ -1065,7 +1065,7 @@ class IfcCompleteParser:
         except (ValueError, TypeError):
             return None
 
-    def _dms_to_decimal(self, dms: tuple) -> Optional[float]:
+    def _dms_to_decimal(self, dms: tuple) -> float | None:
         """Konvertiert Grad/Minuten/Sekunden zu Dezimalgrad."""
         try:
             if len(dms) >= 3:
@@ -1078,7 +1078,7 @@ class IfcCompleteParser:
             pass
         return None
 
-    def _calculate_element_counts(self) -> Dict[str, int]:
+    def _calculate_element_counts(self) -> dict[str, int]:
         """Berechnet Element-Anzahl pro Klasse."""
         counts = {}
         for element_class in self.ELEMENT_CLASSES:
@@ -1090,7 +1090,7 @@ class IfcCompleteParser:
                 pass
         return counts
 
-    def _collect_all_materials(self, project: ParsedProject) -> Set[str]:
+    def _collect_all_materials(self, project: ParsedProject) -> set[str]:
         """Sammelt alle verwendeten Materialnamen."""
         materials = set()
 

@@ -16,12 +16,8 @@ Regelwerke:
 - ATEX / BetrSichV (Ex-Schutz)
 - DIN 14675 (Brandmeldeanlagen)
 """
-import re
-import json
 import logging
-from dataclasses import dataclass, field, asdict
-from enum import Enum
-from typing import Optional
+import re
 
 from apps.core.handlers.base import (
     BaseCADHandler,
@@ -35,8 +31,8 @@ logger = logging.getLogger(__name__)
 from .brandschutz_models import (
     Brandabschnitt,
     BrandschutzAnalyse,
-    BrandschutzKategorie,
     Brandschutzeinrichtung,
+    BrandschutzKategorie,
     ExBereich,
     ExZone,
     Feuerwiderstand,
@@ -44,11 +40,10 @@ from .brandschutz_models import (
 )
 
 
-
 class BrandschutzHandler(BaseCADHandler):
     """
     Handler für Brandschutz-Analyse aus CAD-Dateien.
-    
+
     Erkennt:
     - Fluchtwege und Rettungswege
     - Brandabschnitte (F30, F60, F90)
@@ -56,21 +51,21 @@ class BrandschutzHandler(BaseCADHandler):
     - Löscheinrichtungen
     - Melder (Rauch, Wärme, Brand)
     - Brandschutztüren (T30, T60, T90)
-    
+
     Input:
         loader: ezdxf-Dokument oder ifcopenshell-Modell
         format: "dxf" oder "ifc"
         use_llm: bool - LLM für unbekannte Layer
-    
+
     Output:
         brandschutz: BrandschutzAnalyse mit allen Elementen
     """
-    
+
     name = "BrandschutzHandler"
     description = "Analysiert Brandschutz-Elemente in CAD-Dateien"
     required_inputs = ["loader", "format"]
     optional_inputs = ["use_llm", "etage"]
-    
+
     # Layer-Keywords für Erkennung
     LAYER_KEYWORDS = {
         BrandschutzKategorie.FLUCHTWEG: [
@@ -123,7 +118,7 @@ class BrandschutzHandler(BaseCADHandler):
             "sammelplatz", "sammelpunkt", "assembly", "muster",
         ],
     }
-    
+
     # Feuerwiderstand-Patterns
     FEUERWIDERSTAND_PATTERNS = [
         (r"F\s*30|REI\s*30|EI\s*30", Feuerwiderstand.F30),
@@ -132,7 +127,7 @@ class BrandschutzHandler(BaseCADHandler):
         (r"F\s*120|REI\s*120|EI\s*120", Feuerwiderstand.F120),
         (r"F\s*180|REI\s*180|EI\s*180", Feuerwiderstand.F180),
     ]
-    
+
     # Ex-Zonen-Patterns
     EX_ZONE_PATTERNS = [
         (r"(?:zone|ex)[_\-\s]*0(?!\d)", ExZone.ZONE_0),
@@ -142,7 +137,7 @@ class BrandschutzHandler(BaseCADHandler):
         (r"(?:zone|ex)[_\-\s]*21", ExZone.ZONE_21),
         (r"(?:zone|ex)[_\-\s]*22", ExZone.ZONE_22),
     ]
-    
+
     def execute(self, input_data: dict) -> CADHandlerResult:
         """Führt Brandschutz-Analyse durch."""
         result = CADHandlerResult(
@@ -150,18 +145,18 @@ class BrandschutzHandler(BaseCADHandler):
             handler_name=self.name,
             status=HandlerStatus.RUNNING,
         )
-        
+
         loader = input_data.get("loader")
         format_type = input_data.get("format", "dxf")
-        use_llm = input_data.get("use_llm", False)
+        input_data.get("use_llm", False)
         etage = input_data.get("etage", "EG")
-        
+
         if not loader:
             result.add_error("Kein CAD-Dokument (loader) übergeben")
             return result
-        
+
         analyse = BrandschutzAnalyse()
-        
+
         try:
             if format_type == "dxf":
                 analyse = self._analyze_dxf(loader, analyse, etage)
@@ -170,18 +165,18 @@ class BrandschutzHandler(BaseCADHandler):
             else:
                 result.add_error(f"Unbekanntes Format: {format_type}")
                 return result
-            
+
             # Prüfungen durchführen
             analyse = self._perform_checks(analyse)
-            
+
             # Zusammenfassung berechnen
             analyse = self._calculate_summary(analyse)
-            
+
         except Exception as e:
             result.add_error(f"Analyse-Fehler: {e}")
             logger.exception(f"[{self.name}] Fehler bei Brandschutz-Analyse")
             return result
-        
+
         # Ergebnis
         result.data["brandschutz"] = analyse.to_dict()
         result.data["fluchtwege_count"] = len(analyse.fluchtwege)
@@ -190,32 +185,32 @@ class BrandschutzHandler(BaseCADHandler):
         result.data["einrichtungen_count"] = len(analyse.einrichtungen)
         result.data["warnungen"] = analyse.warnungen
         result.data["maengel"] = analyse.maengel
-        
+
         result.status = HandlerStatus.SUCCESS
         logger.info(f"[{self.name}] Analyse abgeschlossen: {len(analyse.einrichtungen)} Einrichtungen gefunden")
-        
+
         return result
-    
+
     def _analyze_dxf(self, doc, analyse: BrandschutzAnalyse, etage: str) -> BrandschutzAnalyse:
         """Analysiert DXF-Dokument."""
         msp = doc.modelspace()
-        
+
         # Alle Layer durchgehen
         for layer in doc.layers:
             layer_name = layer.dxf.name.lower()
             kategorie = self._classify_layer(layer_name)
-            
+
             if kategorie:
                 logger.debug(f"[{self.name}] Layer '{layer.dxf.name}' → {kategorie.value}")
-        
+
         # Entities durchgehen
         for entity in msp:
             layer_name = entity.dxf.layer.lower() if hasattr(entity.dxf, 'layer') else ""
             kategorie = self._classify_layer(layer_name)
-            
+
             if not kategorie:
                 continue
-            
+
             # Je nach Entity-Typ verarbeiten
             if entity.dxftype() == "LWPOLYLINE":
                 self._process_polyline(entity, kategorie, analyse, etage)
@@ -225,9 +220,9 @@ class BrandschutzHandler(BaseCADHandler):
                 self._process_line(entity, kategorie, analyse, etage)
             elif entity.dxftype() in ("TEXT", "MTEXT"):
                 self._process_text(entity, kategorie, analyse, etage)
-        
+
         return analyse
-    
+
     def _analyze_ifc(self, model, analyse: BrandschutzAnalyse, etage: str) -> BrandschutzAnalyse:
         """Analysiert IFC-Modell."""
         try:
@@ -239,7 +234,7 @@ class BrandschutzHandler(BaseCADHandler):
                     etage=etage,
                 )
                 analyse.einrichtungen.append(einrichtung)
-            
+
             # IfcSensor (Melder)
             for element in model.by_type("IfcSensor"):
                 name = (element.Name or "").lower()
@@ -249,14 +244,14 @@ class BrandschutzHandler(BaseCADHandler):
                     kat = BrandschutzKategorie.WAERMEMELDER
                 else:
                     kat = BrandschutzKategorie.BRANDMELDER
-                
+
                 einrichtung = Brandschutzeinrichtung(
                     typ=element.Name or "Melder",
                     kategorie=kat.value,
                     etage=etage,
                 )
                 analyse.einrichtungen.append(einrichtung)
-            
+
             # IfcDoor mit Brandschutz-Properties
             for door in model.by_type("IfcDoor"):
                 name = (door.Name or "").lower()
@@ -269,7 +264,7 @@ class BrandschutzHandler(BaseCADHandler):
                         )
                         analyse.einrichtungen.append(einrichtung)
                         break
-            
+
             # IfcSpace für Ex-Zonen
             for space in model.by_type("IfcSpace"):
                 name = (space.Name or "").lower()
@@ -282,47 +277,47 @@ class BrandschutzHandler(BaseCADHandler):
                         )
                         analyse.ex_bereiche.append(ex_bereich)
                         break
-                        
+
         except Exception as e:
             logger.warning(f"[{self.name}] IFC-Analyse Fehler: {e}")
-        
+
         return analyse
-    
-    def _classify_layer(self, layer_name: str) -> Optional[BrandschutzKategorie]:
+
+    def _classify_layer(self, layer_name: str) -> BrandschutzKategorie | None:
         """Klassifiziert Layer nach Brandschutz-Kategorie."""
         layer_lower = layer_name.lower()
-        
+
         for kategorie, keywords in self.LAYER_KEYWORDS.items():
             for keyword in keywords:
                 if keyword in layer_lower:
                     return kategorie
-        
+
         return None
-    
+
     def _process_polyline(self, entity, kategorie: BrandschutzKategorie, analyse: BrandschutzAnalyse, etage: str):
         """Verarbeitet Polylinien (Fluchtwege, Brandabschnitte, Ex-Zonen)."""
         try:
             points = list(entity.get_points())
             if len(points) < 2:
                 return
-            
+
             # Länge berechnen
             length = sum(
                 ((points[i+1][0] - points[i][0])**2 + (points[i+1][1] - points[i][1])**2)**0.5
                 for i in range(len(points) - 1)
             )
-            
+
             # Fläche berechnen (falls geschlossen)
             area = 0.0
             if entity.is_closed:
                 area = abs(sum(
-                    (points[i][0] * points[(i+1) % len(points)][1] - 
+                    (points[i][0] * points[(i+1) % len(points)][1] -
                      points[(i+1) % len(points)][0] * points[i][1])
                     for i in range(len(points))
                 ) / 2.0)
-            
+
             layer_name = entity.dxf.layer
-            
+
             if kategorie == BrandschutzKategorie.FLUCHTWEG:
                 fluchtweg = Fluchtweg(
                     name=layer_name,
@@ -332,7 +327,7 @@ class BrandschutzHandler(BaseCADHandler):
                     max_laenge_ok=length < 35000,  # 35m max nach ASR A2.3
                 )
                 analyse.fluchtwege.append(fluchtweg)
-                
+
             elif kategorie in (BrandschutzKategorie.BRANDABSCHNITT, BrandschutzKategorie.BRANDWAND):
                 fw = self._detect_feuerwiderstand(layer_name)
                 brandabschnitt = Brandabschnitt(
@@ -343,7 +338,7 @@ class BrandschutzHandler(BaseCADHandler):
                     etage=etage,
                 )
                 analyse.brandabschnitte.append(brandabschnitt)
-                
+
             elif kategorie == BrandschutzKategorie.EX_ZONE:
                 zone = self._detect_ex_zone(layer_name)
                 ex_bereich = ExBereich(
@@ -353,16 +348,16 @@ class BrandschutzHandler(BaseCADHandler):
                     layer=layer_name,
                 )
                 analyse.ex_bereiche.append(ex_bereich)
-                
+
         except Exception as e:
             logger.debug(f"[{self.name}] Polyline-Fehler: {e}")
-    
+
     def _process_block(self, entity, kategorie: BrandschutzKategorie, analyse: BrandschutzAnalyse, etage: str):
         """Verarbeitet Block-Referenzen (Symbole für Melder, Löscher, etc.)."""
         try:
             block_name = entity.dxf.name
             insert_point = entity.dxf.insert
-            
+
             einrichtung = Brandschutzeinrichtung(
                 typ=block_name,
                 kategorie=kategorie.value,
@@ -373,17 +368,17 @@ class BrandschutzHandler(BaseCADHandler):
                 block_name=block_name,
             )
             analyse.einrichtungen.append(einrichtung)
-            
+
         except Exception as e:
             logger.debug(f"[{self.name}] Block-Fehler: {e}")
-    
+
     def _process_line(self, entity, kategorie: BrandschutzKategorie, analyse: BrandschutzAnalyse, etage: str):
         """Verarbeitet Linien (z.B. Fluchtwege als einzelne Linien)."""
         try:
             start = entity.dxf.start
             end = entity.dxf.end
             length = ((end[0] - start[0])**2 + (end[1] - start[1])**2)**0.5
-            
+
             if kategorie == BrandschutzKategorie.FLUCHTWEG:
                 fluchtweg = Fluchtweg(
                     name=entity.dxf.layer,
@@ -392,15 +387,15 @@ class BrandschutzHandler(BaseCADHandler):
                     etage=etage,
                 )
                 analyse.fluchtwege.append(fluchtweg)
-                
+
         except Exception as e:
             logger.debug(f"[{self.name}] Line-Fehler: {e}")
-    
+
     def _process_text(self, entity, kategorie: BrandschutzKategorie, analyse: BrandschutzAnalyse, etage: str):
         """Verarbeitet Text-Elemente für zusätzliche Informationen."""
         try:
             text = entity.dxf.text if hasattr(entity.dxf, 'text') else ""
-            
+
             # Feuerwiderstand aus Text extrahieren
             fw = self._detect_feuerwiderstand(text)
             if fw != Feuerwiderstand.UNBEKANNT:
@@ -409,27 +404,27 @@ class BrandschutzHandler(BaseCADHandler):
                     if ba.feuerwiderstand == Feuerwiderstand.UNBEKANNT.value:
                         ba.feuerwiderstand = fw.value
                         break
-                        
+
         except Exception as e:
             logger.debug(f"[{self.name}] Text-Fehler: {e}")
-    
+
     def _detect_feuerwiderstand(self, text: str) -> Feuerwiderstand:
         """Erkennt Feuerwiderstandsklasse aus Text."""
         for pattern, fw in self.FEUERWIDERSTAND_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 return fw
         return Feuerwiderstand.UNBEKANNT
-    
+
     def _detect_ex_zone(self, text: str) -> ExZone:
         """Erkennt Ex-Zone aus Text."""
         for pattern, zone in self.EX_ZONE_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 return zone
         return ExZone.KEINE
-    
+
     def _perform_checks(self, analyse: BrandschutzAnalyse) -> BrandschutzAnalyse:
         """Führt Prüfungen durch und generiert Warnungen/Mängel."""
-        
+
         # Fluchtweg-Prüfung (max 35m nach ASR A2.3)
         for fluchtweg in analyse.fluchtwege:
             if fluchtweg.laenge_m > 35:
@@ -440,26 +435,26 @@ class BrandschutzHandler(BaseCADHandler):
                 analyse.warnungen.append(
                     f"Fluchtweg '{fluchtweg.name}' nähert sich 35m-Grenze ({fluchtweg.laenge_m:.1f}m)"
                 )
-        
+
         # Ex-Zonen-Prüfung
         for ex in analyse.ex_bereiche:
             if ex.zone in (ExZone.ZONE_0.value, ExZone.ZONE_20.value):
                 analyse.warnungen.append(
                     f"Kritische Ex-Zone gefunden: {ex.name} ({ex.zone})"
                 )
-        
+
         # Brandabschnitte ohne Feuerwiderstand
         for ba in analyse.brandabschnitte:
             if ba.feuerwiderstand == Feuerwiderstand.UNBEKANNT.value:
                 analyse.warnungen.append(
                     f"Brandabschnitt '{ba.name}' ohne Feuerwiderstandsklasse"
                 )
-        
+
         return analyse
-    
+
     def _calculate_summary(self, analyse: BrandschutzAnalyse) -> BrandschutzAnalyse:
         """Berechnet Zusammenfassung."""
-        
+
         # Einrichtungen zählen
         for einrichtung in analyse.einrichtungen:
             kat = einrichtung.kategorie
@@ -471,15 +466,15 @@ class BrandschutzHandler(BaseCADHandler):
                 analyse.anzahl_rauchmelder += 1
             elif kat == BrandschutzKategorie.SPRINKLER.value:
                 analyse.anzahl_sprinkler += 1
-        
+
         # Ex-Flächen summieren
         analyse.gesamtflaeche_ex_m2 = sum(ex.flaeche_m2 for ex in analyse.ex_bereiche)
-        
+
         return analyse
 
 
 # Singleton für einfachen Zugriff
-_brandschutz_handler: Optional[BrandschutzHandler] = None
+_brandschutz_handler: BrandschutzHandler | None = None
 
 def get_brandschutz_handler() -> BrandschutzHandler:
     """Gibt BrandschutzHandler-Instanz zurück."""

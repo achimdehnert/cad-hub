@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class CADFormat(Enum):
 
     @classmethod
     def from_extension(
-        cls, filepath: Union[str, Path]
+        cls, filepath: str | Path
     ) -> "CADFormat":
         ext = Path(filepath).suffix.lower()
         mapping = {
@@ -119,8 +119,8 @@ class BaseCADHandler(ABC):
 
     def __init__(self, context: dict = None):
         self.context = context or {}
-        self._start_time: Optional[datetime] = None
-        self._result: Optional[CADHandlerResult] = None
+        self._start_time: datetime | None = None
+        self._result: CADHandlerResult | None = None
 
     @abstractmethod
     def execute(

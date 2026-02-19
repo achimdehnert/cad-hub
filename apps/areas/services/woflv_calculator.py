@@ -7,7 +7,6 @@ Wohnflächenverordnung für Mietwohnungen
 """
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Dict, List, Tuple
 
 
 @dataclass
@@ -37,7 +36,7 @@ class WoFlVRoom:
         """Anrechenbare Wohnfläche"""
         return self.grundflaeche * self.gesamt_faktor
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "name": self.name,
             "number": self.number,
@@ -67,8 +66,8 @@ class WoFlVResult:
     nicht_angerechnet: Decimal = Decimal("0")
 
     # Räume
-    rooms: List[WoFlVRoom] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    rooms: list[WoFlVRoom] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     def _round(self, value: Decimal, decimals: int = 2) -> Decimal:
         return value.quantize(Decimal(10) ** -decimals, rounding=ROUND_HALF_UP)
@@ -80,7 +79,7 @@ class WoFlVResult:
             return 0.0
         return float(self.wohnflaeche_gesamt / self.grundflaeche_gesamt)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "grundflaeche_gesamt": float(self._round(self.grundflaeche_gesamt)),
             "wohnflaeche_gesamt": float(self._round(self.wohnflaeche_gesamt)),
@@ -152,7 +151,7 @@ class WoFlVCalculator:
         else:
             return Decimal("0.0")
 
-    def get_raumtyp_faktor(self, name: str, category: str = "") -> Tuple[str, Decimal]:
+    def get_raumtyp_faktor(self, name: str, category: str = "") -> tuple[str, Decimal]:
         """Ermittelt Raumtyp und Faktor aus Name"""
         search_text = f"{name} {category}".lower()
 
@@ -205,7 +204,7 @@ class WoFlVCalculator:
 
     def calculate_from_rooms(
         self,
-        rooms: List[Dict],
+        rooms: list[dict],
         default_hoehe: float = 2.50,
     ) -> WoFlVResult:
         """

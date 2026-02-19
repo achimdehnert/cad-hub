@@ -18,7 +18,7 @@ from django.views.generic import TemplateView, View
 
 from apps.core.mixins import TenantMixin
 
-from .models import IFCModel, IFCProject
+from .models import IFCModel
 
 logger = logging.getLogger(__name__)
 

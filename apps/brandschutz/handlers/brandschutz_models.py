@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
-
 
 # ============================================================
 # Brandschutz Analysis Models
@@ -62,7 +60,7 @@ class Fluchtweg:
     etage: str = ""
     ist_hauptfluchtweg: bool = False
     max_laenge_ok: bool = True  # Max 35m nach ASR A2.3
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -75,7 +73,7 @@ class Brandabschnitt:
     feuerwiderstand: str = Feuerwiderstand.UNBEKANNT.value
     layer: str = ""
     etage: str = ""
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -88,7 +86,7 @@ class ExBereich:
     flaeche_m2: float = 0.0
     layer: str = ""
     medium: str = ""  # Gas, Staub, etc.
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -103,7 +101,7 @@ class Brandschutzeinrichtung:
     layer: str = ""
     etage: str = ""
     block_name: str = ""
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -115,18 +113,18 @@ class BrandschutzAnalyse:
     brandabschnitte: list[Brandabschnitt] = field(default_factory=list)
     ex_bereiche: list[ExBereich] = field(default_factory=list)
     einrichtungen: list[Brandschutzeinrichtung] = field(default_factory=list)
-    
+
     # Zusammenfassung
     anzahl_notausgaenge: int = 0
     anzahl_feuerloescher: int = 0
     anzahl_rauchmelder: int = 0
     anzahl_sprinkler: int = 0
     gesamtflaeche_ex_m2: float = 0.0
-    
+
     # Prüfergebnisse
     warnungen: list[str] = field(default_factory=list)
     maengel: list[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> dict:
         return {
             "fluchtwege": [f.to_dict() for f in self.fluchtwege],
@@ -159,18 +157,18 @@ class SymbolTyp(Enum):
     NOTAUSGANG_RECHTS = "E001-R"  # Notausgang rechts
     SAMMELSTELLE = "E007"         # Sammelstelle
     ERSTE_HILFE = "E003"          # Erste Hilfe
-    
+
     # Brandschutzzeichen (rot)
     FEUERLOESCHER = "F001"        # Feuerlöscher
     LOESCHDECKE = "F002"          # Löschdecke
     FEUERLEITER = "F003"          # Feuerleiter
     BRANDMELDER = "F005"          # Brandmelder
     WANDHYDRANT = "F002"          # Löschschlauch
-    
+
     # Warnzeichen (gelb)
     WARNUNG_FEUER = "W021"        # Feuergefährliche Stoffe
     WARNUNG_EX = "W021"           # Explosionsgefahr
-    
+
     # Sonstige
     RAUCHMELDER = "RM"            # Rauchmelder (kein ISO)
     SPRINKLER = "SP"              # Sprinkler
@@ -201,7 +199,7 @@ class SymbolPlatzierung:
     layer: str = "Brandschutz_Symbole"
     begruendung: str = ""
     prioritaet: int = 1  # 1=kritisch, 2=empfohlen, 3=optional
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -212,12 +210,12 @@ class SymbolInsertionResult:
     vorgeschlagene_symbole: list[SymbolPlatzierung] = field(default_factory=list)
     eingefuegte_symbole: list[SymbolPlatzierung] = field(default_factory=list)
     warnungen: list[str] = field(default_factory=list)
-    
+
     # Statistik
     feuerloescher_fehlen: int = 0
     rauchmelder_fehlen: int = 0
     fluchtweg_schilder_fehlen: int = 0
-    
+
     def to_dict(self) -> dict:
         return {
             "vorgeschlagene_symbole": [s.to_dict() for s in self.vorgeschlagene_symbole],
@@ -246,7 +244,7 @@ class BerichtKonfiguration:
     etage: str = ""
     pruefer: str = ""
     datum: str = ""
-    
+
     # Inhalte
     mit_zusammenfassung: bool = True
     mit_maengelliste: bool = True
@@ -255,7 +253,7 @@ class BerichtKonfiguration:
     mit_regelwerkreferenzen: bool = True
     mit_empfehlungen: bool = True
     mit_grafiken: bool = True
-    
+
     # Ausgabeformat
     format: str = "pdf"  # pdf, excel, json, html
 

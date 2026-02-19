@@ -7,7 +7,6 @@ Supports multiple conversion methods:
 2. LibreDWG (open source alternative)
 3. Cloud API fallback (ShareCAD)
 """
-import io
 import logging
 import os
 import shutil
@@ -15,8 +14,6 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -25,30 +22,30 @@ logger = logging.getLogger(__name__)
 class DWGConversionResult:
     """Result of DWG to DXF conversion."""
     success: bool
-    dxf_path: Optional[Path] = None
-    dxf_content: Optional[bytes] = None
-    error: Optional[str] = None
-    method: Optional[str] = None
+    dxf_path: Path | None = None
+    dxf_content: bytes | None = None
+    error: str | None = None
+    method: str | None = None
 
 
 class DWGConverterService:
     """
     Service for converting DWG files to DXF.
-    
+
     Conversion Methods (in order of preference):
     1. ODA File Converter - Best quality, requires installation
     2. LibreDWG - Open source, requires installation
     3. Cloud API - No installation, but uploads file
-    
+
     Usage:
         converter = DWGConverterService()
         result = converter.convert_to_dxf("drawing.dwg")
-        
+
         if result.success:
             # Use result.dxf_path or result.dxf_content
             pass
     """
-    
+
     # ODA File Converter paths (check multiple locations)
     ODA_PATHS = [
         "/usr/bin/ODAFileConverter",
@@ -56,51 +53,51 @@ class DWGConverterService:
         "C:\\Program Files\\ODA\\ODAFileConverter\\ODAFileConverter.exe",
         "C:\\ODAFileConverter\\ODAFileConverter.exe",
     ]
-    
+
     # LibreDWG paths
     LIBREDWG_PATHS = [
         "/usr/bin/dwg2dxf",
         "/usr/local/bin/dwg2dxf",
     ]
-    
+
     # Cloud APIs for DWG conversion
     CONVERTIO_API = "https://api.convertio.co/convert"
     ZAMZAR_API = "https://api.zamzar.com/v1/jobs"
-    
+
     def __init__(self):
         self.oda_path = self._find_oda_converter()
         self.libredwg_path = self._find_libredwg()
-    
-    def _find_oda_converter(self) -> Optional[str]:
+
+    def _find_oda_converter(self) -> str | None:
         """Find ODA File Converter installation."""
         for path in self.ODA_PATHS:
             if os.path.exists(path):
                 logger.info(f"Found ODA File Converter at: {path}")
                 return path
-        
+
         # Try to find in PATH
         result = shutil.which("ODAFileConverter")
         if result:
             logger.info(f"Found ODA File Converter in PATH: {result}")
             return result
-        
+
         return None
-    
-    def _find_libredwg(self) -> Optional[str]:
+
+    def _find_libredwg(self) -> str | None:
         """Find LibreDWG installation."""
         for path in self.LIBREDWG_PATHS:
             if os.path.exists(path):
                 logger.info(f"Found LibreDWG at: {path}")
                 return path
-        
+
         # Try to find in PATH
         result = shutil.which("dwg2dxf")
         if result:
             logger.info(f"Found LibreDWG in PATH: {result}")
             return result
-        
+
         return None
-    
+
     def get_available_methods(self) -> list[str]:
         """Get list of available conversion methods."""
         methods = []
@@ -110,29 +107,29 @@ class DWGConverterService:
             methods.append("libredwg")
         methods.append("cloud")  # Always available
         return methods
-    
-    def convert_to_dxf(self, dwg_path: str | Path, 
-                       method: Optional[str] = None,
-                       output_path: Optional[Path] = None) -> DWGConversionResult:
+
+    def convert_to_dxf(self, dwg_path: str | Path,
+                       method: str | None = None,
+                       output_path: Path | None = None) -> DWGConversionResult:
         """
         Convert DWG file to DXF.
-        
+
         Args:
             dwg_path: Path to DWG file
             method: Conversion method ('oda', 'libredwg', 'cloud'). Auto-selects if None.
             output_path: Where to save DXF. Uses temp file if None.
-        
+
         Returns:
             DWGConversionResult with DXF path or content
         """
         dwg_path = Path(dwg_path)
-        
+
         if not dwg_path.exists():
             return DWGConversionResult(success=False, error=f"File not found: {dwg_path}")
-        
+
         if not dwg_path.suffix.lower() == ".dwg":
             return DWGConversionResult(success=False, error="Not a DWG file")
-        
+
         # Auto-select method
         if method is None:
             if self.oda_path:
@@ -141,9 +138,9 @@ class DWGConverterService:
                 method = "libredwg"
             else:
                 method = "cloud"
-        
+
         logger.info(f"Converting {dwg_path.name} using method: {method}")
-        
+
         # Dispatch to appropriate method
         if method == "oda":
             return self._convert_with_oda(dwg_path, output_path)
@@ -153,44 +150,44 @@ class DWGConverterService:
             return self._convert_with_cloud(dwg_path, output_path)
         else:
             return DWGConversionResult(success=False, error=f"Unknown method: {method}")
-    
-    def convert_bytes_to_dxf(self, dwg_content: bytes, 
+
+    def convert_bytes_to_dxf(self, dwg_content: bytes,
                              filename: str = "upload.dwg",
-                             method: Optional[str] = None) -> DWGConversionResult:
+                             method: str | None = None) -> DWGConversionResult:
         """Convert DWG content from bytes to DXF."""
         # Save to temp file
         with tempfile.NamedTemporaryFile(suffix=".dwg", delete=False) as f:
             f.write(dwg_content)
             temp_path = Path(f.name)
-        
+
         try:
             result = self.convert_to_dxf(temp_path, method=method)
-            
+
             # Read DXF content if successful
             if result.success and result.dxf_path:
                 with open(result.dxf_path, 'rb') as f:
                     result.dxf_content = f.read()
-            
+
             return result
         finally:
             # Cleanup temp DWG
             temp_path.unlink(missing_ok=True)
-    
-    def _convert_with_oda(self, dwg_path: Path, 
-                          output_path: Optional[Path]) -> DWGConversionResult:
+
+    def _convert_with_oda(self, dwg_path: Path,
+                          output_path: Path | None) -> DWGConversionResult:
         """Convert using ODA File Converter."""
         if not self.oda_path:
             return DWGConversionResult(
-                success=False, 
+                success=False,
                 error="ODA File Converter not installed"
             )
-        
+
         try:
             # Create temp output directory
             with tempfile.TemporaryDirectory() as temp_dir:
                 input_dir = dwg_path.parent
                 output_dir = temp_dir
-                
+
                 # ODA syntax: ODAFileConverter <input_folder> <output_folder> <output_version> <output_type> <recurse> <audit>
                 # Output version: ACAD2018 (most compatible)
                 # Output type: DXF
@@ -204,13 +201,13 @@ class DWGConverterService:
                     "1",  # Audit
                     str(dwg_path.name)
                 ]
-                
+
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-                
+
                 # Find output file
                 dxf_name = dwg_path.stem + ".dxf"
                 temp_dxf = Path(output_dir) / dxf_name
-                
+
                 if temp_dxf.exists():
                     if output_path:
                         shutil.copy(temp_dxf, output_path)
@@ -219,7 +216,7 @@ class DWGConverterService:
                         # Copy to new temp file that won't be deleted
                         final_path = Path(tempfile.mktemp(suffix=".dxf"))
                         shutil.copy(temp_dxf, final_path)
-                    
+
                     return DWGConversionResult(
                         success=True,
                         dxf_path=final_path,
@@ -231,7 +228,7 @@ class DWGConverterService:
                         error=f"ODA conversion failed: {result.stderr}",
                         method="oda"
                     )
-                    
+
         except subprocess.TimeoutExpired:
             return DWGConversionResult(
                 success=False,
@@ -244,25 +241,25 @@ class DWGConverterService:
                 error=f"ODA conversion error: {e}",
                 method="oda"
             )
-    
+
     def _convert_with_libredwg(self, dwg_path: Path,
-                                output_path: Optional[Path]) -> DWGConversionResult:
+                                output_path: Path | None) -> DWGConversionResult:
         """Convert using LibreDWG dwg2dxf."""
         if not self.libredwg_path:
             return DWGConversionResult(
                 success=False,
                 error="LibreDWG not installed"
             )
-        
+
         try:
             if output_path is None:
                 output_path = Path(tempfile.mktemp(suffix=".dxf"))
-            
+
             # dwg2dxf syntax: dwg2dxf [-v] <input.dwg> [output.dxf]
             cmd = [self.libredwg_path, str(dwg_path), str(output_path)]
-            
+
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            
+
             if output_path.exists():
                 return DWGConversionResult(
                     success=True,
@@ -275,7 +272,7 @@ class DWGConverterService:
                     error=f"LibreDWG conversion failed: {result.stderr}",
                     method="libredwg"
                 )
-                
+
         except subprocess.TimeoutExpired:
             return DWGConversionResult(
                 success=False,
@@ -288,9 +285,9 @@ class DWGConverterService:
                 error=f"LibreDWG conversion error: {e}",
                 method="libredwg"
             )
-    
+
     def _convert_with_cloud(self, dwg_path: Path,
-                            output_path: Optional[Path]) -> DWGConversionResult:
+                            output_path: Path | None) -> DWGConversionResult:
         """
         Cloud conversion not available without API key.
         Returns instructions for installing local converters.

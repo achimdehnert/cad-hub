@@ -12,14 +12,10 @@ Verwendet:
 - PyMuPDF für Text-Extraktion
 - Optional: Vision LLM für komplexe Interpretation
 """
-import io
-import re
 import json
 import logging
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
-from pathlib import Path
-from typing import Optional
+import re
+from dataclasses import asdict, dataclass, field
 
 from apps.core.handlers.base import (
     BaseCADHandler,
@@ -39,7 +35,7 @@ class Grundstueck:
     gemeinde: str = ""
     strasse: str = ""
     hausnummer: str = ""
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -53,7 +49,7 @@ class Gebaeude:
     hoehe_m: float = 0.0
     geschosse: int = 0
     nutzung: str = ""  # Wohnen, Gewerbe, etc.
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -66,7 +62,7 @@ class Kennzahlen:
     gfz: float = 0.0  # Geschossflächenzahl
     gfz_zulaessig: float = 0.0
     bmz: float = 0.0  # Baumassenzahl
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -82,7 +78,7 @@ class LageplanInfo:
     grenzabstaende: dict = field(default_factory=dict)  # {"nord": 3.0, "sued": 5.0, ...}
     stellplaetze: int = 0
     raw_text: str = ""
-    
+
     def to_dict(self) -> dict:
         return {
             "grundstueck": self.grundstueck.to_dict(),
@@ -98,26 +94,26 @@ class LageplanInfo:
 class PDFLageplanHandler(BaseCADHandler):
     """
     Handler für Lageplan-Extraktion aus PDF.
-    
+
     Funktionen:
     - Text-Extraktion mit PyMuPDF
     - Pattern-Matching für Standardfelder
     - Optional: LLM für komplexe Interpretation
-    
+
     Input:
         pdf_content: bytes - PDF-Datei als Bytes
         pdf_path: str - Pfad zur PDF-Datei
         use_llm: bool - LLM für Interpretation verwenden
-    
+
     Output:
         lageplan: LageplanInfo mit allen extrahierten Daten
     """
-    
+
     name = "PDFLageplanHandler"
     description = "Extrahiert Daten aus Lageplan-PDFs"
     required_inputs = []
     optional_inputs = ["pdf_content", "pdf_path", "use_llm"]
-    
+
     # Regex-Patterns für Extraktion
     PATTERNS = {
         "flurstueck": [
@@ -157,7 +153,7 @@ class PDFLageplanHandler(BaseCADHandler):
             r"(\d+[.,]\d+)\s*m\s*(?:zur\s+)?(?:Grenze|Nachbar)",
         ],
     }
-    
+
     def execute(self, input_data: dict) -> CADHandlerResult:
         """Extrahiert Lageplan-Informationen aus PDF."""
         result = CADHandlerResult(
@@ -165,120 +161,120 @@ class PDFLageplanHandler(BaseCADHandler):
             handler_name=self.name,
             status=HandlerStatus.RUNNING,
         )
-        
+
         pdf_content = input_data.get("pdf_content")
         pdf_path = input_data.get("pdf_path")
         use_llm = input_data.get("use_llm", True)
-        
+
         if not pdf_content and not pdf_path:
             result.add_error("Keine PDF-Daten (pdf_content oder pdf_path)")
             return result
-        
+
         # PDF laden
         try:
             import fitz  # PyMuPDF
         except ImportError:
             result.add_error("PyMuPDF nicht installiert: pip install pymupdf")
             return result
-        
+
         try:
             if pdf_path:
                 doc = fitz.open(pdf_path)
             else:
                 doc = fitz.open(stream=pdf_content, filetype="pdf")
-            
+
             # Text aus allen Seiten extrahieren
             full_text = ""
             for page in doc:
                 full_text += page.get_text() + "\n"
-            
+
             doc.close()
-            
+
         except Exception as e:
             result.add_error(f"PDF konnte nicht gelesen werden: {e}")
             return result
-        
+
         # Lageplan-Info extrahieren
         lageplan = LageplanInfo(raw_text=full_text[:2000])
-        
+
         # 1. Pattern-basierte Extraktion
         lageplan = self._extract_with_patterns(full_text, lageplan)
-        
+
         # 2. LLM-basierte Extraktion (falls aktiviert und Lücken)
         if use_llm and self._has_gaps(lageplan):
             lageplan = self._extract_with_llm(full_text, lageplan)
-        
+
         # Ergebnis
         result.data["lageplan"] = lageplan.to_dict()
         result.data["raw_text_preview"] = full_text[:500]
         result.data["extraction_complete"] = not self._has_gaps(lageplan)
-        
+
         result.status = HandlerStatus.SUCCESS
         logger.info(f"[{self.name}] Lageplan extrahiert: {lageplan.grundstueck.flurstueck}")
-        
+
         return result
-    
+
     def _extract_with_patterns(self, text: str, lageplan: LageplanInfo) -> LageplanInfo:
         """Extrahiert Daten mit Regex-Patterns."""
-        
+
         # Flurstück
         for pattern in self.PATTERNS["flurstueck"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.grundstueck.flurstueck = match.group(1)
                 break
-        
+
         # Gemarkung
         for pattern in self.PATTERNS["gemarkung"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.grundstueck.gemarkung = match.group(1).strip()
                 break
-        
+
         # Fläche
         for pattern in self.PATTERNS["flaeche"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.grundstueck.flaeche_m2 = float(match.group(1).replace(",", "."))
                 break
-        
+
         # GRZ
         for pattern in self.PATTERNS["grz"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.kennzahlen.grz = float(match.group(1).replace(",", "."))
                 break
-        
+
         # GFZ
         for pattern in self.PATTERNS["gfz"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.kennzahlen.gfz = float(match.group(1).replace(",", "."))
                 break
-        
+
         # Maßstab
         for pattern in self.PATTERNS["massstab"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.massstab = f"1:{match.group(1)}"
                 break
-        
+
         # Stellplätze
         for pattern in self.PATTERNS["stellplaetze"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 lageplan.stellplaetze = int(match.group(1))
                 break
-        
+
         # Abstände (alle finden)
         for pattern in self.PATTERNS["abstand"]:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for i, m in enumerate(matches[:4]):  # Max 4 Abstände
                 key = ["nord", "ost", "sued", "west"][i] if i < 4 else f"abstand_{i}"
                 lageplan.grenzabstaende[key] = float(m.replace(",", "."))
-        
+
         return lageplan
-    
+
     def _has_gaps(self, lageplan: LageplanInfo) -> bool:
         """Prüft ob wichtige Felder fehlen."""
         return (
@@ -286,7 +282,7 @@ class PDFLageplanHandler(BaseCADHandler):
             lageplan.grundstueck.flaeche_m2 == 0 or
             lageplan.kennzahlen.grz == 0
         )
-    
+
     def _extract_with_llm(self, text: str, lageplan: LageplanInfo) -> LageplanInfo:
         """Extrahiert fehlende Daten mit LLM."""
         try:
@@ -294,14 +290,15 @@ class PDFLageplanHandler(BaseCADHandler):
                 from apps.core.services.llm_client import generate_text
             except ImportError:
                 import os
+
                 import openai
-                
+
                 api_key = os.environ.get("OPENAI_API_KEY")
                 if not api_key:
                     return lageplan
-                
+
                 client = openai.OpenAI(api_key=api_key)
-                
+
                 def generate_text(prompt, max_tokens=500):
                     response = client.chat.completions.create(
                         model="gpt-3.5-turbo",
@@ -310,7 +307,7 @@ class PDFLageplanHandler(BaseCADHandler):
                         temperature=0.1,
                     )
                     return response.choices[0].message.content
-            
+
             prompt = f"""Analysiere diesen Lageplan-Text und extrahiere die Informationen als JSON.
 
 Text (Auszug):
@@ -335,7 +332,7 @@ Antworte NUR mit JSON, z.B.:
                 json_match = re.search(r'\{[^{}]+\}', response)
                 if json_match:
                     data = json.loads(json_match.group())
-                    
+
                     # Felder übernehmen wenn leer
                     if not lageplan.grundstueck.flurstueck and data.get("flurstueck"):
                         lageplan.grundstueck.flurstueck = data["flurstueck"]
@@ -347,10 +344,10 @@ Antworte NUR mit JSON, z.B.:
                         lageplan.kennzahlen.grz = float(data["grz"])
                     if lageplan.kennzahlen.gfz == 0 and data.get("gfz"):
                         lageplan.kennzahlen.gfz = float(data["gfz"])
-                    
+
                     logger.info(f"[{self.name}] LLM extraction successful")
-                    
+
         except Exception as e:
             logger.warning(f"[{self.name}] LLM extraction failed: {e}")
-        
+
         return lageplan

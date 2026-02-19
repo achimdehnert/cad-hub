@@ -5,12 +5,11 @@ DIN 277:2021 Flächenberechnung
 Basiert auf BauCAD Hub MCP standards/din277.py
 """
 from dataclasses import dataclass, field
-from decimal import ROUND_HALF_UP, Decimal
-from enum import Enum
-from typing import Dict, List, Optional
+from decimal import Decimal
+from enum import StrEnum
 
 
-class AreaCategory(str, Enum):
+class AreaCategory(StrEnum):
     """Flächenkategorien nach DIN 277:2021"""
 
     BGF = "BGF"  # Brutto-Grundfläche
@@ -71,7 +70,7 @@ class DIN277Result:
 
     # Metadaten
     room_count: int = 0
-    warnings: List[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         self._recalculate()
@@ -97,7 +96,7 @@ class DIN277Result:
             return 0.0
         return float(self.vf / self.nrf)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Für JSON/Template-Nutzung"""
         return {
             "bgf": float(self.bgf),
@@ -163,8 +162,8 @@ class DIN277Calculator:
 
     def calculate_from_rooms(
         self,
-        rooms: List[Dict],
-        bgf: Optional[float] = None,
+        rooms: list[dict],
+        bgf: float | None = None,
         floor_height: float = 3.0,
     ) -> DIN277Result:
         """

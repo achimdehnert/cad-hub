@@ -18,27 +18,17 @@ Version: 2.0.0
 
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass, field
 from decimal import Decimal
-from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union
-
-import ifcopenshell
-import ifcopenshell.geom
-import ifcopenshell.util.element
-import ifcopenshell.util.placement
-import ifcopenshell.util.shape
-import ifcopenshell.util.unit
+from enum import StrEnum
+from typing import Any
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
 
-class IfcSchemaVersion(str, Enum):
+class IfcSchemaVersion(StrEnum):
     """Unterstützte IFC Schema Versionen."""
 
     IFC2X3 = "IFC2X3"
@@ -48,7 +38,7 @@ class IfcSchemaVersion(str, Enum):
     IFC4X3 = "IFC4X3"
 
 
-class PropertyDataType(str, Enum):
+class PropertyDataType(StrEnum):
     """IFC Property Datentypen."""
 
     STRING = "string"
@@ -79,10 +69,10 @@ class ParsedProperty:
     name: str  # Property Name (z.B. "FireRating")
     value: Any  # Wert
     data_type: PropertyDataType = PropertyDataType.STRING
-    unit: Optional[str] = None  # Einheit falls vorhanden
-    description: Optional[str] = None  # Beschreibung falls vorhanden
+    unit: str | None = None  # Einheit falls vorhanden
+    description: str | None = None  # Beschreibung falls vorhanden
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "pset_name": self.pset_name,
             "name": self.name,
@@ -99,12 +89,12 @@ class ParsedQuantity:
 
     qto_name: str  # Name des QuantitySets (z.B. "Qto_WallBaseQuantities")
     name: str  # Quantity Name (z.B. "NetSideArea")
-    value: Optional[Decimal] = None  # Numerischer Wert
-    unit: Optional[str] = None  # Einheit (m², m³, m, etc.)
-    formula: Optional[str] = None  # Berechnungsformel falls vorhanden
+    value: Decimal | None = None  # Numerischer Wert
+    unit: str | None = None  # Einheit (m², m³, m, etc.)
+    formula: str | None = None  # Berechnungsformel falls vorhanden
     quantity_type: str = "area"  # length, area, volume, count, weight, time
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "qto_name": self.qto_name,
             "name": self.name,
@@ -120,18 +110,18 @@ class ParsedMaterial:
     """IFC Material (einzelne Schicht oder Material)."""
 
     name: str  # Material Name
-    thickness: Optional[Decimal] = None  # Schichtdicke in Metern
+    thickness: Decimal | None = None  # Schichtdicke in Metern
     layer_order: int = 0  # Reihenfolge bei mehrschichtigen Aufbauten
     is_ventilated: bool = False  # Hinterlüftete Schicht
-    category: Optional[str] = None  # Kategorie (z.B. "Dämmung", "Tragschicht")
+    category: str | None = None  # Kategorie (z.B. "Dämmung", "Tragschicht")
 
     # Material-Properties
-    density: Optional[Decimal] = None  # kg/m³
-    thermal_conductivity: Optional[Decimal] = None  # W/(m·K)
-    specific_heat: Optional[Decimal] = None  # J/(kg·K)
-    fire_rating: Optional[str] = None  # Brandschutzklasse
+    density: Decimal | None = None  # kg/m³
+    thermal_conductivity: Decimal | None = None  # W/(m·K)
+    specific_heat: Decimal | None = None  # J/(kg·K)
+    fire_rating: str | None = None  # Brandschutzklasse
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "name": self.name,
             "thickness_m": float(self.thickness) if self.thickness else None,
@@ -152,10 +142,10 @@ class ParsedClassification:
 
     system: str  # Klassifikationssystem (z.B. "Omniclass")
     code: str  # Code (z.B. "23-13 00 00")
-    name: Optional[str] = None  # Bezeichnung
-    location: Optional[str] = None  # URL zur Spezifikation
+    name: str | None = None  # Bezeichnung
+    location: str | None = None  # URL zur Spezifikation
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "system": self.system,
             "code": self.code,
@@ -174,23 +164,23 @@ class ParsedSite:
     """IFC Site (Grundstück)."""
 
     global_id: str
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
     # Geolocation
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    elevation: Optional[float] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    elevation: float | None = None
 
     # Address
-    address_lines: List[str] = field(default_factory=list)
-    postal_code: Optional[str] = None
-    city: Optional[str] = None
-    country: Optional[str] = None
+    address_lines: list[str] = field(default_factory=list)
+    postal_code: str | None = None
+    city: str | None = None
+    country: str | None = None
 
-    properties: List[ParsedProperty] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "name": self.name,
@@ -213,21 +203,21 @@ class ParsedBuilding:
     """IFC Building (Gebäude)."""
 
     global_id: str
-    name: Optional[str] = None
-    long_name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    long_name: str | None = None
+    description: str | None = None
 
     # Building Info
-    building_type: Optional[str] = None  # Nutzungsart
-    construction_year: Optional[int] = None
+    building_type: str | None = None  # Nutzungsart
+    construction_year: int | None = None
 
     # Elevation
-    elevation_of_ref_height: Optional[float] = None
-    elevation_of_terrain: Optional[float] = None
+    elevation_of_ref_height: float | None = None
+    elevation_of_terrain: float | None = None
 
-    properties: List[ParsedProperty] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "name": self.name,
@@ -246,19 +236,19 @@ class ParsedStorey:
     """IFC Building Storey (Geschoss)."""
 
     global_id: str
-    name: Optional[str] = None
-    long_name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    long_name: str | None = None
+    description: str | None = None
 
-    elevation: Optional[float] = None  # Geschosshöhe über NN
-    height: Optional[float] = None  # Geschosshöhe (Rohbau)
+    elevation: float | None = None  # Geschosshöhe über NN
+    height: float | None = None  # Geschosshöhe (Rohbau)
 
     # Referenzen
-    building_global_id: Optional[str] = None
+    building_global_id: str | None = None
 
-    properties: List[ParsedProperty] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "name": self.name,
@@ -281,75 +271,75 @@ class ParsedSpace:
     """IFC Space (Raum) mit allen Properties."""
 
     global_id: str
-    name: Optional[str] = None
-    long_name: Optional[str] = None  # Langname
-    space_number: Optional[str] = None  # Raumnummer
-    description: Optional[str] = None
+    name: str | None = None
+    long_name: str | None = None  # Langname
+    space_number: str | None = None  # Raumnummer
+    description: str | None = None
 
     # Referenzen
-    storey_global_id: Optional[str] = None
-    space_type_global_id: Optional[str] = None
+    storey_global_id: str | None = None
+    space_type_global_id: str | None = None
 
     # Geometrie - BaseQuantities
-    net_floor_area: Optional[Decimal] = None  # Netto-Grundfläche
-    gross_floor_area: Optional[Decimal] = None  # Brutto-Grundfläche
-    net_wall_area: Optional[Decimal] = None  # Wandfläche netto
-    net_ceiling_area: Optional[Decimal] = None  # Deckenfläche netto
-    net_volume: Optional[Decimal] = None  # Raumvolumen netto
-    gross_volume: Optional[Decimal] = None  # Raumvolumen brutto
-    net_perimeter: Optional[Decimal] = None  # Umfang
-    net_height: Optional[Decimal] = None  # Raumhöhe (lichte Höhe)
-    gross_height: Optional[Decimal] = None  # Brutto-Höhe
+    net_floor_area: Decimal | None = None  # Netto-Grundfläche
+    gross_floor_area: Decimal | None = None  # Brutto-Grundfläche
+    net_wall_area: Decimal | None = None  # Wandfläche netto
+    net_ceiling_area: Decimal | None = None  # Deckenfläche netto
+    net_volume: Decimal | None = None  # Raumvolumen netto
+    gross_volume: Decimal | None = None  # Raumvolumen brutto
+    net_perimeter: Decimal | None = None  # Umfang
+    net_height: Decimal | None = None  # Raumhöhe (lichte Höhe)
+    gross_height: Decimal | None = None  # Brutto-Höhe
 
     # Nutzung
-    occupancy_type: Optional[str] = None  # Nutzungsart (DIN 277)
-    occupancy_number: Optional[int] = None  # Max. Personenzahl
+    occupancy_type: str | None = None  # Nutzungsart (DIN 277)
+    occupancy_number: int | None = None  # Max. Personenzahl
 
     # Brandschutz
-    fire_compartment: Optional[str] = None  # Brandabschnitt
-    fire_rating: Optional[str] = None  # Feuerwiderstandsklasse
+    fire_compartment: str | None = None  # Brandabschnitt
+    fire_rating: str | None = None  # Feuerwiderstandsklasse
     sprinkler_protected: bool = False  # Sprinkler vorhanden
 
     # ATEX / Explosionsschutz
-    ex_zone: Optional[str] = None  # Ex-Zone (0, 1, 2, 20, 21, 22)
+    ex_zone: str | None = None  # Ex-Zone (0, 1, 2, 20, 21, 22)
 
     # Akustik
-    acoustic_rating: Optional[str] = None  # Schallschutzklasse
-    reverberation_time: Optional[Decimal] = None  # Nachhallzeit
+    acoustic_rating: str | None = None  # Schallschutzklasse
+    reverberation_time: Decimal | None = None  # Nachhallzeit
 
     # Thermik
-    design_heating_load: Optional[Decimal] = None  # W
-    design_cooling_load: Optional[Decimal] = None  # W
-    design_temperature_heating: Optional[Decimal] = None  # °C
-    design_temperature_cooling: Optional[Decimal] = None  # °C
-    humidity_min: Optional[Decimal] = None  # % rel. Luftfeuchte
-    humidity_max: Optional[Decimal] = None  # % rel. Luftfeuchte
+    design_heating_load: Decimal | None = None  # W
+    design_cooling_load: Decimal | None = None  # W
+    design_temperature_heating: Decimal | None = None  # °C
+    design_temperature_cooling: Decimal | None = None  # °C
+    humidity_min: Decimal | None = None  # % rel. Luftfeuchte
+    humidity_max: Decimal | None = None  # % rel. Luftfeuchte
 
     # Oberflächen (Finishes)
-    finish_floor: Optional[str] = None  # Bodenbelag
-    finish_wall: Optional[str] = None  # Wandoberfläche
-    finish_ceiling: Optional[str] = None  # Deckenoberfläche
-    finish_floor_rating: Optional[str] = None  # Bodenbelag-Klasse (Rutschfestigkeit etc.)
+    finish_floor: str | None = None  # Bodenbelag
+    finish_wall: str | None = None  # Wandoberfläche
+    finish_ceiling: str | None = None  # Deckenoberfläche
+    finish_floor_rating: str | None = None  # Bodenbelag-Klasse (Rutschfestigkeit etc.)
 
     # Beleuchtung
-    illuminance: Optional[Decimal] = None  # Lux (Beleuchtungsstärke)
+    illuminance: Decimal | None = None  # Lux (Beleuchtungsstärke)
 
     # Elektro
-    electrical_load: Optional[Decimal] = None  # kW
+    electrical_load: Decimal | None = None  # kW
 
     # Begrenzende Elemente
-    boundary_element_ids: List[str] = field(default_factory=list)
+    boundary_element_ids: list[str] = field(default_factory=list)
 
     # Türen und Fenster im Raum
-    door_ids: List[str] = field(default_factory=list)
-    window_ids: List[str] = field(default_factory=list)
+    door_ids: list[str] = field(default_factory=list)
+    window_ids: list[str] = field(default_factory=list)
 
     # Alle Properties (für nicht-standard Properties)
-    properties: List[ParsedProperty] = field(default_factory=list)
-    quantities: List[ParsedQuantity] = field(default_factory=list)
-    classifications: List[ParsedClassification] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
+    quantities: list[ParsedQuantity] = field(default_factory=list)
+    classifications: list[ParsedClassification] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "name": self.name,

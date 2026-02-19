@@ -1,6 +1,5 @@
 """Core admin: Organization and Membership."""
 from django.contrib import admin
-
 from django_tenancy.models import Membership, Organization
 
 

@@ -14,11 +14,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 from uuid import UUID
-
-from asgiref.sync import async_to_sync
-from django.conf import settings
 
 
 def run_async(coro):
@@ -41,24 +37,18 @@ def run_async(coro):
         return asyncio.run(coro)
 
 
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.views import View
-from django.views.generic import TemplateView, DetailView, FormView
-from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.http import JsonResponse
+from django.views import View
+from django.views.generic import DetailView, TemplateView
 
-from .models import IFCModel, Room, Door, Window, Floor
 from apps.core.services.mcp_bridge.mcp_bridge import (
     get_mcp_bridge,
-    CADFormat,
-    AnalysisResult,
-    DXFQualityResult,
-    NLQueryResult,
 )
+
+from .models import Door, Floor, IFCModel, Room, Window
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +60,9 @@ logger = logging.getLogger(__name__)
 class FormatAnalyzerView(LoginRequiredMixin, TemplateView):
     """
     Format-Analyse Dashboard
-    
+
     URL: /cad-hub/analyze/
-    
+
     Features:
     - Datei-Upload (Drag & Drop)
     - Auto-Format-Erkennung
@@ -80,48 +70,48 @@ class FormatAnalyzerView(LoginRequiredMixin, TemplateView):
     - Historie der letzten Analysen
     """
     template_name = "cad_hub/analysis/format_analyzer.html"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
+
         # Unterstützte Formate
         bridge = get_mcp_bridge()
         ctx["supported_formats"] = run_async(bridge.get_supported_formats())
-        
+
         # Letzte Analysen aus Session
         ctx["recent_analyses"] = self.request.session.get("recent_analyses", [])[:5]
-        
+
         return ctx
 
 
 class FormatAnalyzeAPIView(LoginRequiredMixin, View):
     """
     API Endpoint für Datei-Analyse
-    
+
     URL: /cad-hub/analyze/api/
-    
+
     POST: Datei hochladen und analysieren
     """
-    
+
     def post(self, request):
         """Datei analysieren"""
         uploaded_file = request.FILES.get("file")
-        
+
         if not uploaded_file:
             return JsonResponse({"success": False, "error": "Keine Datei hochgeladen"}, status=400)
-        
+
         # Datei temporär speichern
         file_path = default_storage.save(
             f"cad_uploads/{uploaded_file.name}",
             ContentFile(uploaded_file.read())
         )
         full_path = Path(default_storage.path(file_path))
-        
+
         try:
             # Analyse durchführen
             bridge = get_mcp_bridge()
             result = run_async(bridge.analyze_file(str(full_path)))
-            
+
             # In Session speichern für Historie
             recent = request.session.get("recent_analyses", [])
             recent.insert(0, {
@@ -131,7 +121,7 @@ class FormatAnalyzeAPIView(LoginRequiredMixin, View):
                 "timestamp": str(asyncio.get_event_loop().time()),
             })
             request.session["recent_analyses"] = recent[:10]
-            
+
             return JsonResponse({
                 "success": result.success,
                 "file_name": uploaded_file.name,
@@ -141,11 +131,11 @@ class FormatAnalyzeAPIView(LoginRequiredMixin, View):
                 "errors": result.errors,
                 "warnings": result.warnings,
             })
-            
+
         except Exception as e:
             logger.exception(f"Analyse fehlgeschlagen: {e}")
             return JsonResponse({"success": False, "error": str(e)}, status=500)
-        
+
         finally:
             # Temporäre Datei löschen
             if full_path.exists():
@@ -159,9 +149,9 @@ class FormatAnalyzeAPIView(LoginRequiredMixin, View):
 class DXFQualityView(LoginRequiredMixin, TemplateView):
     """
     DXF Qualitätsprüfung Dashboard
-    
+
     URL: /cad-hub/dxf-quality/
-    
+
     Features:
     - DXF-Upload
     - Maßketten-Analyse
@@ -169,7 +159,7 @@ class DXFQualityView(LoginRequiredMixin, TemplateView):
     - Qualitäts-Score
     """
     template_name = "cad_hub/analysis/dxf_quality.html"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["quality_checks"] = [
@@ -177,12 +167,12 @@ class DXFQualityView(LoginRequiredMixin, TemplateView):
             {"name": "Schnittdarstellungen", "description": "Erkennt Schnitte und ordnet Materialien zu"},
             {"name": "Layer-Struktur", "description": "Prüft Namenskonventionen und Organisation"},
         ]
-        
+
         # Prüfe ob DWG-Konvertierung verfügbar ist
         ctx["dwg_supported"] = self._check_dwg_support()
-        
+
         return ctx
-    
+
     def _check_dwg_support(self) -> bool:
         """Prüft ob DWG-Dateien konvertiert werden können."""
         try:
@@ -191,12 +181,12 @@ class DXFQualityView(LoginRequiredMixin, TemplateView):
             return True
         except ImportError:
             pass
-        
+
         # Prüfe ODA File Converter
         import shutil
         if shutil.which("ODAFileConverter"):
             return True
-        
+
         # Prüfe bekannte Pfade
         from pathlib import Path
         known_paths = [
@@ -206,38 +196,38 @@ class DXFQualityView(LoginRequiredMixin, TemplateView):
         for path in known_paths:
             if Path(path).exists():
                 return True
-        
+
         return False
 
 
 class DXFQualityAPIView(LoginRequiredMixin, View):
     """
     API für DXF-Qualitätsprüfung
-    
+
     URL: /cad-hub/dxf-quality/api/
     """
-    
+
     def post(self, request):
         """DXF-Qualität prüfen"""
         uploaded_file = request.FILES.get("file")
-        
+
         if not uploaded_file:
             return JsonResponse({"success": False, "error": "Keine DXF-Datei hochgeladen"}, status=400)
-        
+
         if not uploaded_file.name.lower().endswith((".dxf", ".dwg")):
             return JsonResponse({"success": False, "error": "Nur DXF/DWG-Dateien erlaubt"}, status=400)
-        
+
         # Datei temporär speichern
         file_path = default_storage.save(
             f"cad_uploads/{uploaded_file.name}",
             ContentFile(uploaded_file.read())
         )
         full_path = Path(default_storage.path(file_path))
-        
+
         try:
             bridge = get_mcp_bridge()
             result = run_async(bridge.check_dxf_quality(str(full_path)))
-            
+
             return JsonResponse({
                 "success": result.success,
                 "file_name": uploaded_file.name,
@@ -246,11 +236,11 @@ class DXFQualityAPIView(LoginRequiredMixin, View):
                 "section_views": result.section_views,
                 "issues": result.issues,
             })
-            
+
         except Exception as e:
             logger.exception(f"DXF-Qualitätsprüfung fehlgeschlagen: {e}")
             return JsonResponse({"success": False, "error": str(e)}, status=500)
-        
+
         finally:
             if full_path.exists():
                 full_path.unlink()
@@ -259,13 +249,13 @@ class DXFQualityAPIView(LoginRequiredMixin, View):
 class DXFQualityModelView(LoginRequiredMixin, DetailView):
     """
     DXF-Qualitätsprüfung für ein existierendes Modell
-    
+
     URL: /cad-hub/model/<uuid>/dxf-quality/
     """
     model = IFCModel
     template_name = "cad_hub/analysis/dxf_quality_model.html"
     context_object_name = "model"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         # Hier könnte man bereits gespeicherte DXF-Analysen laden
@@ -280,9 +270,9 @@ class DXFQualityModelView(LoginRequiredMixin, DetailView):
 class NL2CADQueryView(LoginRequiredMixin, TemplateView):
     """
     NL2CAD Query Interface
-    
+
     URL: /cad-hub/nl-query/
-    
+
     Features:
     - Freitext-Eingabe
     - Modell-Auswahl
@@ -290,13 +280,13 @@ class NL2CADQueryView(LoginRequiredMixin, TemplateView):
     - Beispiel-Fragen
     """
     template_name = "cad_hub/analysis/nl_query.html"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
+
         # Verfügbare Modelle
         ctx["models"] = IFCModel.objects.select_related("project").order_by("-created_at")[:20]
-        
+
         # Beispiel-Fragen
         ctx["example_questions"] = [
             "Welcher Raum ist am größten?",
@@ -306,44 +296,44 @@ class NL2CADQueryView(LoginRequiredMixin, TemplateView):
             "Welcher Raum ist am kleinsten?",
             "Wie viele Fenster hat das Gebäude?",
         ]
-        
+
         # Chat-Historie aus Session
         ctx["chat_history"] = self.request.session.get("nl_chat_history", [])[-10:]
-        
+
         return ctx
 
 
 class NL2CADQueryAPIView(LoginRequiredMixin, View):
     """
     API für NL2CAD Queries
-    
+
     URL: /cad-hub/nl-query/api/
     """
-    
+
     def post(self, request):
         """Natural Language Query ausführen"""
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
             data = request.POST
-        
+
         question = data.get("question", "").strip()
         model_id = data.get("model_id")
-        
+
         if not question:
             return JsonResponse({"success": False, "error": "Keine Frage gestellt"}, status=400)
-        
+
         try:
             bridge = get_mcp_bridge()
-            
+
             # Model ID in UUID konvertieren
             model_uuid = UUID(model_id) if model_id else None
-            
+
             result = run_async(bridge.query_natural_language(
                 question=question,
                 model_id=model_uuid
             ))
-            
+
             # Chat-Historie aktualisieren
             history = request.session.get("nl_chat_history", [])
             history.append({
@@ -353,7 +343,7 @@ class NL2CADQueryAPIView(LoginRequiredMixin, View):
                 "model_id": model_id,
             })
             request.session["nl_chat_history"] = history[-20:]
-            
+
             return JsonResponse({
                 "success": result.success,
                 "question": result.query,
@@ -361,7 +351,7 @@ class NL2CADQueryAPIView(LoginRequiredMixin, View):
                 "data": result.data,
                 "confidence": result.confidence,
             })
-            
+
         except Exception as e:
             logger.exception(f"NL Query fehlgeschlagen: {e}")
             return JsonResponse({"success": False, "error": str(e)}, status=500)
@@ -370,16 +360,16 @@ class NL2CADQueryAPIView(LoginRequiredMixin, View):
 class NL2CADModelQueryView(LoginRequiredMixin, DetailView):
     """
     NL Query für spezifisches Modell
-    
+
     URL: /cad-hub/model/<uuid>/query/
     """
     model = IFCModel
     template_name = "cad_hub/analysis/nl_query_model.html"
     context_object_name = "model"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
+
         # Modell-Statistiken für Kontext
         model = self.object
         ctx["stats"] = {
@@ -388,7 +378,7 @@ class NL2CADModelQueryView(LoginRequiredMixin, DetailView):
             "window_count": Window.objects.filter(ifc_model=model).count(),
             "floor_count": Floor.objects.filter(ifc_model=model).count(),
         }
-        
+
         # Beispiel-Fragen
         ctx["example_questions"] = [
             "Welcher Raum ist am größten?",
@@ -396,7 +386,7 @@ class NL2CADModelQueryView(LoginRequiredMixin, DetailView):
             "Gesamtfläche aller Räume?",
             "Liste alle Räume",
         ]
-        
+
         return ctx
 
 
@@ -407,9 +397,9 @@ class NL2CADModelQueryView(LoginRequiredMixin, DetailView):
 class BatchAnalyzeView(LoginRequiredMixin, TemplateView):
     """
     Batch-Analyse Dashboard
-    
+
     URL: /cad-hub/batch-analyze/
-    
+
     Features:
     - Verzeichnis-Auswahl
     - Multi-File Upload
@@ -417,38 +407,38 @@ class BatchAnalyzeView(LoginRequiredMixin, TemplateView):
     - Zusammenfassung
     """
     template_name = "cad_hub/analysis/batch_analyze.html"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
+
         ctx["supported_extensions"] = [
-            ".ifc", ".dxf", ".dwg", ".igs", ".iges", 
+            ".ifc", ".dxf", ".dwg", ".igs", ".iges",
             ".fbx", ".gltf", ".glb", ".3mf", ".ply"
         ]
-        
+
         # Letzte Batch-Jobs
         ctx["recent_batches"] = self.request.session.get("recent_batches", [])[:5]
-        
+
         return ctx
 
 
 class BatchAnalyzeAPIView(LoginRequiredMixin, View):
     """
     API für Batch-Analyse
-    
+
     URL: /cad-hub/batch-analyze/api/
     """
-    
+
     def post(self, request):
         """Batch-Analyse durchführen"""
         files = request.FILES.getlist("files")
-        
+
         if not files:
             return JsonResponse({"success": False, "error": "Keine Dateien hochgeladen"}, status=400)
-        
+
         results = []
         bridge = get_mcp_bridge()
-        
+
         for uploaded_file in files:
             # Datei temporär speichern
             file_path = default_storage.save(
@@ -456,7 +446,7 @@ class BatchAnalyzeAPIView(LoginRequiredMixin, View):
                 ContentFile(uploaded_file.read())
             )
             full_path = Path(default_storage.path(file_path))
-            
+
             try:
                 result = run_async(bridge.analyze_file(str(full_path)))
                 results.append({
@@ -475,11 +465,11 @@ class BatchAnalyzeAPIView(LoginRequiredMixin, View):
             finally:
                 if full_path.exists():
                     full_path.unlink()
-        
+
         # Zusammenfassung
         successful = len([r for r in results if r.get("success")])
         failed = len(results) - successful
-        
+
         # In Session speichern
         batches = request.session.get("recent_batches", [])
         batches.insert(0, {
@@ -488,7 +478,7 @@ class BatchAnalyzeAPIView(LoginRequiredMixin, View):
             "failed": failed,
         })
         request.session["recent_batches"] = batches[:10]
-        
+
         return JsonResponse({
             "success": failed == 0,
             "total": len(results),
@@ -505,10 +495,10 @@ class BatchAnalyzeAPIView(LoginRequiredMixin, View):
 class SupportedFormatsView(View):
     """
     API: Liste aller unterstützten Formate
-    
+
     URL: /cad-hub/formats/
     """
-    
+
     def get(self, request):
         bridge = get_mcp_bridge()
         formats = run_async(bridge.get_supported_formats())
@@ -518,14 +508,14 @@ class SupportedFormatsView(View):
 class AnalysisDashboardView(LoginRequiredMixin, TemplateView):
     """
     Haupt-Dashboard für alle Analyse-Funktionen
-    
+
     URL: /cad-hub/analysis/
     """
     template_name = "cad_hub/analysis/dashboard.html"
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        
+
         ctx["scenarios"] = [
             {
                 "name": "Format-Analyse",
@@ -556,12 +546,12 @@ class AnalysisDashboardView(LoginRequiredMixin, TemplateView):
                 "color": "info",
             },
         ]
-        
+
         # Statistiken
         ctx["stats"] = {
             "total_models": IFCModel.objects.count(),
             "total_rooms": Room.objects.count(),
             "recent_analyses": len(self.request.session.get("recent_analyses", [])),
         }
-        
+
         return ctx

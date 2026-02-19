@@ -7,12 +7,10 @@ Integriert DIN 277 Calculator für korrekte Flächenklassifizierung.
 """
 import logging
 from io import BytesIO
-from pathlib import Path
-from typing import Optional
 
 from django.db.models import Sum
 
-from .din277_calculator import DIN277Calculator, DIN277Result
+from .din277_calculator import DIN277Calculator
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +71,7 @@ class RaumbuchExportService:
         3. Geschosse - Zusammenfassung pro Geschoss
         """
         from openpyxl import Workbook
-        from openpyxl.utils import get_column_letter
 
-        from ..models import Floor, Room
 
         wb = Workbook()
 

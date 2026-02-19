@@ -5,7 +5,6 @@ Views für IFC Dashboard
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -15,12 +14,11 @@ from django.views.generic import (
     ListView,
     TemplateView,
     UpdateView,
-    View,
 )
 
 from apps.core.mixins import TenantMixin
 
-from .models import Door, Floor, IFCModel, IFCProject, Room, Slab, Wall, Window
+from .models import Floor, IFCModel, IFCProject, Room
 
 
 class HtmxMixin:
@@ -307,7 +305,6 @@ class ModelDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         model = self.get_object()
-        project_id = model.project.pk
         messages.success(request, f"IFC-Version {model.version} wurde gelöscht.")
         return super().delete(request, *args, **kwargs)
 
@@ -417,7 +414,7 @@ class WoFlVSummaryView(HtmxMixin, TemplateView):
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
 
         # Einfache WoFlV-Berechnung aus Räumen
-        rooms = Room.objects.filter(ifc_model=ifc_model)
+        Room.objects.filter(ifc_model=ifc_model)
 
         ctx["woflv"] = {
             "wohnflaeche_gesamt": 0,

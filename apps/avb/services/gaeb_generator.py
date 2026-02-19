@@ -8,14 +8,12 @@ Für deutsche Bauausschreibungen nach GAEB Standard
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from decimal import ROUND_HALF_UP, Decimal
-from enum import Enum
+from decimal import Decimal
+from enum import StrEnum
 from io import BytesIO
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 
-class GAEBPhase(str, Enum):
+class GAEBPhase(StrEnum):
     """GAEB Datenaustausch-Phasen"""
 
     X81 = "81"  # Anfrage
@@ -24,7 +22,7 @@ class GAEBPhase(str, Enum):
     X85 = "85"  # Auftragserteilung
 
 
-class MengenEinheit(str, Enum):
+class MengenEinheit(StrEnum):
     """Mengeneinheiten nach GAEB"""
 
     STK = "Stk"  # Stück
@@ -56,7 +54,7 @@ class Position:
         if self.gesamtpreis == 0 and self.menge > 0 and self.einheitspreis > 0:
             self.gesamtpreis = self.menge * self.einheitspreis
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "oz": self.oz,
             "kurztext": self.kurztext,
@@ -73,8 +71,8 @@ class LosGruppe:
 
     oz: str
     bezeichnung: str
-    positionen: List[Position] = field(default_factory=list)
-    untergruppen: List["LosGruppe"] = field(default_factory=list)
+    positionen: list[Position] = field(default_factory=list)
+    untergruppen: list["LosGruppe"] = field(default_factory=list)
 
     @property
     def summe(self) -> Decimal:
@@ -96,7 +94,7 @@ class Leistungsverzeichnis:
     lv_nummer: str = ""
     auftraggeber: str = ""
     auftragnehmer: str = ""
-    lose: List[LosGruppe] = field(default_factory=list)
+    lose: list[LosGruppe] = field(default_factory=list)
     waehrung: str = "EUR"
     datum: date = field(default_factory=date.today)
     phase: GAEBPhase = GAEBPhase.X83
@@ -141,7 +139,7 @@ class GAEBGenerator:
     def generate_excel(self, lv: Leistungsverzeichnis) -> BytesIO:
         """Generiert Excel-Alternative zum GAEB"""
         from openpyxl import Workbook
-        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.styles import Alignment, Font, PatternFill
 
         wb = Workbook()
         ws = wb.active
@@ -204,7 +202,7 @@ class GAEBGenerator:
 
     def _write_gruppe_excel(self, ws, gruppe: LosGruppe, row: int, sum_font, sum_fill) -> int:
         """Schreibt Gruppe in Excel"""
-        from openpyxl.styles import Font, PatternFill
+        from openpyxl.styles import Font
 
         # Gruppenzeile
         ws.cell(row=row, column=1, value=gruppe.oz).font = Font(bold=True)
@@ -314,11 +312,11 @@ class MassenermittlungHelper:
 
     @staticmethod
     def from_rooms(
-        rooms: List[Dict],
+        rooms: list[dict],
         gewerk: str,
         oz_prefix: str = "01",
         einheit: MengenEinheit = MengenEinheit.M2,
-    ) -> List[Position]:
+    ) -> list[Position]:
         """Erstellt Positionen aus Raumlisten (Bodenbeläge etc.)"""
         positionen = []
 
@@ -335,10 +333,10 @@ class MassenermittlungHelper:
 
     @staticmethod
     def from_room_perimeters(
-        rooms: List[Dict],
+        rooms: list[dict],
         gewerk: str = "Sockelleisten",
         oz_prefix: str = "02",
-    ) -> List[Position]:
+    ) -> list[Position]:
         """Erstellt Positionen aus Raumumfängen"""
         positionen = []
 

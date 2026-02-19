@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Dict, List, Optional, Set
 
 from .models import (
     IfcSchemaVersion,
@@ -27,67 +26,67 @@ class ParsedElement:
 
     global_id: str
     ifc_class: str  # z.B. "IfcWall", "IfcDoor"
-    name: Optional[str] = None
-    description: Optional[str] = None
-    object_type: Optional[str] = None  # Typ-Bezeichnung
-    tag: Optional[str] = None  # Kennzeichnung/Tag
+    name: str | None = None
+    description: str | None = None
+    object_type: str | None = None  # Typ-Bezeichnung
+    tag: str | None = None  # Kennzeichnung/Tag
 
     # Referenzen
-    storey_global_id: Optional[str] = None
-    type_global_id: Optional[str] = None
-    host_element_id: Optional[str] = None  # z.B. Wand bei Tür
+    storey_global_id: str | None = None
+    type_global_id: str | None = None
+    host_element_id: str | None = None  # z.B. Wand bei Tür
 
     # Position
-    position_x: Optional[Decimal] = None
-    position_y: Optional[Decimal] = None
-    position_z: Optional[Decimal] = None
+    position_x: Decimal | None = None
+    position_y: Decimal | None = None
+    position_z: Decimal | None = None
 
     # Geometrie - abgeleitet aus Quantities
-    length_m: Optional[Decimal] = None
-    width_m: Optional[Decimal] = None
-    height_m: Optional[Decimal] = None
-    thickness_m: Optional[Decimal] = None
-    area_m2: Optional[Decimal] = None
-    volume_m3: Optional[Decimal] = None
-    gross_area_m2: Optional[Decimal] = None
-    net_area_m2: Optional[Decimal] = None
-    opening_area_m2: Optional[Decimal] = None  # Fläche der Öffnungen
+    length_m: Decimal | None = None
+    width_m: Decimal | None = None
+    height_m: Decimal | None = None
+    thickness_m: Decimal | None = None
+    area_m2: Decimal | None = None
+    volume_m3: Decimal | None = None
+    gross_area_m2: Decimal | None = None
+    net_area_m2: Decimal | None = None
+    opening_area_m2: Decimal | None = None  # Fläche der Öffnungen
 
     # Wichtige Flags
-    is_external: Optional[bool] = None  # Außenbauteil
-    is_load_bearing: Optional[bool] = None  # Tragend
+    is_external: bool | None = None  # Außenbauteil
+    is_load_bearing: bool | None = None  # Tragend
 
     # Brandschutz
-    fire_rating: Optional[str] = None  # z.B. "F90", "REI 90"
-    surface_spread_of_flame: Optional[str] = None
-    combustible: Optional[bool] = None
+    fire_rating: str | None = None  # z.B. "F90", "REI 90"
+    surface_spread_of_flame: str | None = None
+    combustible: bool | None = None
 
     # Akustik
-    acoustic_rating: Optional[str] = None  # Schallschutzklasse
-    sound_transmission_class: Optional[int] = None  # STC
+    acoustic_rating: str | None = None  # Schallschutzklasse
+    sound_transmission_class: int | None = None  # STC
 
     # Thermik (für Außenbauteile)
-    thermal_transmittance: Optional[Decimal] = None  # U-Wert W/(m²·K)
+    thermal_transmittance: Decimal | None = None  # U-Wert W/(m²·K)
 
     # Türen/Fenster spezifisch
-    operation_type: Optional[str] = None  # SINGLE_SWING_LEFT, SLIDING, etc.
-    panel_operation: Optional[str] = None  # Flügelart
-    glass_layers: Optional[int] = None  # Anzahl Glasschichten
+    operation_type: str | None = None  # SINGLE_SWING_LEFT, SLIDING, etc.
+    panel_operation: str | None = None  # Flügelart
+    glass_layers: int | None = None  # Anzahl Glasschichten
 
     # Materialien
-    materials: List[ParsedMaterial] = field(default_factory=list)
+    materials: list[ParsedMaterial] = field(default_factory=list)
 
     # Alle Properties & Quantities
-    properties: List[ParsedProperty] = field(default_factory=list)
-    quantities: List[ParsedQuantity] = field(default_factory=list)
-    classifications: List[ParsedClassification] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
+    quantities: list[ParsedQuantity] = field(default_factory=list)
+    classifications: list[ParsedClassification] = field(default_factory=list)
 
     # Verbundene Elemente
-    connected_element_ids: List[str] = field(default_factory=list)
-    fills_void_ids: List[str] = field(default_factory=list)
-    has_openings_ids: List[str] = field(default_factory=list)
+    connected_element_ids: list[str] = field(default_factory=list)
+    fills_void_ids: list[str] = field(default_factory=list)
+    has_openings_ids: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "ifc_class": self.ifc_class,
@@ -168,19 +167,19 @@ class ParsedElementType:
 
     global_id: str
     ifc_class: str  # z.B. "IfcWallType", "IfcDoorType"
-    name: Optional[str] = None
-    description: Optional[str] = None
-    element_type: Optional[str] = None  # PredefinedType
+    name: str | None = None
+    description: str | None = None
+    element_type: str | None = None  # PredefinedType
 
     # Alle Properties am Typ
-    properties: List[ParsedProperty] = field(default_factory=list)
-    quantities: List[ParsedQuantity] = field(default_factory=list)
-    classifications: List[ParsedClassification] = field(default_factory=list)
+    properties: list[ParsedProperty] = field(default_factory=list)
+    quantities: list[ParsedQuantity] = field(default_factory=list)
+    classifications: list[ParsedClassification] = field(default_factory=list)
 
     # Materialien (oft am Typ definiert)
-    materials: List[ParsedMaterial] = field(default_factory=list)
+    materials: list[ParsedMaterial] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "global_id": self.global_id,
             "ifc_class": self.ifc_class,
@@ -204,40 +203,40 @@ class ParsedProject:
     """Komplettes IFC Projekt mit allen extrahierten Daten."""
 
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     schema_version: IfcSchemaVersion = IfcSchemaVersion.IFC4
 
     # File Info
-    file_path: Optional[str] = None
-    file_hash: Optional[str] = None
-    file_size_bytes: Optional[int] = None
+    file_path: str | None = None
+    file_hash: str | None = None
+    file_size_bytes: int | None = None
 
     # Authoring
-    authoring_app: Optional[str] = None
-    authoring_app_version: Optional[str] = None
-    author: Optional[str] = None
-    organization: Optional[str] = None
-    creation_date: Optional[str] = None
+    authoring_app: str | None = None
+    authoring_app_version: str | None = None
+    author: str | None = None
+    organization: str | None = None
+    creation_date: str | None = None
 
     # Räumliche Struktur
-    sites: List[ParsedSite] = field(default_factory=list)
-    buildings: List[ParsedBuilding] = field(default_factory=list)
-    storeys: List[ParsedStorey] = field(default_factory=list)
-    spaces: List[ParsedSpace] = field(default_factory=list)
+    sites: list[ParsedSite] = field(default_factory=list)
+    buildings: list[ParsedBuilding] = field(default_factory=list)
+    storeys: list[ParsedStorey] = field(default_factory=list)
+    spaces: list[ParsedSpace] = field(default_factory=list)
 
     # Element Types
-    element_types: List[ParsedElementType] = field(default_factory=list)
+    element_types: list[ParsedElementType] = field(default_factory=list)
 
     # Elemente
-    elements: List[ParsedElement] = field(default_factory=list)
+    elements: list[ParsedElement] = field(default_factory=list)
 
     # Alle verwendeten Materialien
-    all_materials: Set[str] = field(default_factory=set)
+    all_materials: set[str] = field(default_factory=set)
 
     # Statistiken
-    element_counts: Dict[str, int] = field(default_factory=dict)
+    element_counts: dict[str, int] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "project": {
                 "name": self.name,

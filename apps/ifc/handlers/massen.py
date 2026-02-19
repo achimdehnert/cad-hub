@@ -7,12 +7,10 @@ und GAEB-Export.
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
-    CADHandlerError,
     HandlerStatus,
 )
 
@@ -38,7 +36,7 @@ class MassItem:
     layer: str = ""
     gaeb_position: str = ""
     gaeb_text: str = ""
-    
+
     def to_dict(self) -> dict:
         return {
             "description": self.description,
@@ -59,7 +57,7 @@ class MassCategory:
     items: list = field(default_factory=list)
     total: float = 0.0
     unit: str = "m²"
-    
+
     def add_item(self, item: MassItem):
         self.items.append(item)
         if item.mass_type == MassType.AREA:
@@ -69,7 +67,7 @@ class MassCategory:
 class MassenHandler(BaseCADHandler):
     """
     Handler für Massenberechnung.
-    
+
     Funktionen:
     - Flächenberechnung aus Polygonen
     - Längenberechnung aus Linien
@@ -77,23 +75,23 @@ class MassenHandler(BaseCADHandler):
     - Stückzählung (Türen, Fenster, etc.)
     - GAEB-Positionszuordnung
     - LV-Struktur Vorbereitung
-    
+
     Input:
         loader: CADLoaderService (von CADFileInputHandler)
         rooms: Optional - Räume (von RoomAnalysisHandler)
         include_gaeb: Optional - GAEB-Positionen generieren
-    
+
     Output:
         masses: Massenliste nach Kategorien
         summary: Zusammenfassung
         gaeb_positions: GAEB-Positionen (wenn aktiviert)
     """
-    
+
     name = "MassenHandler"
     description = "Flächen, Volumina, Umfänge berechnen für LV/GAEB"
     required_inputs = []
     optional_inputs = ["loader", "rooms", "include_gaeb", "wall_height"]
-    
+
     # Layer die KEINE echten Flächen sind (gleich wie RoomAnalysisHandler)
     EXCLUDED_LAYER_KEYWORDS = [
         "symbol", "symbole",
@@ -108,7 +106,7 @@ class MassenHandler(BaseCADHandler):
         "notiz", "note", "comment",
         "hilfslin", "construction",
     ]
-    
+
     # Standard GAEB Positionen
     GAEB_MAPPING = {
         "wand": {
@@ -142,7 +140,7 @@ class MassenHandler(BaseCADHandler):
             "unit": "m",
         },
     }
-    
+
     def execute(self, input_data: dict) -> CADHandlerResult:
         """Berechnet Massen."""
         result = CADHandlerResult(
@@ -150,74 +148,74 @@ class MassenHandler(BaseCADHandler):
             handler_name=self.name,
             status=HandlerStatus.RUNNING,
         )
-        
+
         loader = input_data.get("_loader") or input_data.get("loader")
         rooms = input_data.get("rooms", [])
         include_gaeb = input_data.get("include_gaeb", True)
         wall_height = input_data.get("wall_height", 2.5)  # Standard 2.5m
-        
+
         if not loader and not rooms:
             result.add_error("Keine Daten (loader oder rooms)")
             return result
-        
+
         categories = {}
-        
+
         # 1. Bodenflächen
         floor_cat = self._calculate_floors(loader, rooms, result)
         if floor_cat.items:
             categories["floors"] = floor_cat
-        
+
         # 2. Wandflächen (aus Umfang * Höhe)
         wall_cat = self._calculate_walls(loader, rooms, wall_height, result)
         if wall_cat.items:
             categories["walls"] = wall_cat
-        
+
         # 3. Deckenflächen (= Bodenflächen)
         ceiling_cat = self._calculate_ceilings(floor_cat, result)
         if ceiling_cat.items:
             categories["ceilings"] = ceiling_cat
-        
+
         # 4. Sockelleisten (Umfang)
         baseboard_cat = self._calculate_baseboards(loader, rooms, result)
         if baseboard_cat.items:
             categories["baseboards"] = baseboard_cat
-        
+
         # 5. Stückzahlen (Türen, Fenster)
         elements_cat = self._count_elements(loader, result)
         if elements_cat.items:
             categories["elements"] = elements_cat
-        
+
         # GAEB Export vorbereiten
         gaeb_positions = []
         if include_gaeb:
             gaeb_positions = self._create_gaeb_positions(categories)
-        
+
         # Zusammenfassung
         summary = self._create_summary(categories)
-        
+
         result.data.update({
             "categories": {k: self._category_to_dict(v) for k, v in categories.items()},
             "summary": summary,
             "gaeb_positions": gaeb_positions,
             "wall_height_used": wall_height,
         })
-        
+
         result.status = HandlerStatus.SUCCESS
         logger.info(f"[{self.name}] {len(categories)} Kategorien berechnet")
-        
+
         return result
-    
+
     def _is_excluded_layer(self, layer_name: str) -> bool:
         """Prüft ob Layer ausgeschlossen werden soll."""
         if not layer_name:
             return False
         layer_lower = layer_name.lower()
         return any(kw in layer_lower for kw in self.EXCLUDED_LAYER_KEYWORDS)
-    
+
     def _calculate_floors(self, loader, rooms: list, result: CADHandlerResult) -> MassCategory:
         """Berechnet Bodenflächen."""
         category = MassCategory(name="Bodenflächen", unit="m²")
-        
+
         # From rooms (filter excluded layers)
         for room in rooms:
             if isinstance(room, dict):
@@ -228,11 +226,11 @@ class MassenHandler(BaseCADHandler):
                 area = getattr(room, "area", 0)
                 name = getattr(room, "name", "Raum")
                 layer = getattr(room, "layer", "")
-            
+
             # Skip excluded layers (Symbole, Schraffuren, etc.)
             if self._is_excluded_layer(layer):
                 continue
-            
+
             if area > 0:
                 item = MassItem(
                     description=f"Boden {name}",
@@ -243,7 +241,7 @@ class MassenHandler(BaseCADHandler):
                     gaeb_text=f"Bodenbelag {name}",
                 )
                 category.add_item(item)
-        
+
         # From loader if no rooms
         if not category.items and loader:
             try:
@@ -262,14 +260,14 @@ class MassenHandler(BaseCADHandler):
                         category.add_item(item)
             except Exception as e:
                 result.add_warning(f"Flächenberechnung fehlgeschlagen: {e}")
-        
+
         return category
-    
-    def _calculate_walls(self, loader, rooms: list, wall_height: float, 
+
+    def _calculate_walls(self, loader, rooms: list, wall_height: float,
                          result: CADHandlerResult) -> MassCategory:
         """Berechnet Wandflächen aus Umfang × Höhe."""
         category = MassCategory(name="Wandflächen", unit="m²")
-        
+
         for room in rooms:
             if isinstance(room, dict):
                 perimeter = room.get("perimeter", 0)
@@ -279,11 +277,11 @@ class MassenHandler(BaseCADHandler):
                 perimeter = getattr(room, "perimeter", 0)
                 name = getattr(room, "name", "Raum")
                 layer = getattr(room, "layer", "")
-            
+
             # Skip excluded layers
             if self._is_excluded_layer(layer):
                 continue
-            
+
             if perimeter > 0:
                 wall_area = perimeter * wall_height
                 item = MassItem(
@@ -295,14 +293,14 @@ class MassenHandler(BaseCADHandler):
                     gaeb_text=f"Wandfläche {name} (U={perimeter:.1f}m × H={wall_height}m)",
                 )
                 category.add_item(item)
-        
+
         return category
-    
-    def _calculate_ceilings(self, floor_cat: MassCategory, 
+
+    def _calculate_ceilings(self, floor_cat: MassCategory,
                             result: CADHandlerResult) -> MassCategory:
         """Deckenflächen = Bodenflächen."""
         category = MassCategory(name="Deckenflächen", unit="m²")
-        
+
         for floor_item in floor_cat.items:
             item = MassItem(
                 description=floor_item.description.replace("Boden", "Decke"),
@@ -314,14 +312,14 @@ class MassenHandler(BaseCADHandler):
                 gaeb_text=floor_item.gaeb_text.replace("Bodenbelag", "Decke") if floor_item.gaeb_text else "",
             )
             category.add_item(item)
-        
+
         return category
-    
-    def _calculate_baseboards(self, loader, rooms: list, 
+
+    def _calculate_baseboards(self, loader, rooms: list,
                               result: CADHandlerResult) -> MassCategory:
         """Berechnet Sockelleisten (Umfang)."""
         category = MassCategory(name="Sockelleisten", unit="m")
-        
+
         for room in rooms:
             if isinstance(room, dict):
                 perimeter = room.get("perimeter", 0)
@@ -331,11 +329,11 @@ class MassenHandler(BaseCADHandler):
                 perimeter = getattr(room, "perimeter", 0)
                 name = getattr(room, "name", "Raum")
                 layer = getattr(room, "layer", "")
-            
+
             # Skip excluded layers
             if self._is_excluded_layer(layer):
                 continue
-            
+
             if perimeter > 0:
                 item = MassItem(
                     description=f"Sockel {name}",
@@ -347,16 +345,16 @@ class MassenHandler(BaseCADHandler):
                 )
                 category.items.append(item)
                 category.total += perimeter
-        
+
         return category
-    
+
     def _count_elements(self, loader, result: CADHandlerResult) -> MassCategory:
         """Zählt Bauelemente (Türen, Fenster)."""
         category = MassCategory(name="Bauelemente", unit="Stk")
-        
+
         if not loader:
             return category
-        
+
         try:
             doors = loader.get_doors()
             if doors:
@@ -372,7 +370,7 @@ class MassenHandler(BaseCADHandler):
                 category.total += len(doors)
         except:
             pass
-        
+
         try:
             windows = loader.get_windows()
             if windows:
@@ -388,13 +386,13 @@ class MassenHandler(BaseCADHandler):
                 category.total += len(windows)
         except:
             pass
-        
+
         return category
-    
+
     def _create_gaeb_positions(self, categories: dict) -> list[dict]:
         """Erstellt GAEB X84 Positionen."""
         positions = []
-        
+
         for cat_name, category in categories.items():
             for item in category.items:
                 if item.gaeb_position:
@@ -405,9 +403,9 @@ class MassenHandler(BaseCADHandler):
                         "unit": item.unit,
                         "category": cat_name,
                     })
-        
+
         return positions
-    
+
     def _create_summary(self, categories: dict) -> dict:
         """Erstellt Zusammenfassung."""
         summary = {
@@ -418,7 +416,7 @@ class MassenHandler(BaseCADHandler):
             "door_count": 0,
             "window_count": 0,
         }
-        
+
         if "floors" in categories:
             summary["total_floor_area"] = categories["floors"].total
         if "walls" in categories:
@@ -433,13 +431,13 @@ class MassenHandler(BaseCADHandler):
                     summary["door_count"] = int(item.value)
                 elif "fenster" in item.description.lower():
                     summary["window_count"] = int(item.value)
-        
+
         # Formatted strings
         summary["total_floor_area_formatted"] = f"{summary['total_floor_area']:.2f} m²"
         summary["total_wall_area_formatted"] = f"{summary['total_wall_area']:.2f} m²"
-        
+
         return summary
-    
+
     def _category_to_dict(self, category: MassCategory) -> dict:
         """Konvertiert Kategorie zu Dictionary."""
         return {

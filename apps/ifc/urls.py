@@ -1,12 +1,7 @@
 """IFC URL configuration."""
 from django.urls import path
 
-from . import views
-from . import views_analysis
-from . import views_chat
-from . import views_components
-from . import views_export
-from . import views_nl2cad
+from . import views, views_analysis, views_chat, views_components, views_export, views_nl2cad
 
 app_name = "ifc"
 

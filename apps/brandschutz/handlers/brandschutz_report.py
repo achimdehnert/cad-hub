@@ -20,7 +20,6 @@ import logging
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 from apps.core.handlers.base import (
     BaseCADHandler,
@@ -37,25 +36,25 @@ logger = logging.getLogger(__name__)
 class BrandschutzReportHandler(BaseCADHandler):
     """
     Handler für Brandschutz-Prüfbericht-Erstellung.
-    
+
     Erstellt professionelle Prüfberichte aus Analyseergebnissen.
-    
+
     Input:
         analyse_ergebnis: dict - Ergebnis von BrandschutzHandler
         symbol_ergebnis: dict - Ergebnis von BrandschutzSymbolHandler (optional)
         konfiguration: dict - BerichtKonfiguration
         format: str - "pdf", "excel", "json", "html"
-    
+
     Output:
         bericht: bytes - Generierter Bericht
         bericht_pfad: str - Pfad zur gespeicherten Datei (wenn save=True)
     """
-    
+
     name = "BrandschutzReportHandler"
     description = "Erstellt Brandschutz-Prüfberichte"
     required_inputs = ["analyse_ergebnis"]
     optional_inputs = ["symbol_ergebnis", "konfiguration", "format", "save", "output_path"]
-    
+
     def execute(self, input_data: dict) -> CADHandlerResult:
         """Erstellt Prüfbericht."""
         result = CADHandlerResult(
@@ -63,14 +62,14 @@ class BrandschutzReportHandler(BaseCADHandler):
             handler_name=self.name,
             status=HandlerStatus.RUNNING,
         )
-        
+
         analyse = input_data.get("analyse_ergebnis", {})
         symbole = input_data.get("symbol_ergebnis", {})
         config_dict = input_data.get("konfiguration", {})
         output_format = input_data.get("format", "html")
         save = input_data.get("save", False)
         output_path = input_data.get("output_path")
-        
+
         # Konfiguration erstellen
         config = BerichtKonfiguration(
             projekt_name=config_dict.get("projekt_name", "Unbekannt"),
@@ -79,7 +78,7 @@ class BrandschutzReportHandler(BaseCADHandler):
             datum=config_dict.get("datum", datetime.now().strftime("%d.%m.%Y")),
             format=output_format,
         )
-        
+
         try:
             if output_format == "html":
                 bericht_bytes, mime_type = self._generate_html(analyse, symbole, config)
@@ -92,41 +91,41 @@ class BrandschutzReportHandler(BaseCADHandler):
             else:
                 result.add_error(f"Unbekanntes Format: {output_format}")
                 return result
-            
+
             # Speichern wenn gewünscht
             if save and output_path:
                 Path(output_path).write_bytes(bericht_bytes)
                 result.data["bericht_pfad"] = output_path
-            
+
             result.data["bericht"] = bericht_bytes
             result.data["mime_type"] = mime_type
             result.data["format"] = output_format
             result.data["groesse_bytes"] = len(bericht_bytes)
-            
+
         except Exception as e:
             result.add_error(f"Berichtserstellung fehlgeschlagen: {e}")
             logger.exception(f"[{self.name}] Fehler bei Berichtserstellung")
             return result
-        
+
         result.status = HandlerStatus.SUCCESS
         logger.info(f"[{self.name}] Bericht erstellt: {output_format}, {len(bericht_bytes)} bytes")
-        
+
         return result
-    
+
     def _generate_html(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
         """Generiert HTML-Bericht."""
-        
+
         # Daten extrahieren
         brandschutz = analyse.get("brandschutz", {})
         zusammenfassung = brandschutz.get("zusammenfassung", {})
         maengel = brandschutz.get("maengel", [])
         warnungen = brandschutz.get("warnungen", [])
         fluchtwege = brandschutz.get("fluchtwege", [])
-        einrichtungen = brandschutz.get("einrichtungen", [])
-        
+        brandschutz.get("einrichtungen", [])
+
         symbol_stats = symbole.get("symbole", {}).get("statistik", {})
         vorgeschlagen = symbole.get("symbole", {}).get("vorgeschlagene_symbole", [])
-        
+
         # HTML generieren
         html = f"""<!DOCTYPE html>
 <html lang="de">
@@ -177,7 +176,7 @@ class BrandschutzReportHandler(BaseCADHandler):
             <div class="meta-item"><strong>Datum:</strong> {config.datum}</div>
         </div>
     </div>
-    
+
     <h2>📊 Zusammenfassung</h2>
     <div class="stats">
         <div class="stat-card">
@@ -198,7 +197,7 @@ class BrandschutzReportHandler(BaseCADHandler):
         </div>
     </div>
 """
-        
+
         # Mängel
         if maengel:
             html += f"""
@@ -219,7 +218,7 @@ class BrandschutzReportHandler(BaseCADHandler):
         <strong>Keine Mängel festgestellt.</strong>
     </div>
 """
-        
+
         # Warnungen
         if warnungen:
             html += f"""
@@ -232,7 +231,7 @@ class BrandschutzReportHandler(BaseCADHandler):
             for warnung in warnungen:
                 html += f"        <li>{warnung}</li>\n"
             html += "    </ul>\n"
-        
+
         # Vorgeschlagene Symbole
         if vorgeschlagen:
             html += f"""
@@ -250,7 +249,7 @@ class BrandschutzReportHandler(BaseCADHandler):
             </tr>
 """
             html += "        </table>\n    </div>\n"
-            
+
             # Statistik der fehlenden Symbole
             if symbol_stats:
                 html += """
@@ -269,7 +268,7 @@ class BrandschutzReportHandler(BaseCADHandler):
         </div>
 """
                 html += "    </div>\n"
-        
+
         # Footer
         html += f"""
     <div class="footer">
@@ -278,9 +277,9 @@ class BrandschutzReportHandler(BaseCADHandler):
     </div>
 </body>
 </html>"""
-        
+
         return html.encode("utf-8"), "text/html"
-    
+
     def _generate_json(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
         """Generiert JSON-Bericht."""
         bericht = {
@@ -295,34 +294,34 @@ class BrandschutzReportHandler(BaseCADHandler):
             "analyse": analyse,
             "symbole": symbole,
         }
-        
+
         return json.dumps(bericht, indent=2, ensure_ascii=False).encode("utf-8"), "application/json"
-    
+
     def _generate_excel(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
         """Generiert Excel-Bericht."""
         try:
             import openpyxl
-            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
         except ImportError:
             logger.warning(f"[{self.name}] openpyxl nicht installiert")
             # Fallback zu CSV
             return self._generate_csv_fallback(analyse, symbole, config)
-        
+
         wb = openpyxl.Workbook()
-        
+
         # Sheet 1: Zusammenfassung
         ws = wb.active
         ws.title = "Zusammenfassung"
-        
+
         # Header-Style
         header_fill = PatternFill(start_color="C0392B", end_color="C0392B", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True)
-        
+
         # Titel
         ws["A1"] = config.titel
         ws["A1"].font = Font(size=16, bold=True)
         ws.merge_cells("A1:D1")
-        
+
         # Meta
         ws["A3"] = "Projekt:"
         ws["B3"] = config.projekt_name
@@ -332,11 +331,11 @@ class BrandschutzReportHandler(BaseCADHandler):
         ws["B5"] = config.pruefer
         ws["A6"] = "Datum:"
         ws["B6"] = config.datum
-        
+
         # Statistik
         brandschutz = analyse.get("brandschutz", {})
         zusammenfassung = brandschutz.get("zusammenfassung", {})
-        
+
         ws["A8"] = "Statistik"
         ws["A8"].font = Font(bold=True)
         ws["A9"] = "Notausgänge"
@@ -345,24 +344,24 @@ class BrandschutzReportHandler(BaseCADHandler):
         ws["B10"] = zusammenfassung.get("feuerloescher", 0)
         ws["A11"] = "Rauchmelder"
         ws["B11"] = zusammenfassung.get("rauchmelder", 0)
-        
+
         # Sheet 2: Mängel
         ws2 = wb.create_sheet("Mängel")
         ws2.append(["#", "Beschreibung", "Schweregrad", "Status"])
         for cell in ws2[1]:
             cell.fill = header_fill
             cell.font = header_font
-        
+
         for i, mangel in enumerate(brandschutz.get("maengel", []), 1):
             ws2.append([i, mangel, "Kritisch", "Offen"])
-        
+
         # Sheet 3: Empfehlungen
         ws3 = wb.create_sheet("Empfehlungen")
         ws3.append(["Symbol", "Position X", "Position Y", "Begründung", "Priorität"])
         for cell in ws3[1]:
             cell.fill = header_fill
             cell.font = header_font
-        
+
         for sym in symbole.get("symbole", {}).get("vorgeschlagene_symbole", []):
             ws3.append([
                 sym.get("symbol_typ", ""),
@@ -371,66 +370,66 @@ class BrandschutzReportHandler(BaseCADHandler):
                 sym.get("begruendung", ""),
                 sym.get("prioritaet", 2),
             ])
-        
+
         # Spaltenbreiten
         for ws in [wb.active, ws2, ws3]:
             for col in ws.columns:
                 max_length = max(len(str(cell.value or "")) for cell in col)
                 ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 50)
-        
+
         # Als Bytes
         output = BytesIO()
         wb.save(output)
         output.seek(0)
-        
+
         return output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    
+
     def _generate_csv_fallback(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
         """Fallback zu CSV wenn openpyxl nicht verfügbar."""
         import csv
         from io import StringIO
-        
+
         output = StringIO()
         writer = csv.writer(output, delimiter=";")
-        
+
         writer.writerow([config.titel])
         writer.writerow(["Projekt", config.projekt_name])
         writer.writerow(["Datum", config.datum])
         writer.writerow([])
-        
+
         writer.writerow(["Mängel"])
         for mangel in analyse.get("brandschutz", {}).get("maengel", []):
             writer.writerow([mangel])
-        
+
         return output.getvalue().encode("utf-8"), "text/csv"
-    
+
     def _generate_pdf(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
         """Generiert PDF-Bericht."""
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import A4
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
             from reportlab.lib.units import cm
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+            from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
         except ImportError:
             logger.warning(f"[{self.name}] reportlab nicht installiert, verwende HTML")
             # Fallback zu HTML
             html_bytes, _ = self._generate_html(analyse, symbole, config)
             return html_bytes, "text/html"
-        
+
         output = BytesIO()
         doc = SimpleDocTemplate(output, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
-        
+
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle('Title', parent=styles['Title'], textColor=colors.darkred)
         heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], textColor=colors.darkblue)
-        
+
         story = []
-        
+
         # Titel
         story.append(Paragraph(f"🔥 {config.titel}", title_style))
         story.append(Spacer(1, 0.5*cm))
-        
+
         # Meta
         meta_data = [
             ["Projekt:", config.projekt_name, "Etage:", config.etage or "Alle"],
@@ -446,12 +445,12 @@ class BrandschutzReportHandler(BaseCADHandler):
         ]))
         story.append(meta_table)
         story.append(Spacer(1, 1*cm))
-        
+
         # Zusammenfassung
         story.append(Paragraph("Zusammenfassung", heading_style))
         brandschutz = analyse.get("brandschutz", {})
         zusammenfassung = brandschutz.get("zusammenfassung", {})
-        
+
         stats_data = [
             ["Notausgänge", "Feuerlöscher", "Rauchmelder", "Fluchtwege"],
             [
@@ -472,7 +471,7 @@ class BrandschutzReportHandler(BaseCADHandler):
         ]))
         story.append(stats_table)
         story.append(Spacer(1, 1*cm))
-        
+
         # Mängel
         maengel = brandschutz.get("maengel", [])
         story.append(Paragraph(f"Mängel ({len(maengel)})", heading_style))
@@ -488,15 +487,15 @@ class BrandschutzReportHandler(BaseCADHandler):
             story.append(maengel_table)
         else:
             story.append(Paragraph("✅ Keine Mängel festgestellt.", styles['Normal']))
-        
+
         doc.build(story)
         output.seek(0)
-        
+
         return output.getvalue(), "application/pdf"
 
 
 # Singleton
-_report_handler: Optional[BrandschutzReportHandler] = None
+_report_handler: BrandschutzReportHandler | None = None
 
 def get_brandschutz_report_handler() -> BrandschutzReportHandler:
     """Gibt BrandschutzReportHandler-Instanz zurück."""

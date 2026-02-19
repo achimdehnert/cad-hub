@@ -57,13 +57,13 @@ def main():
 
         # Brandschutz
         if space.fire_rating or space.fire_compartment:
-            print(f"   🔥 Brandschutz:")
+            print("   🔥 Brandschutz:")
             if space.fire_rating:
                 print(f"      - Feuerwiderstand: {space.fire_rating}")
             if space.fire_compartment:
                 print(f"      - Brandabschnitt: {space.fire_compartment}")
             if space.sprinkler_protected:
-                print(f"      - Sprinkler: Ja")
+                print("      - Sprinkler: Ja")
 
         # Ex-Zone
         if space.ex_zone:
@@ -75,7 +75,7 @@ def main():
 
         # Thermik
         if space.design_temperature_heating or space.design_temperature_cooling:
-            print(f"   🌡️ Thermik:")
+            print("   🌡️ Thermik:")
             if space.design_temperature_heating:
                 print(f"      - Heizung: {float(space.design_temperature_heating):.1f}°C")
             if space.design_temperature_cooling:
@@ -83,7 +83,7 @@ def main():
 
         # Oberflächen
         if space.finish_floor or space.finish_wall or space.finish_ceiling:
-            print(f"   🎨 Oberflächen:")
+            print("   🎨 Oberflächen:")
             if space.finish_floor:
                 print(f"      - Boden: {space.finish_floor}")
             if space.finish_wall:
@@ -140,7 +140,7 @@ def main():
     print(f"\n✅ JSON exportiert nach: {output_path}")
 
     # Statistik
-    print(f"\n📊 Zusammenfassung:")
+    print("\n📊 Zusammenfassung:")
     print(f"   - {len(project.spaces)} Räume")
     print(f"   - {len(project.elements)} Bauelemente")
     print(f"   - {len(project.element_types)} Element-Typen")

@@ -4,11 +4,11 @@ MCP Bridge Data Models
 Enums and dataclasses for CAD MCP Bridge results.
 """
 from dataclasses import asdict, dataclass, field
-from enum import Enum
-from typing import Any, Dict, List
+from enum import StrEnum
+from typing import Any
 
 
-class CADFormat(str, Enum):
+class CADFormat(StrEnum):
     """Unterstützte CAD-Formate"""
     IFC = "ifc"
     DXF = "dxf"
@@ -29,12 +29,12 @@ class AnalysisResult:
     success: bool
     file_path: str
     format: CADFormat
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     markdown_report: str = ""
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "file_path": self.file_path,
@@ -51,16 +51,16 @@ class DXFQualityResult:
     """Ergebnis der DXF-Qualitätsprüfung"""
     success: bool
     file_path: str
-    dimension_chains: Dict[str, Any] = field(default_factory=dict)
-    section_views: Dict[str, Any] = field(default_factory=dict)
+    dimension_chains: dict[str, Any] = field(default_factory=dict)
+    section_views: dict[str, Any] = field(default_factory=dict)
     quality_score: float = 0.0
-    issues: List[Dict[str, Any]] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    issues: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
-@dataclass 
+@dataclass
 class NLQueryResult:
     """Ergebnis einer Natural Language Abfrage"""
     success: bool
@@ -69,8 +69,8 @@ class NLQueryResult:
     data: Any = None
     source_file: str = ""
     confidence: float = 1.0
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -81,10 +81,10 @@ class BatchResult:
     total_files: int
     analyzed: int
     failed: int
-    results: List[AnalysisResult] = field(default_factory=list)
-    summary: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    results: list[AnalysisResult] = field(default_factory=list)
+    summary: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "total_files": self.total_files,

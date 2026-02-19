@@ -13,21 +13,18 @@ Implementiert die 4 Hauptszenarien:
 
 Usage:
     # Legacy import removed — this IS the mcp_bridge module
-    
+
     bridge = get_mcp_bridge()
     result = await bridge.analyze_file("/path/to/model.ifc")
 """
 
 import asyncio
-import json
 import logging
-from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 from uuid import UUID
 
 from django.conf import settings
-from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +37,7 @@ from .mcp_bridge_models import (
     DXFQualityResult,
     NLQueryResult,
 )
+
 # =============================================================================
 # MCP Bridge Service
 # =============================================================================
@@ -47,12 +45,12 @@ from .mcp_bridge_models import (
 class CADMCPBridge:
     """
     Bridge Service für CAD MCP Integration.
-    
+
     Kann entweder:
     1. Direkt die Python-Module importieren (LOCAL mode)
     2. Via HTTP mit einem separaten MCP Server kommunizieren (REMOTE mode)
     """
-    
+
     def __init__(self, mode: str = "local"):
         """
         Args:
@@ -62,32 +60,28 @@ class CADMCPBridge:
         self._parsers = {}
         self._analyzers = {}
         self._initialized = False
-        
+
         # Remote mode settings
         self.mcp_base_url = getattr(settings, "CAD_MCP_URL", "http://localhost:8001")
         self.timeout = 60.0
-    
+
     def _ensure_initialized(self):
         """Lazy initialization der Parser/Analyzer"""
         if self._initialized:
             return
-            
+
         if self.mode == "local":
             self._init_local_parsers()
-        
+
         self._initialized = True
-    
+
     def _init_local_parsers(self):
         """Initialisiert lokale Parser (aus mcp-hub/cad_mcp)"""
         try:
             # Versuche Import aus dem installierten Package
-            from baucad_hub_mcp.parsers import (
-                DXFParser, IFCParser, IGESParser, FBXParser
-            )
-            from baucad_hub_mcp.analyzers import (
-                DimensionChainAnalyzer, SectionViewAnalyzer
-            )
-            
+            from baucad_hub_mcp.analyzers import DimensionChainAnalyzer, SectionViewAnalyzer
+            from baucad_hub_mcp.parsers import DXFParser, FBXParser, IFCParser, IGESParser
+
             self._parsers = {
                 CADFormat.DXF: DXFParser(),
                 CADFormat.DWG: DXFParser(),  # DWG wird zu DXF konvertiert
@@ -95,43 +89,43 @@ class CADMCPBridge:
                 CADFormat.IGES: IGESParser(),
                 CADFormat.FBX: FBXParser(),
             }
-            
+
             self._analyzers = {
                 "dimension_chains": DimensionChainAnalyzer(),
                 "section_views": SectionViewAnalyzer(),
             }
-            
+
             logger.info("CAD MCP Bridge: Local parsers initialized")
-            
+
         except ImportError as e:
             logger.warning(f"CAD MCP local import failed: {e}. Using fallback.")
             self._init_fallback_parsers()
-    
+
     def _init_fallback_parsers(self):
         """Fallback: Nutze lokale CAD Hub Services"""
         try:
-            from .ifc_parser import IFCParserService
             from .dxf_parser import DXFParserService
-            
+            from .ifc_parser import IFCParserService
+
             self._parsers = {
                 CADFormat.IFC: IFCParserService(),
                 CADFormat.DXF: DXFParserService(),
             }
-            
+
             # DXFAnalyzer wird nicht vorinitialisiert, da er einen filepath benötigt
             # Er wird in _analyze_dxf_quality_fallback() bei Bedarf erstellt
             self._analyzers = {}
-            
+
             logger.info("CAD MCP Bridge: Fallback parsers initialized")
-            
+
         except ImportError as e:
             logger.error(f"Fallback parser import failed: {e}")
-    
-    def _detect_format(self, file_path: Union[str, Path]) -> CADFormat:
+
+    def _detect_format(self, file_path: str | Path) -> CADFormat:
         """Erkennt das CAD-Format anhand der Dateiendung"""
         path = Path(file_path)
         suffix = path.suffix.lower()
-        
+
         format_map = {
             ".ifc": CADFormat.IFC,
             ".dxf": CADFormat.DXF,
@@ -146,34 +140,34 @@ class CADMCPBridge:
             ".stp": CADFormat.STEP,
             ".step": CADFormat.STEP,
         }
-        
+
         return format_map.get(suffix, CADFormat.UNKNOWN)
-    
+
     # =========================================================================
     # Szenario 1: Format-Analyse
     # =========================================================================
-    
+
     async def analyze_file(
-        self, 
-        file_path: str, 
+        self,
+        file_path: str,
         format: str = "auto",
         output_format: str = "dict"
     ) -> AnalysisResult:
         """
         Analysiert eine CAD-Datei.
-        
+
         Szenario 1: IFC-Upload mit Auto-Analyse
-        
+
         Args:
             file_path: Pfad zur CAD-Datei
             format: "auto" oder spezifisches Format
             output_format: "dict", "markdown", "json"
-            
+
         Returns:
             AnalysisResult mit Analyse-Daten
         """
         self._ensure_initialized()
-        
+
         path = Path(file_path)
         if not path.exists():
             return AnalysisResult(
@@ -182,18 +176,18 @@ class CADMCPBridge:
                 format=CADFormat.UNKNOWN,
                 errors=[f"Datei nicht gefunden: {file_path}"]
             )
-        
+
         # Format erkennen
         detected_format = self._detect_format(path) if format == "auto" else CADFormat(format)
-        
+
         try:
             if self.mode == "local":
                 result = await self._analyze_local(path, detected_format)
             else:
                 result = await self._analyze_remote(path, detected_format)
-            
+
             return result
-            
+
         except Exception as e:
             logger.exception(f"Analyse fehlgeschlagen für {file_path}")
             return AnalysisResult(
@@ -202,11 +196,11 @@ class CADMCPBridge:
                 format=detected_format,
                 errors=[str(e)]
             )
-    
+
     async def _analyze_local(self, path: Path, format: CADFormat) -> AnalysisResult:
         """Lokale Analyse mit importierten Parsern"""
         parser = self._parsers.get(format)
-        
+
         if not parser:
             return AnalysisResult(
                 success=False,
@@ -214,17 +208,17 @@ class CADMCPBridge:
                 format=format,
                 errors=[f"Kein Parser für Format {format.value} verfügbar"]
             )
-        
+
         # Parser aufrufen (sync oder async)
         if asyncio.iscoroutinefunction(parser.parse):
             result = await parser.parse(path)
         else:
             result = parser.parse(path)
-        
+
         # Result normalisieren
         data = result.to_dict() if hasattr(result, "to_dict") else dict(result)
         markdown = result.to_markdown() if hasattr(result, "to_markdown") else ""
-        
+
         return AnalysisResult(
             success=True,
             file_path=str(path),
@@ -232,11 +226,11 @@ class CADMCPBridge:
             data=data,
             markdown_report=markdown
         )
-    
+
     async def _analyze_remote(self, path: Path, format: CADFormat) -> AnalysisResult:
         """Remote-Analyse via HTTP"""
         import httpx
-        
+
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             # Datei hochladen
             with open(path, "rb") as f:
@@ -246,7 +240,7 @@ class CADMCPBridge:
                     files=files,
                     data={"format": format.value}
                 )
-            
+
             if response.status_code != 200:
                 return AnalysisResult(
                     success=False,
@@ -254,7 +248,7 @@ class CADMCPBridge:
                     format=format,
                     errors=[f"MCP Server Error: {response.status_code}"]
                 )
-            
+
             data = response.json()
             return AnalysisResult(
                 success=True,
@@ -263,31 +257,31 @@ class CADMCPBridge:
                 data=data.get("data", {}),
                 markdown_report=data.get("markdown", "")
             )
-    
+
     # =========================================================================
     # Szenario 2: DXF Qualitätsprüfung
     # =========================================================================
-    
+
     async def check_dxf_quality(self, file_path: str) -> DXFQualityResult:
         """
         Prüft die Qualität einer DXF-Zeichnung.
-        
+
         Szenario 2: DXF Qualitätsprüfung (Maßketten + Schnitte)
-        
+
         Analysiert:
         - Maßketten (Dimension Chains)
         - Schnittdarstellungen (Section Views)
         - Überbestimmung / Schließfehler
         - Material-Erkennung via Schraffuren
-        
+
         Args:
             file_path: Pfad zur DXF-Datei
-            
+
         Returns:
             DXFQualityResult mit Qualitäts-Metriken
         """
         self._ensure_initialized()
-        
+
         path = Path(file_path)
         if not path.exists():
             return DXFQualityResult(
@@ -295,14 +289,14 @@ class CADMCPBridge:
                 file_path=file_path,
                 issues=[{"type": "error", "message": f"Datei nicht gefunden: {file_path}"}]
             )
-        
+
         issues = []
         dimension_result = {}
         section_result = {}
-        
+
         # Prüfen ob MCP-Analyzer verfügbar sind
         has_mcp_analyzers = "dimension_chains" in self._analyzers or "section_views" in self._analyzers
-        
+
         if has_mcp_analyzers:
             # MCP-Analyzer verwenden
             # Maßketten analysieren
@@ -311,35 +305,35 @@ class CADMCPBridge:
                     analyzer = self._analyzers["dimension_chains"]
                     result = analyzer.analyze(path)
                     dimension_result = result.to_dict() if hasattr(result, "to_dict") else {}
-                    
+
                     # Issues aus Validierung extrahieren
                     if hasattr(result, "validation"):
                         for warning in result.validation.warnings:
                             issues.append({"type": "warning", "category": "dimension", "message": warning})
                         for error in result.validation.errors:
                             issues.append({"type": "error", "category": "dimension", "message": error})
-                            
+
             except Exception as e:
                 logger.warning(f"Maßketten-Analyse fehlgeschlagen: {e}")
                 issues.append({"type": "error", "category": "dimension", "message": str(e)})
-            
+
             # Schnittdarstellungen analysieren
             try:
                 if "section_views" in self._analyzers:
                     analyzer = self._analyzers["section_views"]
                     result = analyzer.analyze(path)
                     section_result = result.to_dict() if hasattr(result, "to_dict") else {}
-                    
+
             except Exception as e:
                 logger.warning(f"Schnitt-Analyse fehlgeschlagen: {e}")
                 issues.append({"type": "error", "category": "section", "message": str(e)})
         else:
             # Fallback: Lokalen DXFAnalyzer verwenden
             dimension_result, section_result, issues = await self._analyze_dxf_quality_fallback(path)
-        
+
         # Qualitäts-Score berechnen
         quality_score = self._calculate_quality_score(dimension_result, section_result, issues)
-        
+
         return DXFQualityResult(
             success=len([i for i in issues if i["type"] == "error"]) == 0,
             file_path=file_path,
@@ -348,47 +342,47 @@ class CADMCPBridge:
             quality_score=quality_score,
             issues=issues
         )
-    
+
     async def _analyze_dxf_quality_fallback(self, path: Path) -> tuple:
         """
         Fallback-Analyse mit lokalem DXFAnalyzer.
-        
+
         Wird verwendet wenn MCP-Analyzer nicht verfügbar sind.
         """
         dimension_result = {}
         section_result = {}
         issues = []
-        
+
         try:
             from .dxf_analyzer import DXFAnalyzer
-            
+
             # DXFAnalyzer initialisieren (unterstützt DXF und DWG)
             analyzer = DXFAnalyzer(path)
-            
+
             # Vollständige Analyse durchführen
             report = analyzer.full_analysis()
-            
+
             # Dimensionen extrahieren
             dimensions = report.dimensions if hasattr(report, 'dimensions') else []
             dimension_count = len(dimensions)
-            
+
             dimension_result = {
                 "chain_count": dimension_count,
                 "chain_dimensions": dimension_count,
                 "baseline_dimensions": 0,
                 "dimensions": dimensions[:20],  # Erste 20 für Anzeige
             }
-            
+
             # Schraffuren/Schnitte analysieren (aus Layern und Entities)
             entity_counts = report.entity_counts if hasattr(report, 'entity_counts') else {}
             hatch_count = entity_counts.get('HATCH', 0)
-            
+
             section_result = {
                 "section_view_count": hatch_count,
                 "hatches": hatch_count,
                 "materials": [],
             }
-            
+
             # Issues aus Qualitätsprüfung
             quality_issues = report.issues if hasattr(report, 'issues') else []
             for issue in quality_issues:
@@ -396,102 +390,102 @@ class CADMCPBridge:
                     issues.append(issue)
                 else:
                     issues.append({"type": "warning", "category": "quality", "message": str(issue)})
-            
+
             # Layer-Analyse für zusätzliche Infos
             layers = analyzer.analyze_layers()
             layer_count = len(layers)
-            
+
             # Zusätzliche Infos in dimension_result
             dimension_result["layer_count"] = layer_count
             dimension_result["entity_count"] = report.entity_count if hasattr(report, 'entity_count') else 0
             dimension_result["source_format"] = report.source_format if hasattr(report, 'source_format') else "DXF"
             dimension_result["was_converted"] = report.was_converted if hasattr(report, 'was_converted') else False
-            
+
             logger.info(f"DXF-Qualitätsanalyse erfolgreich: {dimension_count} Bemaßungen, {hatch_count} Schraffuren")
-            
+
         except RuntimeError as e:
             # DWG-Konvertierung fehlgeschlagen (ODA nicht installiert)
             error_msg = str(e)
             if "ODA" in error_msg or "DWG" in error_msg:
                 logger.warning(f"DWG-Konvertierung nicht möglich: {e}")
                 issues.append({
-                    "type": "error", 
-                    "category": "conversion", 
+                    "type": "error",
+                    "category": "conversion",
                     "message": "DWG-Datei kann nicht gelesen werden. ODA File Converter ist nicht installiert. Bitte als DXF speichern oder ODA installieren."
                 })
             else:
                 logger.exception(f"DXF-Qualitätsanalyse Fallback fehlgeschlagen: {e}")
                 issues.append({"type": "error", "category": "analysis", "message": error_msg})
-                
+
         except Exception as e:
             logger.exception(f"DXF-Qualitätsanalyse Fallback fehlgeschlagen: {e}")
             issues.append({"type": "error", "category": "analysis", "message": str(e)})
-        
+
         return dimension_result, section_result, issues
-    
+
     def _calculate_quality_score(
-        self, 
-        dimensions: Dict, 
-        sections: Dict, 
-        issues: List[Dict]
+        self,
+        dimensions: dict,
+        sections: dict,
+        issues: list[dict]
     ) -> float:
         """Berechnet einen Qualitäts-Score (0-100)"""
         score = 100.0
-        
+
         # Abzüge für Fehler
         errors = len([i for i in issues if i["type"] == "error"])
         warnings = len([i for i in issues if i["type"] == "warning"])
-        
+
         score -= errors * 15
         score -= warnings * 5
-        
+
         # Bonus für vollständige Analysen
         if dimensions.get("chain_count", 0) > 0:
             score += 5
         if sections.get("section_view_count", 0) > 0:
             score += 5
-        
+
         # Abzug für überbestimmte Maßketten
         if dimensions.get("validation", {}).get("overdetermined_count", 0) > 0:
             score -= 10
-        
+
         return max(0.0, min(100.0, score))
-    
+
     # =========================================================================
     # Szenario 3: Natural Language Query
     # =========================================================================
-    
+
     async def query_natural_language(
-        self, 
+        self,
         question: str,
-        model_id: Optional[UUID] = None,
-        file_path: Optional[str] = None,
-        context: Optional[Dict] = None
+        model_id: UUID | None = None,
+        file_path: str | None = None,
+        context: dict | None = None
     ) -> NLQueryResult:
         """
         Beantwortet eine Frage in natürlicher Sprache.
-        
+
         Szenario 3: Natural Language Query
-        
+
         Unterstützte Fragen:
         - "Welcher Raum ist am größten?"
         - "Wie viele Türen gibt es?"
         - "Gesamtfläche aller Räume?"
         - "Liste alle Räume im 1. OG"
-        
+
         Args:
             question: Frage in natürlicher Sprache
             model_id: Optional - UUID des IFC-Models
             file_path: Optional - Pfad zur CAD-Datei
             context: Optional - Zusätzlicher Kontext
-            
+
         Returns:
             NLQueryResult mit Antwort
         """
         self._ensure_initialized()
-        
-        question_lower = question.lower()
-        
+
+        question.lower()
+
         # Pattern Matching für häufige Fragen
         if model_id:
             return await self._query_from_model(question, model_id)
@@ -505,19 +499,19 @@ class CADMCPBridge:
                 answer="Bitte geben Sie eine CAD-Datei oder ein Modell an, um Fragen zu stellen.",
                 confidence=0.0
             )
-    
+
     async def _query_from_model(self, question: str, model_id: UUID) -> NLQueryResult:
         """Query basierend auf einem Django Model"""
-        from apps.ifc.models import IFCModel, Room, Door, Window
-        
+        from apps.ifc.models import Door, IFCModel, Room, Window
+
         question_lower = question.lower()
-        
+
         try:
             model = IFCModel.objects.get(pk=model_id)
             rooms = Room.objects.filter(ifc_model=model)
             doors = Door.objects.filter(ifc_model=model)
             windows = Window.objects.filter(ifc_model=model)
-            
+
             # Größter Raum
             if "größt" in question_lower and "raum" in question_lower:
                 largest = rooms.order_by("-area").first()
@@ -531,7 +525,7 @@ class CADMCPBridge:
                         source_file=str(model_id),
                         confidence=1.0
                     )
-            
+
             # Kleinster Raum
             if "kleinst" in question_lower and "raum" in question_lower:
                 smallest = rooms.filter(area__gt=0).order_by("area").first()
@@ -544,7 +538,7 @@ class CADMCPBridge:
                         source_file=str(model_id),
                         confidence=1.0
                     )
-            
+
             # Anzahl Räume
             if "wie viel" in question_lower and "räume" in question_lower:
                 count = rooms.count()
@@ -556,7 +550,7 @@ class CADMCPBridge:
                     source_file=str(model_id),
                     confidence=1.0
                 )
-            
+
             # Anzahl Türen
             if "tür" in question_lower and ("wie viel" in question_lower or "anzahl" in question_lower):
                 count = doors.count()
@@ -568,7 +562,7 @@ class CADMCPBridge:
                     source_file=str(model_id),
                     confidence=1.0
                 )
-            
+
             # Anzahl Fenster
             if "fenster" in question_lower and ("wie viel" in question_lower or "anzahl" in question_lower):
                 count = windows.count()
@@ -580,7 +574,7 @@ class CADMCPBridge:
                     source_file=str(model_id),
                     confidence=1.0
                 )
-            
+
             # Gesamtfläche
             if "gesamt" in question_lower and "fläche" in question_lower:
                 from django.db.models import Sum
@@ -593,14 +587,14 @@ class CADMCPBridge:
                     source_file=str(model_id),
                     confidence=1.0
                 )
-            
+
             # Liste Räume
             if "liste" in question_lower and "räume" in question_lower:
                 room_list = list(rooms.values("name", "area", "floor__name")[:20])
                 answer_lines = ["**Raumliste:**\n"]
                 for r in room_list:
                     answer_lines.append(f"- {r['name']}: {r['area']:.1f} m² ({r['floor__name'] or '-'})")
-                
+
                 return NLQueryResult(
                     success=True,
                     query=question,
@@ -609,7 +603,7 @@ class CADMCPBridge:
                     source_file=str(model_id),
                     confidence=1.0
                 )
-            
+
             # Fallback
             return NLQueryResult(
                 success=False,
@@ -622,7 +616,7 @@ class CADMCPBridge:
                 source_file=str(model_id),
                 confidence=0.3
             )
-            
+
         except IFCModel.DoesNotExist:
             return NLQueryResult(
                 success=False,
@@ -638,12 +632,12 @@ class CADMCPBridge:
                 answer=f"Fehler bei der Verarbeitung: {str(e)}",
                 confidence=0.0
             )
-    
+
     async def _query_from_file(self, question: str, file_path: str) -> NLQueryResult:
         """Query basierend auf einer Datei"""
         # Erst Datei analysieren
         analysis = await self.analyze_file(file_path)
-        
+
         if not analysis.success:
             return NLQueryResult(
                 success=False,
@@ -652,11 +646,11 @@ class CADMCPBridge:
                 source_file=file_path,
                 confidence=0.0
             )
-        
+
         # Dann Frage beantworten basierend auf Analyse-Daten
         data = analysis.data
         question_lower = question.lower()
-        
+
         # Entity-Zählung
         if "wie viel" in question_lower or "anzahl" in question_lower:
             if "entit" in question_lower:
@@ -669,7 +663,7 @@ class CADMCPBridge:
                     source_file=file_path,
                     confidence=1.0
                 )
-        
+
         # Fallback: Markdown Report zurückgeben
         return NLQueryResult(
             success=True,
@@ -679,35 +673,35 @@ class CADMCPBridge:
             source_file=file_path,
             confidence=0.5
         )
-    
+
     # =========================================================================
     # Szenario 4: Batch-Analyse
     # =========================================================================
-    
+
     async def batch_analyze(
-        self, 
+        self,
         directory: str,
-        extensions: Optional[List[str]] = None,
+        extensions: list[str] | None = None,
         recursive: bool = False
     ) -> BatchResult:
         """
         Analysiert mehrere CAD-Dateien in einem Verzeichnis.
-        
+
         Szenario 4: Multi-Format Batch-Analyse
-        
+
         Args:
             directory: Pfad zum Verzeichnis
             extensions: Liste der Dateiendungen (z.B. [".ifc", ".dxf"])
             recursive: Unterverzeichnisse einbeziehen
-            
+
         Returns:
             BatchResult mit allen Ergebnissen
         """
         self._ensure_initialized()
-        
+
         if extensions is None:
             extensions = [".ifc", ".dxf", ".dwg", ".igs", ".iges", ".fbx", ".gltf", ".glb", ".3mf", ".ply"]
-        
+
         path = Path(directory)
         if not path.exists() or not path.is_dir():
             return BatchResult(
@@ -717,30 +711,30 @@ class CADMCPBridge:
                 failed=0,
                 summary={"error": f"Verzeichnis nicht gefunden: {directory}"}
             )
-        
+
         # Dateien sammeln
         files = []
         pattern = "**/*" if recursive else "*"
         for ext in extensions:
             files.extend(path.glob(f"{pattern}{ext}"))
-        
+
         results = []
         analyzed = 0
         failed = 0
         format_counts = {}
-        
+
         # Alle Dateien analysieren
         for file in files:
             result = await self.analyze_file(str(file))
             results.append(result)
-            
+
             if result.success:
                 analyzed += 1
                 fmt = result.format.value
                 format_counts[fmt] = format_counts.get(fmt, 0) + 1
             else:
                 failed += 1
-        
+
         return BatchResult(
             success=failed == 0,
             total_files=len(files),
@@ -753,12 +747,12 @@ class CADMCPBridge:
                 "extensions_searched": extensions,
             }
         )
-    
+
     # =========================================================================
     # Hilfsmethoden
     # =========================================================================
-    
-    async def get_supported_formats(self) -> Dict[str, Any]:
+
+    async def get_supported_formats(self) -> dict[str, Any]:
         """Gibt alle unterstützten Formate zurück"""
         return {
             "formats": [
@@ -785,22 +779,22 @@ class CADMCPBridge:
 # Singleton Factory
 # =============================================================================
 
-_bridge_instance: Optional[CADMCPBridge] = None
+_bridge_instance: CADMCPBridge | None = None
 
 
 def get_mcp_bridge(mode: str = "local") -> CADMCPBridge:
     """
     Factory für CADMCPBridge Singleton.
-    
+
     Usage:
         bridge = get_mcp_bridge()
         result = await bridge.analyze_file("model.ifc")
     """
     global _bridge_instance
-    
+
     if _bridge_instance is None:
         _bridge_instance = CADMCPBridge(mode=mode)
-    
+
     return _bridge_instance
 
 
@@ -826,7 +820,7 @@ async def ask_cad_question(question: str, model_id: UUID = None, file_path: str 
     return await bridge.query_natural_language(question, model_id, file_path)
 
 
-async def batch_analyze_directory(directory: str, extensions: List[str] = None) -> BatchResult:
+async def batch_analyze_directory(directory: str, extensions: list[str] = None) -> BatchResult:
     """Shortcut für Batch-Analyse"""
     bridge = get_mcp_bridge()
     return await bridge.batch_analyze(directory, extensions)

@@ -8,10 +8,8 @@ Basiert auf Best Practices aus BauCAD Hub MCP:
 - Robuste Fehlerbehandlung
 """
 import logging
-from dataclasses import dataclass, field
-from enum import Enum
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, List, Optional
 
 try:
     import ifcopenshell
@@ -36,6 +34,8 @@ from .ifc_parser_models import (
     ParsedWindow,
     RoomType,
 )
+
+
 class IFCParserService:
     """
     Optimierter IFC Parser - nutzt BauCAD Hub MCP Patterns
@@ -162,7 +162,7 @@ class IFCParserService:
                 return parts[0]
         return ""
 
-    def _get_quantity(self, element, name: str) -> Optional[float]:
+    def _get_quantity(self, element, name: str) -> float | None:
         try:
             for rel in element.IsDefinedBy:
                 if rel.is_a("IfcRelDefinesByProperties"):
@@ -180,7 +180,7 @@ class IFCParserService:
             pass
         return None
 
-    def _find_floor(self, space) -> Optional[str]:
+    def _find_floor(self, space) -> str | None:
         try:
             for rel in self._ifc.by_type("IfcRelContainedInSpatialStructure"):
                 if space in rel.RelatedElements:
@@ -357,7 +357,7 @@ class IFCParserService:
                 return parts[0]
         return ""
 
-    def _get_property(self, element, prop_name: str) -> Optional[str]:
+    def _get_property(self, element, prop_name: str) -> str | None:
         """Liest Property aus PropertySet"""
         try:
             for rel in element.IsDefinedBy:
@@ -522,7 +522,7 @@ class IFCParserService:
 
         return material_info
 
-    def _find_element_floor(self, element) -> Optional[str]:
+    def _find_element_floor(self, element) -> str | None:
         """Findet Geschoss für Element"""
         try:
             for rel in self._ifc.by_type("IfcRelContainedInSpatialStructure"):

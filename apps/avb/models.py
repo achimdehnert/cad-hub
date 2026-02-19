@@ -284,8 +284,8 @@ class CostEstimateEntry(models.Model):
 from .models_tender import (  # noqa: F401
     Award,
     Bid,
-    BidPosition,
     Bidder,
+    BidPosition,
     Tender,
     TenderGroup,
     TenderPosition,

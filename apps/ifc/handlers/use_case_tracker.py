@@ -6,11 +6,10 @@ Ergebnis liefert, wird dies als potenzieller neuer Use Case erfasst.
 """
 import json
 import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 from enum import Enum
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +50,10 @@ class UseCase:
     tags: list = field(default_factory=list)
     technical_notes: str = ""
     resolution: str = ""
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
-    
+
     def update_priority(self):
         """Aktualisiert Priorität basierend auf Anfragehäufigkeit."""
         if self.request_count >= 10:
@@ -68,28 +67,28 @@ class UseCase:
 class UseCaseTracker:
     """
     Verwaltet Use Cases / Feature Requests.
-    
+
     Erfasst automatisch:
     - Leere Ergebnisse (z.B. "0 Fenster gefunden")
     - Unbekannte Intents
     - Fehler bei der Verarbeitung
-    
+
     Ermöglicht:
     - Priorisierung nach Häufigkeit
     - Admin-Review
     - Tracking der Implementierung
     """
-    
+
     def __init__(self, data_path: Path = None):
         self.data_path = data_path or USE_CASE_DATA_PATH
         self.use_cases: dict[str, UseCase] = {}
         self._load()
-    
+
     def _load(self):
         """Lädt Use Cases aus JSON."""
         try:
             if self.data_path.exists():
-                with open(self.data_path, "r", encoding="utf-8") as f:
+                with open(self.data_path, encoding="utf-8") as f:
                     data = json.load(f)
                     for uc_data in data.get("use_cases", []):
                         uc = UseCase(**uc_data)
@@ -97,7 +96,7 @@ class UseCaseTracker:
                 logger.info(f"[UseCaseTracker] Loaded {len(self.use_cases)} use cases")
         except Exception as e:
             logger.warning(f"[UseCaseTracker] Could not load: {e}")
-    
+
     def _save(self):
         """Speichert Use Cases in JSON."""
         try:
@@ -111,14 +110,14 @@ class UseCaseTracker:
                 }, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"[UseCaseTracker] Could not save: {e}")
-    
+
     def _generate_id(self, title: str) -> str:
         """Generiert ID aus Titel."""
         import re
         slug = re.sub(r'[^\w\s-]', '', title.lower())
         slug = re.sub(r'[-\s]+', '_', slug).strip('_')
         return slug[:50]
-    
+
     def report_empty_result(
         self,
         query: str,
@@ -128,19 +127,19 @@ class UseCaseTracker:
     ) -> UseCase:
         """
         Erfasst leeres Ergebnis als potenziellen Use Case.
-        
+
         Args:
             query: Original-Anfrage
             intent: Erkannter Intent
             result_type: Art des Ergebnisses (z.B. "fenster", "türen")
             context: Zusätzlicher Kontext
-        
+
         Returns:
             Erstellter/aktualisierter Use Case
         """
         title = f"{result_type.title()}-Erkennung verbessern"
         uc_id = self._generate_id(f"{result_type}_detection")
-        
+
         if uc_id in self.use_cases:
             uc = self.use_cases[uc_id]
             uc.request_count += 1
@@ -158,15 +157,15 @@ class UseCaseTracker:
                 tags=[result_type, "auto_detected", "empty_result"],
             )
             self.use_cases[uc_id] = uc
-        
+
         self._save()
         logger.info(f"[UseCaseTracker] Reported: {uc_id} (count: {uc.request_count})")
         return uc
-    
+
     def report_unknown_intent(self, query: str) -> UseCase:
         """Erfasst unbekannten Intent als Use Case."""
         uc_id = "unknown_intent_patterns"
-        
+
         if uc_id in self.use_cases:
             uc = self.use_cases[uc_id]
             uc.request_count += 1
@@ -186,10 +185,10 @@ class UseCaseTracker:
                 tags=["language", "patterns", "auto_detected"],
             )
             self.use_cases[uc_id] = uc
-        
+
         self._save()
         return uc
-    
+
     def report_feature_request(
         self,
         title: str,
@@ -199,18 +198,18 @@ class UseCaseTracker:
     ) -> UseCase:
         """
         Erfasst manuellen Feature Request.
-        
+
         Args:
             title: Titel des Features
             description: Beschreibung
             query: Optional - auslösende Anfrage
             tags: Optional - Tags
-        
+
         Returns:
             Erstellter Use Case
         """
         uc_id = self._generate_id(title)
-        
+
         if uc_id in self.use_cases:
             uc = self.use_cases[uc_id]
             uc.request_count += 1
@@ -227,15 +226,15 @@ class UseCaseTracker:
                 tags=tags or ["user_request"],
             )
             self.use_cases[uc_id] = uc
-        
+
         self._save()
         logger.info(f"[UseCaseTracker] Feature request: {uc_id}")
         return uc
-    
-    def get_use_case(self, uc_id: str) -> Optional[UseCase]:
+
+    def get_use_case(self, uc_id: str) -> UseCase | None:
         """Gibt Use Case zurück."""
         return self.use_cases.get(uc_id)
-    
+
     def list_use_cases(
         self,
         status: str = None,
@@ -244,39 +243,39 @@ class UseCaseTracker:
     ) -> list[UseCase]:
         """Listet Use Cases mit Filtern."""
         results = list(self.use_cases.values())
-        
+
         if status:
             results = [uc for uc in results if uc.status == status]
         if priority:
             results = [uc for uc in results if uc.priority == priority]
-        
+
         # Sort by request count (most requested first)
         results.sort(key=lambda x: -x.request_count)
         return results[:limit]
-    
-    def update_status(self, uc_id: str, status: str, resolution: str = "") -> Optional[UseCase]:
+
+    def update_status(self, uc_id: str, status: str, resolution: str = "") -> UseCase | None:
         """Aktualisiert Status eines Use Cases."""
         if uc_id not in self.use_cases:
             return None
-        
+
         uc = self.use_cases[uc_id]
         uc.status = status
         uc.resolution = resolution
         uc.updated_at = datetime.now().isoformat()
         self._save()
         return uc
-    
+
     def get_stats(self) -> dict:
         """Statistiken über Use Cases."""
         status_counts = {}
         priority_counts = {}
         total_requests = 0
-        
+
         for uc in self.use_cases.values():
             status_counts[uc.status] = status_counts.get(uc.status, 0) + 1
             priority_counts[uc.priority] = priority_counts.get(uc.priority, 0) + 1
             total_requests += uc.request_count
-        
+
         return {
             "total_use_cases": len(self.use_cases),
             "total_requests": total_requests,
@@ -290,7 +289,7 @@ class UseCaseTracker:
 
 
 # Singleton
-_tracker: Optional[UseCaseTracker] = None
+_tracker: UseCaseTracker | None = None
 
 def get_use_case_tracker() -> UseCaseTracker:
     """Gibt Singleton UseCaseTracker zurück."""

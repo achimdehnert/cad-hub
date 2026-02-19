@@ -1,7 +1,6 @@
 """Root URL configuration for CAD Hub."""
 from django.contrib import admin
 from django.urls import include, path
-
 from django_tenancy.healthz import liveness, readiness
 
 from . import views
