@@ -1,26 +1,14 @@
 # CAD Hub - CD Production Pipeline
-# Deploys to Hetzner Server via SSH with automatic rollback
+# Deploys via self-hosted runner on Hetzner server (same pattern as risk-hub)
 
 name: Deploy Production
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag to deploy (default: latest)'
-        required: false
-        default: 'latest'
   workflow_run:
     workflows: ["CI"]
     branches: [main]
     types: [completed]
-  push:
-    tags:
-      - "v*"
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 concurrency:
   group: deploy-production
@@ -29,8 +17,8 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Hetzner
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, hetzner, dev]
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: production
       url: https://nl2cad.de
@@ -39,55 +27,51 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Determine Image Tag
-        id: tag
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "push" ]; then
-            echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
+          set -euo pipefail
 
-      - name: Copy deploy script to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          source: "deployment/scripts/deploy-remote.sh"
-          target: "/opt/cad-hub/"
-          strip_components: 2
+          # .env.prod lives outside git at persistent location
+          cp /opt/cad-hub/.env.prod .env.prod
 
-      - name: Deploy via SSH (with rollback)
-        id: deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            cd /opt/cad-hub
-            chmod +x scripts/deploy-remote.sh
-            bash scripts/deploy-remote.sh \
-              --tag "${{ steps.tag.outputs.tag }}" \
-              --app "cad-hub" \
-              --web-service "web" \
-              --health-endpoint "/livez/"
+          echo "=== Pulling new image ==="
+          docker compose -f docker-compose.prod.yml pull web
 
-      - name: External Health Check
+          echo "=== Running migrations ==="
+          docker compose -f docker-compose.prod.yml run --rm --no-deps \
+            -e DJANGO_SETTINGS_MODULE=config.settings.production \
+            web python manage.py migrate --noinput
+
+          echo "=== Recreating containers ==="
+          docker compose -f docker-compose.prod.yml up -d --force-recreate web worker
+
+          echo "=== Collecting static files ==="
+          sleep 5
+          docker compose -f docker-compose.prod.yml exec -T web \
+            python manage.py collectstatic --noinput 2>/dev/null || true
+
+      - name: Health Check
         run: |
           sleep 10
           for i in 1 2 3; do
-            if curl -sf https://nl2cad.de/livez/ --max-time 10; then
-              echo "External health check passed"
+            HTTP=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8094/livez/ 2>/dev/null || echo 000)
+            if [[ "$HTTP" == "200" ]]; then
+              echo "Health check passed (HTTP $HTTP)"
               exit 0
             fi
-            echo "Attempt $i failed, retrying..."
-            sleep 5
+            echo "Attempt $i: HTTP $HTTP — retrying..."
+            sleep 10
           done
-          echo "External health check failed after 3 attempts"
+          echo "Health check FAILED"
           exit 1
+
+      - name: Cleanup old images
+        if: always()
+        run: docker image prune -f || true
