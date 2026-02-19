@@ -11,6 +11,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from apps.core.managers import TenantAwareManager
+
 
 class ProjectPhase(models.TextChoices):
     """HOAI Leistungsphasen"""
@@ -74,6 +76,8 @@ class CostGroup(models.TextChoices):
 
 class ConstructionProject(models.Model):
     """Erweitertes Bauprojekt für Planung & Ausschreibung."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -160,6 +164,8 @@ class ConstructionProject(models.Model):
 class ProjectMilestone(models.Model):
     """Projektmeilenstein."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -215,6 +221,8 @@ class ProjectMilestone(models.Model):
 
 class CostEstimateEntry(models.Model):
     """Kostenschätzung nach DIN 276."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False

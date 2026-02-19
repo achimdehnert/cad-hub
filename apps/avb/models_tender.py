@@ -5,6 +5,8 @@ Tender, TenderPosition, TenderGroup, Bidder, Bid, BidPosition, Award.
 """
 from django.db import models
 
+from apps.core.managers import TenantAwareManager
+
 from .models import (
     BidStatus,
     ConstructionProject,
@@ -15,6 +17,8 @@ from .models import (
 
 class Tender(models.Model):
     """Ausschreibung / Leistungsverzeichnis."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -110,6 +114,8 @@ class Tender(models.Model):
 class TenderPosition(models.Model):
     """LV-Position in einer Ausschreibung."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -160,6 +166,8 @@ class TenderPosition(models.Model):
 class TenderGroup(models.Model):
     """Los/Titel/Gruppe im LV."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -202,6 +210,8 @@ class TenderGroup(models.Model):
 
 class Bidder(models.Model):
     """Bieter / Unternehmen."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -274,6 +284,8 @@ class Bidder(models.Model):
 
 class Bid(models.Model):
     """Angebot eines Bieters."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -384,6 +396,8 @@ class Bid(models.Model):
 class BidPosition(models.Model):
     """Einzelposition im Angebot."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -442,6 +456,8 @@ class BidPosition(models.Model):
 
 class Award(models.Model):
     """Zuschlag / Vergabe."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False

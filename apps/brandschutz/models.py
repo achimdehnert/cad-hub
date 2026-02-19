@@ -9,6 +9,8 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from apps.core.managers import TenantAwareManager
+
 
 class BrandschutzKategorie(models.TextChoices):
     FLUCHTWEG = "fluchtweg", "Fluchtweg"
@@ -51,6 +53,8 @@ class PruefStatus(models.TextChoices):
 class BrandschutzSymbol(models.Model):
     """Brandschutz-Symbol nach DIN EN ISO 7010."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -89,6 +93,8 @@ class BrandschutzSymbol(models.Model):
 
 class BrandschutzPruefung(models.Model):
     """Brandschutz-Prüfung für ein Projekt/Plan."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -149,6 +155,8 @@ class BrandschutzPruefung(models.Model):
 class BrandschutzMangel(models.Model):
     """Einzelner Mangel aus einer Brandschutz-Prüfung."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -205,6 +213,8 @@ class BrandschutzMangel(models.Model):
 
 class BrandschutzSymbolVorschlag(models.Model):
     """Vorgeschlagenes Symbol für eine Prüfung."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False

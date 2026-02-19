@@ -9,6 +9,8 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from apps.core.managers import TenantAwareManager
+
 
 class IFCProject(models.Model):
     """IFC Project - UI Cache Only
@@ -17,6 +19,8 @@ class IFCProject(models.Model):
     Real data lives in IFC MCP Backend (PostgreSQL).
     This model only caches data for UI performance.
     """
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True,
@@ -88,6 +92,8 @@ class IFCProject(models.Model):
 class IFCModel(models.Model):
     """Eine Version eines IFC-Modells."""
 
+    objects = TenantAwareManager()
+
     class Status(models.TextChoices):
         UPLOADING = "uploading", "Wird hochgeladen"
         PROCESSING = "processing", "Wird verarbeitet"
@@ -156,6 +162,8 @@ class IFCModel(models.Model):
 class Floor(models.Model):
     """Geschoss (IfcBuildingStorey)."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -197,6 +205,8 @@ class Floor(models.Model):
 
 class Room(models.Model):
     """Raum (IfcSpace)."""
+
+    objects = TenantAwareManager()
 
     class UsageCategory(models.TextChoices):
         """DIN 277 Nutzungskategorien."""

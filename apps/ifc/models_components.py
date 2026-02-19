@@ -3,13 +3,19 @@ IFC Component Models
 
 Window, Door, Wall, Slab models.
 """
+import uuid
+
 from django.db import models
+
+from apps.core.managers import TenantAwareManager
 
 from .models import Floor, IFCModel, Room
 
 
 class Window(models.Model):
     """Fenster (IfcWindow)."""
+
+    objects = TenantAwareManager()
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -102,6 +108,8 @@ class Window(models.Model):
 class Door(models.Model):
     """Tür (IfcDoor)."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -187,6 +195,8 @@ class Door(models.Model):
 class Wall(models.Model):
     """Wand (IfcWall)."""
 
+    objects = TenantAwareManager()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -271,6 +281,8 @@ class Wall(models.Model):
 
 class Slab(models.Model):
     """Decke/Bodenplatte (IfcSlab)."""
+
+    objects = TenantAwareManager()
 
     class SlabType(models.TextChoices):
         FLOOR = "FLOOR", "Geschossdecke"

@@ -18,6 +18,8 @@ from django.views.generic import (
     View,
 )
 
+from apps.core.mixins import TenantMixin
+
 from .models import Door, Floor, IFCModel, IFCProject, Room, Slab, Wall, Window
 
 
@@ -37,19 +39,20 @@ class HtmxMixin:
 # =============================================================================
 
 
-class DashboardView(TemplateView):
+class DashboardView(TenantMixin, TemplateView):
     """Haupt-Dashboard mit Übersicht"""
 
     template_name = "cad_hub/dashboard.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        tid = self._tenant_id()
 
-        ctx["recent_projects"] = IFCProject.objects.all()[:5]
+        ctx["recent_projects"] = IFCProject.objects.filter(tenant_id=tid)[:5] if tid else IFCProject.objects.none()
         ctx["stats"] = {
-            "projects": IFCProject.objects.count(),
-            "models": IFCModel.objects.filter(status="ready").count(),
-            "rooms": Room.objects.count(),
+            "projects": IFCProject.objects.filter(tenant_id=tid).count() if tid else 0,
+            "models": IFCModel.objects.filter(tenant_id=tid, status="ready").count() if tid else 0,
+            "rooms": Room.objects.filter(tenant_id=tid).count() if tid else 0,
         }
 
         return ctx
@@ -60,7 +63,7 @@ class DashboardView(TemplateView):
 # =============================================================================
 
 
-class ProjectListView(HtmxMixin, ListView):
+class ProjectListView(TenantMixin, HtmxMixin, ListView):
     """Liste aller Projekte"""
 
     model = IFCProject
@@ -70,7 +73,7 @@ class ProjectListView(HtmxMixin, ListView):
     paginate_by = 10
 
 
-class ProjectDetailView(DetailView):
+class ProjectDetailView(TenantMixin, DetailView):
     """Projekt-Detail mit Modellversionen"""
 
     model = IFCProject
@@ -83,7 +86,7 @@ class ProjectDetailView(DetailView):
         return ctx
 
 
-class ProjectCreateView(LoginRequiredMixin, CreateView):
+class ProjectCreateView(TenantMixin, LoginRequiredMixin, CreateView):
     """Neues Projekt erstellen"""
 
     model = IFCProject
@@ -96,7 +99,7 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ProjectUpdateView(LoginRequiredMixin, UpdateView):
+class ProjectUpdateView(TenantMixin, LoginRequiredMixin, UpdateView):
     """Projekt-Name bearbeiten"""
 
     model = IFCProject
@@ -111,7 +114,7 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class ProjectDeleteView(LoginRequiredMixin, DeleteView):
+class ProjectDeleteView(TenantMixin, LoginRequiredMixin, DeleteView):
     """Projekt löschen (inkl. aller Modelle)"""
 
     model = IFCProject
@@ -131,7 +134,7 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 # =============================================================================
 
 
-class ModelDetailView(DetailView):
+class ModelDetailView(TenantMixin, DetailView):
     """IFC-Modell Detail"""
 
     model = IFCModel
@@ -150,7 +153,7 @@ class ModelDetailView(DetailView):
         return ctx
 
 
-class ModelViewerView(DetailView):
+class ModelViewerView(TenantMixin, DetailView):
     """3D Viewer für IFC-Modell"""
 
     model = IFCModel
@@ -158,7 +161,7 @@ class ModelViewerView(DetailView):
     context_object_name = "model"
 
 
-class IFCContentOverviewView(DetailView):
+class IFCContentOverviewView(TenantMixin, DetailView):
     """IFC Inhalts-Übersicht: Alle extrahierten Elemente in Tabellen"""
 
     model = IFCModel
@@ -213,7 +216,7 @@ class IFCContentOverviewView(DetailView):
         return ctx
 
 
-class ModelUploadView(CreateView):
+class ModelUploadView(TenantMixin, LoginRequiredMixin, CreateView):
     """IFC-Datei hochladen"""
 
     model = IFCModel
@@ -222,25 +225,25 @@ class ModelUploadView(CreateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["project"] = get_object_or_404(IFCProject, pk=self.kwargs["project_id"])
+        tid = self._tenant_id()
+        ctx["project"] = get_object_or_404(IFCProject, pk=self.kwargs["project_id"], tenant_id=tid)
         return ctx
 
     def form_valid(self, form):
-        project = get_object_or_404(IFCProject, pk=self.kwargs["project_id"])
+        tid = self._tenant_id()
+        project = get_object_or_404(IFCProject, pk=self.kwargs["project_id"], tenant_id=tid)
 
-        # Version ermitteln
         last = IFCModel.objects.filter(project=project).order_by("-version").first()
 
+        form.instance.tenant_id = tid
         form.instance.project = project
         form.instance.version = (last.version + 1) if last else 1
         form.instance.status = IFCModel.Status.UPLOADING
 
         response = super().form_valid(form)
 
-        # Processing starten (später async)
         from .tasks import process_ifc_upload
-
-        process_ifc_upload(str(self.object.pk))
+        process_ifc_upload.delay(str(self.object.pk))
 
         return response
 

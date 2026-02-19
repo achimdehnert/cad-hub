@@ -49,7 +49,8 @@ def process_ifc_upload(self, model_id: str):
         ifc_model.status = IFCModel.Status.PROCESSING
         ifc_model.save(update_fields=["status"])
 
-        logger.info(f"Processing IFC: {model_id}")
+        tenant_id = ifc_model.tenant_id
+        logger.info(f"Processing IFC: {model_id} (tenant={tenant_id})")
 
         # Parse mit optimiertem Service
         parser = IFCParserService()
@@ -70,6 +71,7 @@ def process_ifc_upload(self, model_id: str):
         floor_map = {}
         for idx, parsed_floor in enumerate(result.floors):
             floor = Floor.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 ifc_guid=parsed_floor.ifc_guid,
                 name=parsed_floor.name,
@@ -88,6 +90,7 @@ def process_ifc_upload(self, model_id: str):
             usage_category = ROOMTYPE_TO_USAGE.get(parsed_room.room_type, "")
 
             room = Room.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 floor=floor,
                 ifc_guid=parsed_room.ifc_guid,
@@ -107,6 +110,7 @@ def process_ifc_upload(self, model_id: str):
             floor = floor_map.get(parsed_window.floor_guid)
 
             Window.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 floor=floor,
                 ifc_guid=parsed_window.ifc_guid,
@@ -125,6 +129,7 @@ def process_ifc_upload(self, model_id: str):
             floor = floor_map.get(parsed_door.floor_guid)
 
             Door.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 floor=floor,
                 ifc_guid=parsed_door.ifc_guid,
@@ -142,6 +147,7 @@ def process_ifc_upload(self, model_id: str):
             floor = floor_map.get(parsed_wall.floor_guid)
 
             Wall.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 floor=floor,
                 ifc_guid=parsed_wall.ifc_guid,
@@ -162,6 +168,7 @@ def process_ifc_upload(self, model_id: str):
             floor = floor_map.get(parsed_slab.floor_guid)
 
             Slab.objects.create(
+                tenant_id=tenant_id,
                 ifc_model=ifc_model,
                 floor=floor,
                 ifc_guid=parsed_slab.ifc_guid,
