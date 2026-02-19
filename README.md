@@ -37,19 +37,50 @@ python manage.py runserver
 
 ## Production Deployment
 
-```bash
-# On server (88.198.191.108)
-cd /opt/cad-hub
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d --force-recreate
-```
-
 | Parameter | Value |
 |-----------|-------|
-| Domain | nl2cad.de |
-| Port | 8094 |
-| Health | /livez/, /healthz/ |
-| GHCR | ghcr.io/achimdehnert/cad-hub |
+| URL | https://nl2cad.de |
+| App-Server | 46.225.113.1 (dev-server, Docker Port 8094) |
+| Proxy/SSL | 88.198.191.108 (Nginx + Let's Encrypt) |
+| Image | ghcr.io/achimdehnert/cad-hub/cad-hub-web:latest |
+| Health | https://nl2cad.de/livez/ |
+| .env.prod | /opt/cad-hub/.env.prod (auf App-Server) |
+
+### CI/CD
+
+- **CI** (GitHub-hosted): Lint (Ruff) → Security Scan (Bandit) → Docker Build & Push → GHCR
+- **CD** (self-hosted runner auf 46.225.113.1): Pull → DB/Redis starten → Migrate → Web/Worker neu starten
+
+```bash
+# Manuellen Deploy triggern
+gh workflow run cd-production.yml
+```
+
+### Lokales Setup (Entwicklung)
+
+```bash
+git clone git@github.com:achimdehnert/cad-hub.git
+cd cad-hub
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+# Platform-Packages sind in vendor/ (kein separater Install nötig)
+export PYTHONPATH=$PWD/vendor
+cp .env.prod.example .env
+python manage.py migrate
+python manage.py runserver
+```
+
+### Platform-Packages (vendor/)
+
+Die folgenden Packages sind direkt in `vendor/` eingecheckt (kein git-URL-Install):
+
+| Package | Quelle |
+|---------|--------|
+| `chat_agent` | platform/packages/chat-agent |
+| `creative_services` | platform/packages/creative-services |
+| `django_tenancy` | platform/packages/django-tenancy |
+
+Bei Updates: `cp -r /path/to/platform/packages/<pkg>/src/<pkg> vendor/`
 
 ## Architecture
 
