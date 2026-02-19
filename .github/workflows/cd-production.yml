@@ -44,16 +44,19 @@ jobs:
           echo "=== Pulling new image ==="
           docker compose -f docker-compose.prod.yml pull web
 
+          echo "=== Starting DB + Redis ==="
+          docker compose -f docker-compose.prod.yml up -d db redis
+          sleep 5
+
           echo "=== Running migrations ==="
-          docker compose -f docker-compose.prod.yml run --rm --no-deps \
-            -e DJANGO_SETTINGS_MODULE=config.settings.production \
+          docker compose -f docker-compose.prod.yml run --rm \
             web python manage.py migrate --noinput
 
-          echo "=== Recreating containers ==="
+          echo "=== Recreating web + worker ==="
           docker compose -f docker-compose.prod.yml up -d --force-recreate web worker
 
           echo "=== Collecting static files ==="
-          sleep 5
+          sleep 8
           docker compose -f docker-compose.prod.yml exec -T web \
             python manage.py collectstatic --noinput 2>/dev/null || true
 
