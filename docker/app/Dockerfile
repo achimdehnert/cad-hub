@@ -39,7 +39,8 @@ LABEL org.opencontainers.image.source="https://github.com/achimdehnert/cad-hub"
 LABEL org.opencontainers.image.description="CAD Hub — IFC/DXF Analysis Platform (ADR-022)"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/vendor
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
