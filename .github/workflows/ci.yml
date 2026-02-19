@@ -16,7 +16,7 @@ permissions:
 env:
   PYTHON_VERSION: '3.12'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}/cad-hub-web
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
