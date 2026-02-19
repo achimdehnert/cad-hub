@@ -3,6 +3,10 @@ AVB Tender & Bid Models
 
 Tender, TenderPosition, TenderGroup, Bidder, Bid, BidPosition, Award.
 """
+import uuid
+from decimal import Decimal
+
+from django.conf import settings
 from django.db import models
 
 from apps.core.managers import TenantAwareManager
