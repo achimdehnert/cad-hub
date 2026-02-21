@@ -1,23 +1,17 @@
-# tests/conftest.py — ADR-057 §2.5
+# tests/conftest.py — ADR-058 §Confirmation
 import pytest
 
+# Shared platform fixtures (platform-context[testing])
+from platform_context.testing.fixtures import (  # noqa: F401
+    admin_client,
+    admin_user,
+    auth_client,
+    htmx_client,
+)
 
+# Repo-specific: user via UserFactory (cad-hub uses standard Django User)
 @pytest.fixture
 def user(db):
     """Standard authenticated user."""
     from tests.factories import UserFactory
     return UserFactory()
-
-
-@pytest.fixture
-def admin_user(db):
-    """Admin user with superuser rights."""
-    from tests.factories import UserFactory
-    return UserFactory(is_staff=True, is_superuser=True)
-
-
-@pytest.fixture
-def authenticated_client(client, user):
-    """Pre-authenticated Django test client."""
-    client.force_login(user)
-    return client
