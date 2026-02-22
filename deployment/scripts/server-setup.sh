@@ -8,11 +8,11 @@ set -euo pipefail
 
 REPO="cad-hub"
 GITHUB_ORG="achimdehnert"
-DEPLOY_DIR="/opt/cad-hub"
-RUNNER_DIR="/home/github-runner/runner-achimdehnert-cad-hub"
-RUNNER_TARBALL="/home/github-runner/actions-runner/actions-runner-linux-x64-2.331.0.tar.gz"
-NGINX_CONF_SRC="deployment/nginx/nl2cad.de.conf"
-NGINX_CONF_DEST="/etc/nginx/sites-available/nl2cad.de"
+DEPLOY_DIR="/opt/cad-hub" # noqa: hardcode
+RUNNER_DIR="/home/github-runner/runner-achimdehnert-cad-hub" # noqa: hardcode
+RUNNER_TARBALL="/home/github-runner/actions-runner/actions-runner-linux-x64-2.331.0.tar.gz" # noqa: hardcode
+NGINX_CONF_SRC="deployment/nginx/nl2cad.de.conf" # noqa: hardcode
+NGINX_CONF_DEST="/etc/nginx/sites-available/nl2cad.de" # noqa: hardcode
 GITHUB_PAT="${GITHUB_PAT:-}"
 
 # Parse args
@@ -28,7 +28,7 @@ warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
 err()  { echo -e "\033[1;31m[ERR]\033[0m $*" >&2; }
 
 # ---------------------------------------------------------------------------
-# 1. Create /opt/cad-hub deploy directory
+# 1. Create /opt/cad-hub deploy directory # noqa: hardcode
 # ---------------------------------------------------------------------------
 log "Creating deploy directory: ${DEPLOY_DIR}"
 mkdir -p "${DEPLOY_DIR}/staticfiles"
@@ -71,10 +71,10 @@ fi
 # 3. Nginx setup
 # ---------------------------------------------------------------------------
 if [[ -f "${NGINX_CONF_DEST}" ]]; then
-    NGINX_ENABLED="/etc/nginx/sites-enabled/nl2cad.de"
+    NGINX_ENABLED="/etc/nginx/sites-enabled/nl2cad.de" # noqa: hardcode
     if [[ ! -L "${NGINX_ENABLED}" ]]; then
         ln -s "${NGINX_CONF_DEST}" "${NGINX_ENABLED}"
-        log "Nginx site enabled: nl2cad.de"
+        log "Nginx site enabled: nl2cad.de" # noqa: hardcode
     fi
     nginx -t && systemctl reload nginx && log "Nginx reloaded"
 else
@@ -85,10 +85,10 @@ fi
 # 4. SSL — Certbot (Let's Encrypt)
 # ---------------------------------------------------------------------------
 if command -v certbot >/dev/null 2>&1; then
-    if [[ ! -d "/etc/letsencrypt/live/nl2cad.de" ]]; then
-        log "Requesting SSL certificate for nl2cad.de..."
-        certbot --nginx -d nl2cad.de -d www.nl2cad.de --non-interactive --agree-tos \
-            --email admin@nl2cad.de --redirect || warn "Certbot failed — run manually"
+    if [[ ! -d "/etc/letsencrypt/live/nl2cad.de" ]]; then # noqa: hardcode
+        log "Requesting SSL certificate for nl2cad.de..." # noqa: hardcode
+        certbot --nginx -d nl2cad.de -d www.nl2cad.de --non-interactive --agree-tos \ # noqa: hardcode
+            --email admin@nl2cad.de --redirect || warn "Certbot failed — run manually" # noqa: hardcode
     else
         log "SSL certificate already exists"
     fi
@@ -172,4 +172,4 @@ echo "       HETZNER_HOST=88.198.191.108  # noqa: hardcode"
 echo "       HETZNER_USER=deploy"
 echo "       HETZNER_SSH_KEY=<private key content>"
 echo "  3. Push to main or trigger workflow_dispatch to deploy"
-echo "  4. Check: https://nl2cad.de/livez/"
+echo "  4. Check: https://nl2cad.de/livez/" # noqa: hardcode

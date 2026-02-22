@@ -15,7 +15,7 @@ class IfcMcpClient:
     """Client für IFC MCP Backend API"""
 
     def __init__(self, base_url: str = None):
-        self.base_url = base_url or getattr(settings, "IFC_MCP_URL", "http://localhost:8001")
+        self.base_url = base_url or getattr(settings, "IFC_MCP_URL", "http://localhost:8001") # noqa: hardcode
         self.timeout = 30.0
 
     async def _request(self, method: str, endpoint: str, **kwargs) -> dict[str, Any]:

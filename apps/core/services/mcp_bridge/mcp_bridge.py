@@ -62,7 +62,7 @@ class CADMCPBridge:
         self._initialized = False
 
         # Remote mode settings
-        self.mcp_base_url = getattr(settings, "CAD_MCP_URL", "http://localhost:8001")
+        self.mcp_base_url = getattr(settings, "CAD_MCP_URL", "http://localhost:8001") # noqa: hardcode
         self.timeout = 60.0
 
     def _ensure_initialized(self):

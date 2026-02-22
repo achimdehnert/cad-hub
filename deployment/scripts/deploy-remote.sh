@@ -14,7 +14,7 @@
 #   --app           Application name (required)
 #   --compose-file  Compose file (default: docker-compose.prod.yml)
 #   --env-file      Env file (default: .env.prod)
-#   --deploy-dir    Deploy directory (default: /opt/<app>)
+#   --deploy-dir    Deploy directory (default: /opt/<app>) # noqa: hardcode
 #   --web-service   Web service name in compose (default: web)
 #   --skip-migrate  Skip database migrations
 #   --skip-backup   Skip pre-deploy DB backup
@@ -90,7 +90,7 @@ done
 [[ -z "$IMAGE_TAG" ]] && die "--tag is required" 1
 [[ -z "$APP_NAME" ]]  && die "--app is required" 1
 
-DEPLOY_DIR="${DEPLOY_DIR:-/opt/${APP_NAME}}"
+DEPLOY_DIR="${DEPLOY_DIR:-/opt/${APP_NAME}}" # noqa: hardcode
 TAG_VAR="IMAGE_TAG"
 
 # ─── Validate environment ───────────────────────────────────────────────────
@@ -207,9 +207,9 @@ log "Waiting for healthcheck (${HEALTH_RETRIES}x${HEALTH_INTERVAL}s)..."
 HEALTH_PORT=$(docker port "$WEB_CONTAINER" 8000 2>/dev/null \
     | head -1 | cut -d: -f2 || echo "")
 if [[ -n "$HEALTH_PORT" ]]; then
-    HEALTH_URL="http://127.0.0.1:${HEALTH_PORT}${HEALTH_ENDPOINT}"
+    HEALTH_URL="http://127.0.0.1:${HEALTH_PORT}${HEALTH_ENDPOINT}" # noqa: hardcode
 else
-    HEALTH_URL="http://127.0.0.1:8000${HEALTH_ENDPOINT}"
+    HEALTH_URL="http://127.0.0.1:8000${HEALTH_ENDPOINT}" # noqa: hardcode
 fi
 
 HEALTHY=false

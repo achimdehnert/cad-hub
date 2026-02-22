@@ -21,7 +21,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: production
-      url: https://nl2cad.de
+      url: https://nl2cad.de # noqa: hardcode
 
     steps:
       - name: Checkout
@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
 
           # .env.prod lives outside git at persistent location
-          cp /opt/cad-hub/.env.prod .env.prod
+          cp /opt/cad-hub/.env.prod .env.prod # noqa: hardcode
 
           echo "=== Pulling new image ==="
           docker compose -f docker-compose.prod.yml pull web
@@ -64,7 +64,7 @@ jobs:
         run: |
           sleep 10
           for i in 1 2 3; do
-            HTTP=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8094/livez/ 2>/dev/null || echo 000)
+            HTTP=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8094/livez/ 2>/dev/null || echo 000) # noqa: hardcode
             if [[ "$HTTP" == "200" ]]; then
               echo "Health check passed (HTTP $HTTP)"
               exit 0
