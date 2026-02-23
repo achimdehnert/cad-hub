@@ -1,0 +1,25 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cad-hub
+  description: NL2CAD — Natural language to CAD model generation platform
+  tags: [django, cad, ai, nlp, 3d-modeling]
+  annotations:
+    github.com/project-slug: achimdehnert/cad-hub
+    deployment/server: "88.198.191.108"
+    deployment/path: "/opt/cad-hub"
+    deployment/port: "8094"
+    deployment/health-url: "https://nl2cad.de/livez/"
+    deployment/image: "ghcr.io/achimdehnert/cad-hub:latest"
+    deployment/compose-service: "web"
+    deployment/db-container: "cad_hub_db"
+    deployment/db-name: "cad_hub"
+spec:
+  type: service
+  lifecycle: production
+  owner: achimdehnert
+  system: cad-generation
+  domain: engineering
+  providesApis: []
+  dependsOn:
+    - resource:postgresql
