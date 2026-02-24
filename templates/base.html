@@ -1,14 +1,17 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CAD Hub{% endblock %} — nl2cad.de</title>
+    <!-- Platform Design Tokens (ADR-049) -->
+    <link rel="stylesheet" href="{% static 'platform/css/pui-tokens.css' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="min-h-screen bg-gray-50 text-gray-900" data-app="cad-hub">
     {% block navbar %}
     <nav class="bg-white shadow-sm border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
