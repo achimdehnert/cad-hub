@@ -28,3 +28,14 @@ python_files = ["tests.py", "test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "--tb=short -q"
+markers = [
+    "e2e: Playwright end-to-end tests (require --playwright flag)",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "playwright>=1.44",
+    "pytest-playwright>=0.5",
+]
