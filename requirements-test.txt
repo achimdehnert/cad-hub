@@ -10,3 +10,4 @@ respx>=0.21
 schemathesis>=3.30
 jsonschema>=4.21
 beautifulsoup4>=4.12
+pyyaml>=6.0

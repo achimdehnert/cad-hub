@@ -7,16 +7,16 @@
 {% avb_page_header "Bauprojekte" subtitle="Ihre Bauvorhaben im Überblick" icon="bi-building" cta_label="Neues Projekt" cta_url=create_url %}
 
 <!-- Project Grid -->
-<div class="row g-4">
+<div class="row g-4" data-testid="project-list-grid">
     {% for project in projects %}
     <div class="col-md-6 col-xl-4">
-        <div class="card h-100 card-hover">
+        <div class="card h-100 card-hover" data-testid="project-card">
             <div class="card-body">
                 <!-- Project Header -->
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
                         <h5 class="card-title mb-1">
-                            <a href="{% url 'avb:project_detail' pk=project.pk %}" class="text-decoration-none">
+                            <a href="{% url 'avb:project_detail' pk=project.pk %}" class="text-decoration-none" data-testid="project-card-name">
                                 {{ project.ifc_project.name }}
                             </a>
                         </h5>
@@ -67,10 +67,10 @@
             
             <!-- Footer Actions -->
             <div class="card-footer bg-transparent d-flex justify-content-between">
-                <a href="{% url 'avb:project_detail' pk=project.pk %}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'avb:project_detail' pk=project.pk %}" class="btn btn-sm btn-outline-secondary" data-testid="project-card-detail-btn">
                     <i class="bi bi-eye"></i> Details
                 </a>
-                <a href="{% url 'avb:tender_create' %}?project={{ project.pk }}" class="btn btn-sm btn-primary">
+                <a href="{% url 'avb:tender_create' %}?project={{ project.pk }}" class="btn btn-sm btn-primary" data-testid="project-card-create-lv-btn">
                     <i class="bi bi-plus"></i> LV erstellen
                 </a>
             </div>

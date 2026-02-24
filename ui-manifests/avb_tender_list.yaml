@@ -1,0 +1,56 @@
+manifest_version: "1.0"
+page:
+  route: /avb/tenders/
+  title: "Ausschreibungen"
+  django_view: "apps.avb.views.TenderListView"
+  django_url_name: "avb:tender_list"
+  template: "cad_hub/cad_hub/avb/tender_list.html"
+
+components:
+  - id: page-header
+    type: section
+    description: "Page Header via avb_page_header Component"
+    required_elements:
+      - element_id: page-header
+        type: section
+        description: "Header-Wrapper mit Titel und CTA"
+      - element_id: page-header-cta
+        type: button
+        htmx: false
+        description: "CTA-Button: Neue Ausschreibung"
+
+  - id: stats-row
+    type: data-display
+    description: "4 Stat-Karten via avb_stat_card Component"
+    required_elements:
+      - element_id: stat-card-gesamt
+        type: card
+        description: "Stat-Karte: Gesamt Ausschreibungen"
+      - element_id: stat-card-offen
+        type: card
+        description: "Stat-Karte: Offene Ausschreibungen"
+      - element_id: stat-card-vergeben
+        type: card
+        description: "Stat-Karte: Vergebene Ausschreibungen"
+      - element_id: stat-card-volumen
+        type: card
+        description: "Stat-Karte: Gesamtvolumen"
+
+  - id: tender-list-table
+    type: table
+    description: "Tabelle aller Ausschreibungen mit Filter"
+    required_elements:
+      - element_id: tender-list-table-card
+        type: section
+        description: "Tabellen-Wrapper Card"
+      - element_id: tender-list-table
+        type: table
+        description: "HTML-Tabelle"
+      - element_id: tender-row
+        type: row
+        conditional: "Nur wenn Ausschreibungen vorhanden"
+        description: "Tabellenzeile für eine Ausschreibung"
+      - element_id: tender-number
+        type: text
+        conditional: "Nur wenn Ausschreibungen vorhanden"
+        description: "Ausschreibungsnummer"

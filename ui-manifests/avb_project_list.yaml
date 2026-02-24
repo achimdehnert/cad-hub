@@ -1,0 +1,53 @@
+manifest_version: "1.0"
+page:
+  route: /avb/projects/
+  title: "Bauprojekte"
+  django_view: "apps.avb.views.ConstructionProjectListView"
+  django_url_name: "avb:project_list"
+  template: "cad_hub/cad_hub/avb/project_list.html"
+
+components:
+  - id: page-header
+    type: section
+    description: "Page Header via avb_page_header Component"
+    required_elements:
+      - element_id: page-header
+        type: section
+        description: "Header-Wrapper mit Titel und CTA"
+      - element_id: page-header-cta
+        type: button
+        htmx: false
+        description: "CTA-Button: Neues Projekt"
+
+  - id: project-list-grid
+    type: list
+    description: "Raster mit Projekt-Cards"
+    conditional: "Nur wenn Projekte vorhanden"
+    required_elements:
+      - element_id: project-list-grid
+        type: section
+        description: "Grid-Wrapper für Projekt-Cards"
+      - element_id: project-card
+        type: card
+        description: "Einzelne Projekt-Card"
+      - element_id: project-card-name
+        type: link
+        htmx: false
+        description: "Projektname als Link zur Detailseite"
+      - element_id: project-card-detail-btn
+        type: link
+        htmx: false
+        description: "Details-Button"
+      - element_id: project-card-create-lv-btn
+        type: link
+        htmx: false
+        description: "LV erstellen Button"
+
+  - id: empty-state
+    type: empty-state
+    description: "Leerer Zustand via avb_empty_state Component"
+    conditional: "Nur wenn keine Projekte vorhanden"
+    required_elements:
+      - element_id: empty-state
+        type: section
+        description: "Empty State Wrapper"

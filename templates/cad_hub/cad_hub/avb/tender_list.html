@@ -15,7 +15,7 @@
 </div>
 
 <!-- Filter & Table -->
-<div class="card">
+<div class="card" data-testid="tender-list-table-card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><i class="bi bi-funnel"></i> Filter</span>
         <form method="get" class="d-flex gap-2 align-items-center">
@@ -33,7 +33,7 @@
         </form>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0" data-testid="tender-list-table">
             <thead class="table-light">
                 <tr>
                     <th>Nr.</th>
@@ -49,8 +49,8 @@
             </thead>
             <tbody>
                 {% for tender in tenders %}
-                <tr>
-                    <td>
+                <tr data-testid="tender-row">
+                    <td data-testid="tender-number">
                         <a href="{% url 'avb:tender_detail' pk=tender.pk %}">
                             <code>{{ tender.tender_number }}</code>
                         </a>
