@@ -1,81 +1,17 @@
 {% extends "cad_hub/avb/base_avb.html" %}
+{% load avb_components %}
 
 {% block avb_title %}Ausschreibungen{% endblock %}
 
 {% block avb_content %}
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1"><i class="bi bi-file-earmark-text text-primary"></i> Ausschreibungen</h4>
-        <p class="text-muted mb-0">Leistungsverzeichnisse verwalten und Angebote einholen</p>
-    </div>
-    <a href="{% url 'avb:tender_create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Neue Ausschreibung
-    </a>
-</div>
+{% avb_page_header "Ausschreibungen" subtitle="Leistungsverzeichnisse verwalten und Angebote einholen" icon="bi-file-earmark-text" cta_label="Neue Ausschreibung" cta_url=create_url %}
 
 <!-- Stats Row -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded bg-primary bg-opacity-10 p-2">
-                        <i class="bi bi-file-text text-primary fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="stat-value">{{ tenders.count|default:0 }}</div>
-                        <div class="stat-label">Gesamt</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card stat-card warning">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded bg-warning bg-opacity-10 p-2">
-                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="stat-value">{{ tenders|length }}</div>
-                        <div class="stat-label">Offen</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card stat-card success">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded bg-success bg-opacity-10 p-2">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="stat-value">0</div>
-                        <div class="stat-label">Vergeben</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded bg-primary bg-opacity-10 p-2">
-                        <i class="bi bi-currency-euro text-primary fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="stat-value">0 €</div>
-                        <div class="stat-label">Volumen</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="col-6 col-md-3">{% avb_stat_card tenders.count "Gesamt" icon="bi-file-text" variant="primary" %}</div>
+    <div class="col-6 col-md-3">{% avb_stat_card tenders_open "Offen" icon="bi-hourglass-split" variant="warning" %}</div>
+    <div class="col-6 col-md-3">{% avb_stat_card tenders_awarded "Vergeben" icon="bi-check-circle" variant="success" %}</div>
+    <div class="col-6 col-md-3">{% avb_stat_card total_volume "Volumen" icon="bi-currency-euro" variant="primary" %}</div>
 </div>
 
 <!-- Filter & Table -->

@@ -1,0 +1,16 @@
+{# AVB Empty State Component (ADR-041) #}
+{# Usage: {% avb_empty_state title="Keine Projekte" icon="bi-building" cta_label="Erstellen" cta_url=url %} #}
+<div class="col-12" data-testid="empty-state">
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi {{ icon }} text-muted" style="font-size: 4rem;"></i>
+            <h5 class="mt-3">{{ title }}</h5>
+            {% if message %}<p class="text-muted">{{ message }}</p>{% endif %}
+            {% if cta_label and cta_url %}
+            <a href="{{ cta_url }}" class="btn btn-primary mt-2" data-testid="empty-state-cta">
+                <i class="bi {{ cta_icon }}"></i> {{ cta_label }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -41,6 +41,11 @@ class ConstructionProjectListView(LoginRequiredMixin, ListView):
     context_object_name = "projects"
     paginate_by = 20
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["create_url"] = reverse("avb:project_create")
+        return ctx
+
 
 class ConstructionProjectDetailView(LoginRequiredMixin, DetailView):
     """Bauprojekt-Detail mit Übersicht"""
@@ -138,6 +143,17 @@ class TenderListView(LoginRequiredMixin, ListView):
             qs = qs.filter(status=status)
 
         return qs.select_related("project", "project__ifc_project")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        qs = self.get_queryset()
+        ctx["create_url"] = reverse("avb:tender_create")
+        ctx["tenders_open"] = qs.exclude(status="awarded").exclude(status="cancelled").count()
+        ctx["tenders_awarded"] = qs.filter(status="awarded").count()
+        from django.db.models import Sum
+        total = qs.aggregate(v=Sum("estimated_value"))["v"] or 0
+        ctx["total_volume"] = f"{total:,.0f} €".replace(",", ".")
+        return ctx
 
 
 class TenderDetailView(LoginRequiredMixin, DetailView):

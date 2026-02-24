@@ -1,0 +1,15 @@
+{# AVB Stat Card Component (ADR-041) #}
+{# Usage: {% avb_stat_card value=count label="Gesamt" icon="bi-file-text" variant="primary" %} #}
+<div class="card stat-card {% if variant != 'primary' %}{{ variant }}{% endif %}" data-testid="stat-card-{{ label|slugify }}">
+    <div class="card-body py-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded bg-{{ variant }} bg-opacity-10 p-2">
+                <i class="bi {{ icon }} text-{{ variant }} fs-4"></i>
+            </div>
+            <div>
+                <div class="stat-value" data-testid="stat-value">{{ value }}</div>
+                <div class="stat-label">{{ label }}</div>
+            </div>
+        </div>
+    </div>
+</div>

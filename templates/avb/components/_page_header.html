@@ -1,0 +1,16 @@
+{# AVB Page Header Component (ADR-041) #}
+{# Usage: {% avb_page_header title="Bauprojekte" icon="bi-building" cta_label="Neu" cta_url=create_url %} #}
+<div class="d-flex justify-content-between align-items-center mb-4" data-testid="page-header">
+    <div>
+        <h4 class="mb-1">
+            {% if icon %}<i class="bi {{ icon }} text-primary"></i> {% endif %}
+            {{ title }}
+        </h4>
+        {% if subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if cta_label and cta_url %}
+    <a href="{{ cta_url }}" class="btn btn-primary" data-testid="page-header-cta">
+        <i class="bi {{ cta_icon }}"></i> {{ cta_label }}
+    </a>
+    {% endif %}
+</div>
