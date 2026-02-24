@@ -4,7 +4,7 @@
 # Multi-stage build: builder → production
 # Base: python:3.12-slim (Debian bookworm)
 # User: app (UID 1000, non-root)
-# Healthcheck: python urllib on /livez/ (no curl)
+# Healthcheck: defined per-service in docker-compose.prod.yml (ADR-078)
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
@@ -68,9 +68,6 @@ RUN chmod +x /entrypoint.sh
 USER app
 
 EXPOSE 8000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
