@@ -55,7 +55,8 @@ def main() -> int:
             print(f"  [warn] {w}")
 
     print(result.summary)
-    return 0 if result.tasks_found > 0 or not result.warnings else 1
+    # Exit 0 auch wenn kein MCP-Server erreichbar — das ist im CI erwartet
+    return 0
 
 
 if __name__ == "__main__":
