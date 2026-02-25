@@ -23,18 +23,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          pip install httpx
-          pip install -r requirements.txt
+        run: pip install httpx
 
       - name: Run Issue Triage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           ORCHESTRATOR_MCP_URL: ${{ vars.ORCHESTRATOR_MCP_URL || 'http://127.0.0.1:8101' }}
-          DJANGO_SETTINGS_MODULE: config.settings.base
-          SECRET_KEY: "ci-only-not-secret"
-          DATABASE_URL: "sqlite:///ci.db"
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           python .github/scripts/triage_issue.py \

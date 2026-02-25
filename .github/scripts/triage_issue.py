@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Issue Triage Script — ADR-085.
+Issue Triage Script — ADR-085 (cad-hub).
 
-Wird von GitHub Actions aufgerufen wenn ein Issue geöffnet/editiert wird.
-Ruft IssueTriageService auf und setzt Labels via GitHub API.
+Standalone — kein Django nötig.
+Importiert IssueTriageService direkt aus .github/scripts/issue_triage_service.py.
 
 Usage:
     python .github/scripts/triage_issue.py \
@@ -13,18 +13,12 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import sys
 
-# Projektroot zum PYTHONPATH hinzufügen
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+sys.path.insert(0, os.path.dirname(__file__))
 
-import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
-django.setup()
-
-from apps.core.services.issue_triage_service import IssueTriageService
+from issue_triage_service import IssueTriageService
 
 
 def main() -> int:
@@ -32,20 +26,9 @@ def main() -> int:
     parser.add_argument("--issue-number", type=int, required=True)
     parser.add_argument("--title", type=str, required=True)
     parser.add_argument("--body", type=str, default="")
-    parser.add_argument("--body-file", type=str, default=None)
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--tier", type=str, default="budget")
     args = parser.parse_args()
-
-    body = args.body
-    if args.body_file:
-        try:
-            with open(args.body_file) as f:
-                raw = f.read().strip()
-            # GitHub Actions übergibt body als JSON-String via toJSON()
-            body = json.loads(raw) if raw.startswith('"') else raw
-        except Exception as e:
-            print(f"[warn] body-file lesen fehlgeschlagen: {e}")
 
     service = IssueTriageService(
         github_token=os.environ.get("GITHUB_TOKEN", ""),
