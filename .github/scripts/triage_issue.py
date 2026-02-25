@@ -29,6 +29,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--tier", type=str, default="budget")
     args = parser.parse_args()
+    body = args.body
 
     service = IssueTriageService(
         github_token=os.environ.get("GITHUB_TOKEN", ""),
