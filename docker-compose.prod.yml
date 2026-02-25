@@ -7,7 +7,7 @@
 
 services:
   migrate:
-    image: ghcr.io/achimdehnert/cad-hub/cad-hub-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
     entrypoint: ["python", "manage.py", "migrate", "--noinput", "--skip-checks"]
     env_file: .env.prod
     depends_on:
@@ -29,11 +29,12 @@ services:
         max-file: "3"
 
   web:
-    image: ghcr.io/achimdehnert/cad-hub/cad-hub-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
+    container_name: cad_hub_web
     command: ["web"]
     env_file: .env.prod
     ports:
-      - "0.0.0.0:8094:8000"
+      - "127.0.0.1:8094:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -60,7 +61,8 @@ services:
         max-file: "5"
 
   worker:
-    image: ghcr.io/achimdehnert/cad-hub/cad-hub-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
+    container_name: cad_hub_worker
     command: ["worker"]
     env_file: .env.prod
     depends_on:
@@ -85,6 +87,7 @@ services:
 
   db:
     image: postgres:16-alpine
+    container_name: cad_hub_db
     shm_size: 128m
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -92,7 +95,7 @@ services:
     networks:
       - cad_hub_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U cad_hub -d cad_hub"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -109,6 +112,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: cad_hub_redis
     command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
     volumes:
       - redis_data:/data
