@@ -1,0 +1,44 @@
+name: 🚀 Feature Request
+description: Propose a new feature for the 137-hub
+title: "[FEATURE] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🎯 Goal
+        Provide a clear and concise description of the feature and its value.
+  - type: textarea
+    id: user-story
+    attributes:
+      label: 👤 User Story
+      description: AS A [role], I WANT [feature], SO THAT [benefit].
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: List the conditions that must be met for this feature to be considered done.
+      placeholder: |
+        - [ ] Criterion 1...
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: 🧱 Focus Layer
+      options:
+        - Database / Models
+        - Service / Business Logic
+        - UI / HTMX Partial
+        - API / External Sync
+    validations:
+      required: true
+  - type: textarea
+    id: tech-specs
+    attributes:
+      label: 📖 Technical References
+      description: Link to relevant files in `docs/konzept/` or `docs/adr/`.
+    validations:
+      required: true

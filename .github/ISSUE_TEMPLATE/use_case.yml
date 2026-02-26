@@ -1,0 +1,118 @@
+name: "🎯 Use Case"
+description: "Einen neuen Use Case definieren und tracken"
+title: "[UC] "
+labels: ["use-case", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Use Case
+        Formale Use-Case-Beschreibung nach RUP/UML-Konvention. Jeder Use Case wird auch in `docs/use-cases/` dokumentiert.
+
+  - type: input
+    id: uc_id
+    attributes:
+      label: "Use Case ID"
+      description: "Format: UC-XXX (nächste freie Nummer aus docs/use-cases/)"
+      placeholder: "UC-007"
+    validations:
+      required: true
+
+  - type: input
+    id: uc_name
+    attributes:
+      label: "Use Case Name"
+      placeholder: "Buch zum Leseliste hinzufügen"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: uc_level
+    attributes:
+      label: "Use Case Level"
+      options:
+        - "summary — Übergeordnetes Ziel (Epics)"
+        - "user-goal — Primäres Nutzerziel (Standard)"
+        - "subfunction — Teil-Funktion / Helper UC"
+    validations:
+      required: true
+
+  - type: input
+    id: primary_actor
+    attributes:
+      label: "Primärer Akteur"
+      placeholder: "Registrierter Leser / Admin / System / Anon-Besucher"
+    validations:
+      required: true
+
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: "Stakeholder & Interessen"
+      placeholder: |
+        - Leser: möchte Bücher merken ohne sie sofort zu kaufen
+        - Redaktion: möchte Engagement-Metriken sehen
+    validations:
+      required: false
+
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: "Vorbedingungen"
+      placeholder: |
+        - Nutzer ist eingeloggt
+        - Buch existiert in der Datenbank
+    validations:
+      required: true
+
+  - type: textarea
+    id: main_flow
+    attributes:
+      label: "Hauptszenario (Happy Path)"
+      description: "Nummerierte Schritt-für-Schritt-Beschreibung"
+      placeholder: |
+        1. Nutzer öffnet Buchdetailseite
+        2. Nutzer klickt „Zur Leseliste"
+        3. System prüft Auth-Status
+        4. System fügt Buch zur Leseliste hinzu
+        5. System zeigt Bestätigungsmeldung
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative_flows
+    attributes:
+      label: "Alternative Szenarien / Ausnahmen"
+      placeholder: |
+        3a. Nutzer nicht eingeloggt → Redirect zu /login/ mit return_url
+        4a. Buch bereits auf Leseliste → System zeigt „Bereits vorhanden"
+    validations:
+      required: false
+
+  - type: textarea
+    id: postconditions
+    attributes:
+      label: "Nachbedingungen (Erfolgsfall)"
+      placeholder: "Buch ist in ReadingList des Nutzers gespeichert. UI zeigt aktiven Status."
+    validations:
+      required: true
+
+  - type: textarea
+    id: business_rules
+    attributes:
+      label: "Business Rules / Constraints"
+      placeholder: |
+        - Max. 100 Bücher pro Leseliste
+        - Nur publizierte Bücher können hinzugefügt werden
+    validations:
+      required: false
+
+  - type: textarea
+    id: related
+    attributes:
+      label: "Verknüpfte Issues / ADRs / UCs"
+      placeholder: "ADR-005, UC-003, #12"
+    validations:
+      required: false

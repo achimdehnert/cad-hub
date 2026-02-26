@@ -1,0 +1,49 @@
+name: 🐛 Bug Report
+description: Report a bug to help improve the system
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Description
+      description: What is the current behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 🔄 Reproduction Steps
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Go to...
+        2. Click on...
+        3. See error...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: ⚡ Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 💻 Environment
+      description: Browser, OS, Python/Django version if relevant.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🔥 Severity
+      options:
+        - "critical — System down / data loss"
+        - "high — Major feature broken"
+        - "medium — Feature partially broken"
+        - "low — Minor issue / cosmetic"
+    validations:
+      required: true
