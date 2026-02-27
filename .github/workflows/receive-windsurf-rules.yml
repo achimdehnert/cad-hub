@@ -3,6 +3,10 @@ name: Receive Windsurf Rules from Platform
 on:
   repository_dispatch:
     types: [windsurf-rules-updated]
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/receive-windsurf-rules.yml'
   workflow_dispatch:
 
 jobs:
