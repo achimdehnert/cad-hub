@@ -11,6 +11,7 @@ on:
       - '**/apps.py'
       - 'requirements**.txt'
       - 'pyproject.toml'
+      - '.github/workflows/update-project-facts.yml'
   workflow_dispatch:
 
 jobs:
