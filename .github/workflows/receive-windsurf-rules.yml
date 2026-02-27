@@ -1,0 +1,42 @@
+name: Receive Windsurf Rules from Platform
+
+on:
+  repository_dispatch:
+    types: [windsurf-rules-updated]
+  workflow_dispatch:
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout platform windsurf-rules
+        uses: actions/checkout@v4
+        with:
+          repository: achimdehnert/platform
+          path: _platform
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy windsurf rules
+        run: |
+          mkdir -p .windsurf/rules
+          cp _platform/windsurf-rules/platform-principles.md .windsurf/rules/
+          cp _platform/windsurf-rules/django-models-views.md .windsurf/rules/
+          cp _platform/windsurf-rules/htmx-templates.md .windsurf/rules/
+          cp _platform/windsurf-rules/testing.md .windsurf/rules/
+          cp _platform/windsurf-rules/docker-deployment.md .windsurf/rules/
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .windsurf/rules/
+          git diff --staged --quiet || git commit -m 'chore: sync windsurf-rules from platform [skip ci]'
+          git push
