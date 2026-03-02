@@ -12,6 +12,13 @@ redis>=5.0,<6.0
 ezdxf>=0.19
 ifcopenshell>=0.8.0
 
+# nl2cad-* Packages
+nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-core
+nl2cad-areas @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-areas
+nl2cad-brandschutz @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-brandschutz
+nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb
+nl2cad-nlp @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-nlp
+
 # HTTP
 httpx>=0.27,<1.0
 requests>=2.32,<3.0

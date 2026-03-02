@@ -49,11 +49,13 @@ class ExportWoFlVView(View):
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
 
         # WoFlV berechnen
-        from .services import WoFlVCalculator
+        from nl2cad.areas.woflv import WoFlVCalculator
 
-        rooms = list(
+        rooms_qs = list(
             Room.objects.filter(ifc_model=ifc_model).values("name", "number", "area", "height")
         )
+        # Feldname-Mapping: Django ORM 'area' → nl2cad 'area_m2'
+        rooms = [{**r, "area_m2": r["area"]} for r in rooms_qs]
 
         calculator = WoFlVCalculator()
         result = calculator.calculate_from_rooms(rooms)
@@ -75,15 +77,15 @@ class ExportWoFlVView(View):
         ws["A4"] = "Zusammenfassung"
         ws["A4"].font = Font(bold=True, size=12)
 
+        anrechnungsquote = (
+            result.total_woflv_m2 / result.total_raw_m2 * 100
+            if result.total_raw_m2 > 0 else 0.0
+        )
         summary_data = [
-            ("Grundfläche gesamt:", float(result.grundflaeche_gesamt), "m²"),
-            ("Wohnfläche 100%:", float(result.wohnflaeche_100), "m²"),
-            ("Wohnfläche 50%:", float(result.wohnflaeche_50), "m²"),
-            ("Wohnfläche 25%:", float(result.wohnflaeche_25), "m²"),
-            ("Nicht angerechnet:", float(result.nicht_angerechnet), "m²"),
+            ("Grundfläche gesamt:", result.total_raw_m2, "m²"),
             ("", "", ""),
-            ("WOHNFLÄCHE GESAMT:", float(result.wohnflaeche_gesamt), "m²"),
-            ("Anrechnungsquote:", result.anrechnungsquote * 100, "%"),
+            ("WOHNFLÄCHE GESAMT:", result.total_woflv_m2, "m²"),
+            ("Anrechnungsquote:", anrechnungsquote, "%"),
         ]
 
         for idx, (label, value, unit) in enumerate(summary_data, 5):
@@ -93,25 +95,25 @@ class ExportWoFlVView(View):
             ws.cell(row=idx, column=3, value=unit)
 
         # Raumdetails
-        ws["A15"] = "Raumdetails"
-        ws["A15"].font = Font(bold=True, size=12)
+        ws["A12"] = "Raumdetails"
+        ws["A12"].font = Font(bold=True, size=12)
 
-        headers = ["Nr.", "Raumname", "Grundfläche", "Höhe", "Typ", "Faktor", "Wohnfläche"]
+        headers = ["Raumname", "Grundfläche", "Höhe", "Faktor", "Wohnfläche"]
         for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=16, column=col, value=header)
+            cell = ws.cell(row=13, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
 
-        for row_idx, room in enumerate(result.rooms, 17):
-            ws.cell(row=row_idx, column=1, value=room.number)
-            ws.cell(row=row_idx, column=2, value=room.name)
-            ws.cell(row=row_idx, column=3, value=float(room.grundflaeche)).number_format = (
+        for row_idx, room in enumerate(result.rooms, 14):
+            ws.cell(row=row_idx, column=1, value=room.name)
+            ws.cell(row=row_idx, column=2, value=round(room.raw_area_m2, 2)).number_format = (
                 "#,##0.00"
             )
-            ws.cell(row=row_idx, column=4, value=float(room.hoehe)).number_format = "0.00"
-            ws.cell(row=row_idx, column=5, value=room.raumtyp)
-            ws.cell(row=row_idx, column=6, value=float(room.gesamt_faktor)).number_format = "0%"
-            ws.cell(row=row_idx, column=7, value=float(room.wohnflaeche)).number_format = "#,##0.00"
+            ws.cell(row=row_idx, column=3, value=round(room.height_m, 2)).number_format = "0.00"
+            ws.cell(row=row_idx, column=4, value=room.factor).number_format = "0%"
+            ws.cell(
+                row=row_idx, column=5, value=round(room.woflv_area_m2, 2)
+            ).number_format = "#,##0.00"
 
         # Spaltenbreiten
         ws.column_dimensions["A"].width = 20
@@ -134,38 +136,49 @@ class ExportGAEBView(View):
     """GAEB Leistungsverzeichnis exportieren"""
 
     def get(self, request, model_id):
+        from decimal import Decimal
+
+        from nl2cad.gaeb.generator import GAEBGenerator
 
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
+        from nl2cad.gaeb.models import Leistungsverzeichnis, LosGruppe, Position
+
         format_type = request.GET.get("format", "excel")  # excel oder xml
 
-        from .services import (
-            GAEBGenerator,
-            Leistungsverzeichnis,
-            LosGruppe,
-            MassenermittlungHelper,
-        )
-
-        # Räume laden
-        rooms = list(
+        # Räume laden — Feldname-Mapping: 'area' → 'area_m2'
+        rooms_qs = list(
             Room.objects.filter(ifc_model=ifc_model).values("name", "number", "area", "perimeter")
         )
 
-        # LV erstellen mit Massenermittlung
+        # LV erstellen
         lv = Leistungsverzeichnis(
             projekt_name=ifc_model.project.name,
             projekt_nummer=str(ifc_model.project.pk)[:8],
         )
 
         # Los 1: Bodenbeläge
-        boden_positionen = MassenermittlungHelper.from_rooms(
-            rooms, gewerk="Bodenbelag", oz_prefix="01"
-        )
+        boden_positionen = [
+            Position(
+                oz=f"01.{i + 1:03d}",
+                kurztext=f"Bodenbelag {r['name']}",
+                menge=Decimal(str(round(r["area"] or 0, 2))),
+                einheit="m²",
+            )
+            for i, r in enumerate(rooms_qs)
+        ]
         lv.lose.append(LosGruppe(oz="01", bezeichnung="Bodenbeläge", positionen=boden_positionen))
 
         # Los 2: Sockelleisten
-        sockel_positionen = MassenermittlungHelper.from_room_perimeters(
-            rooms, gewerk="Sockelleisten", oz_prefix="02"
-        )
+        sockel_positionen = [
+            Position(
+                oz=f"02.{i + 1:03d}",
+                kurztext=f"Sockelleiste {r['name']}",
+                menge=Decimal(str(round(r["perimeter"] or 0, 2))),
+                einheit="m",
+            )
+            for i, r in enumerate(rooms_qs)
+            if r.get("perimeter")
+        ]
         if sockel_positionen:
             lv.lose.append(
                 LosGruppe(oz="02", bezeichnung="Sockelleisten", positionen=sockel_positionen)
@@ -206,19 +219,14 @@ class ExportX83View(View):
 
         format_type = request.GET.get("format", "xml")
         include_prices = request.GET.get("prices", "1") == "1"
-        gewerke_param = request.GET.get("gewerke", "")
 
-        selected_gewerke = None
-        if gewerke_param:
-            selected_gewerke = [g.strip() for g in gewerke_param.split(",")]
-
-        from .services import get_ifc_x83_converter
+        from nl2cad.gaeb.converter import IFCX83Converter
 
         # IFC-Daten aus Datenbank laden
         ifc_data = self._extract_ifc_data(ifc_model)
 
         # Konvertieren
-        converter = get_ifc_x83_converter()
+        converter = IFCX83Converter()
 
         if format_type == "excel":
             output = converter.convert_to_excel(
@@ -226,7 +234,6 @@ class ExportX83View(View):
                 projekt_name=ifc_model.project.name,
                 projekt_nummer=str(ifc_model.project.pk)[:8],
                 include_prices=include_prices,
-                selected_gewerke=selected_gewerke,
             )
             content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             filename = f"LV_X83_{ifc_model.project.name}_v{ifc_model.version}.xlsx"
@@ -236,7 +243,6 @@ class ExportX83View(View):
                 projekt_name=ifc_model.project.name,
                 projekt_nummer=str(ifc_model.project.pk)[:8],
                 include_prices=include_prices,
-                selected_gewerke=selected_gewerke,
             )
             content_type = "application/xml"
             filename = f"LV_{ifc_model.project.name}_v{ifc_model.version}.x83"
@@ -247,11 +253,13 @@ class ExportX83View(View):
 
     def _extract_ifc_data(self, ifc_model) -> dict:
         """Extrahiert IFC-Daten aus der Datenbank."""
-        rooms = list(
+        rooms_qs = list(
             Room.objects.filter(ifc_model=ifc_model).values(
                 "name", "number", "area", "perimeter", "height", "volume"
             )
         )
+        # Feldname-Mapping: Django ORM 'area' → nl2cad 'area_m2'
+        rooms = [{**r, "area_m2": r["area"]} for r in rooms_qs]
 
         walls = list(
             Wall.objects.filter(ifc_model=ifc_model).values(
@@ -286,7 +294,7 @@ class ExportX83View(View):
         )
 
         return {
-            "rooms": rooms,
+            "rooms": rooms,  # enthält sowohl 'area' als auch 'area_m2'
             "walls": walls,
             "doors": doors,
             "windows": windows,
