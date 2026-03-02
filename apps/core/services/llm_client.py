@@ -1,13 +1,16 @@
 """
-LLM client for CAD Hub — centralized text generation.
+LLM client for CAD Hub — centralized text generation via aifw.
 
-Provides generate_text() with OpenAI fallback.
-Extracted from bfagent/apps/bfagent/services/llm_client.py.
+Provides generate_text() backed by aifw (DB-driven model routing).
+DO NOT use openai/anthropic directly — all LLM calls go through aifw.
 """
 import logging
-import os
+
+from aifw import LLMResult, sync_completion
 
 logger = logging.getLogger(__name__)
+
+ACTION_CAD_NLP = "cad_nlp"
 
 
 def generate_text(
@@ -16,43 +19,37 @@ def generate_text(
     model: str = "",
     max_tokens: int = 2000,
     temperature: float = 0.7,
+    action_code: str = ACTION_CAD_NLP,
 ) -> str | None:
-    """Generate text using OpenAI API.
+    """Generate text using aifw (DB-driven model routing).
 
     Args:
         prompt: User prompt.
         system_prompt: System instruction.
-        model: Model name (default from env or gpt-4o-mini).
+        model: Ignored — model is configured via AIActionType in admin.
         max_tokens: Maximum response tokens.
         temperature: Sampling temperature.
+        action_code: aifw action code (default: cad_nlp).
 
     Returns:
         Generated text or None on error.
     """
-    api_key = os.environ.get("OPENAI_API_KEY", "")
-    if not api_key:
-        logger.warning("OPENAI_API_KEY not set, LLM features disabled")
-        return None
-
-    if not model:
-        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
 
     try:
-        import openai
-
-        client = openai.OpenAI(api_key=api_key)
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
-        response = client.chat.completions.create(
-            model=model,
+        result: LLMResult = sync_completion(
+            action_code=action_code,
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
         )
-        return response.choices[0].message.content
+        if result.success:
+            return result.content
+        logger.warning("LLM call returned no success: %s", result.error)
+        return None
     except Exception:
         logger.exception("LLM generation failed")
         return None
