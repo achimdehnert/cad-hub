@@ -26,7 +26,18 @@ requests>=2.32,<3.0
 # Excel / Export
 openpyxl>=3.1,<4.0
 
-# AI (LLM fallback)
+# ============================================================================
+# iil-ecosystem packages (PRIMARY LLM/AI integration — ADR-089)
+# All LLM calls go through aifw. Do NOT use openai/anthropic/litellm directly.
+# See: .windsurf/rules/iil-packages.md
+# ============================================================================
+aifw>=0.5.0,<1
+iil-promptfw>=0.5.1,<1
+iil-authoringfw>=0.3.0,<1
+iil-nl2cad>=0.1.0,<1
+
+# openai kept as transitive dep for nl2cad-* packages (will be removed after nl2cad migration)
+# DO NOT use openai directly — use aifw instead.
 openai>=1.0,<2.0
 
 # Rendering
