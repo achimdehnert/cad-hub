@@ -3,10 +3,6 @@ name: Receive Windsurf Rules from Platform
 on:
   repository_dispatch:
     types: [windsurf-rules-updated]
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/receive-windsurf-rules.yml'
   workflow_dispatch:
 
 jobs:
@@ -36,6 +32,10 @@ jobs:
           cp _platform/windsurf-rules/htmx-templates.md .windsurf/rules/
           cp _platform/windsurf-rules/testing.md .windsurf/rules/
           cp _platform/windsurf-rules/docker-deployment.md .windsurf/rules/
+          cp _platform/windsurf-rules/aifw-integration.md .windsurf/rules/
+          cp _platform/windsurf-rules/iil-packages.md .windsurf/rules/
+          cp _platform/windsurf-rules/promptfw-integration.md .windsurf/rules/
+          cp _platform/windsurf-rules/authoringfw-integration.md .windsurf/rules/
 
       - name: Commit if changed
         run: |
