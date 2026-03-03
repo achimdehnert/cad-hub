@@ -1,11 +1,15 @@
 """
-RoomAnalysisHandler - Raum-Extraktion & DIN 277 Klassifikation.
+RoomAnalysisHandler — Raum-Extraktion & DIN 277 Klassifikation.
 
-Analysiert CAD-Daten zur Raumerkennung und klassifiziert
-nach DIN 277 Nutzungsarten.
+Nutzt nl2cad.core.models.ifc.IFCRoom als Domänenobjekt
+und nl2cad.areas.din277.DIN277Calculator für die Klassifikation.
 """
+from __future__ import annotations
+
 import logging
-from dataclasses import dataclass
+
+from nl2cad.areas.din277 import DIN277Calculator
+from nl2cad.core.models.ifc import IFCRoom
 
 from apps.core.handlers.base import (
     BaseCADHandler,
@@ -13,165 +17,97 @@ from apps.core.handlers.base import (
     HandlerStatus,
 )
 
-from .area_classifier import AreaCategory, get_area_classifier
-
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class RoomInfo:
-    """Rauminformationen."""
-    name: str
-    area: float = 0.0  # in m²
-    perimeter: float = 0.0  # in m
-    layer: str = ""
-    din277_category: str = ""
-    din277_code: str = ""
-    floor: int = 0
-    has_door: bool = False
-    has_window: bool = False
-    furniture_count: int = 0
-    position: tuple = (0.0, 0.0)
+# Layer-Keywords für DXF-Raumerkennung
+_EXCLUDED_LAYER_KEYWORDS = [
+    "symbol", "schraffur", "hatch", "text", "beschriftung", "annotation",
+    "bemaßung", "dimension", "dim", "achse", "axis", "grid", "hilfslin",
+    "construction", "möbel", "furniture", "einrichtung", "elektro", "sanitär",
+    "heizung", "lüftung", "hvac", "legende", "rahmen", "frame", "border",
+    "logo", "titel", "viewport", "defpoints", "decken", "ceiling",
+    "deckenkonstruktion", "fußbodenaufbau", "wand", "wände", "wall",
+    "konstruktion", "tragwerk", "fundament", "dach", "roof", "fassade",
+    "treppe", "stair", "aufzug", "elevator",
+]
+
+_VALID_FLOOR_KEYWORDS = [
+    "raum", "räume", "room", "nutzfläche", "nutzflaeche", "nuf",
+    "bodenplatte", "grundriss", "wohnfläche", "büro", "buero", "office",
+    "flur", "corridor", "küche", "kueche", "kitchen", "bad", "wc",
+    "schlaf", "wohn", "lager", "storage", "keller", "basement", "garage",
+]
+
+
+def _is_excluded_layer(layer_name: str) -> bool:
+    layer_lower = layer_name.lower()
+    if layer_name.startswith("\\") or "{\\p" in layer_name or "\\f" in layer_name:
+        return True
+    return any(kw in layer_lower for kw in _EXCLUDED_LAYER_KEYWORDS)
+
+
+def _is_valid_floor_layer(layer_name: str) -> bool:
+    layer_lower = layer_name.lower()
+    return any(kw in layer_lower for kw in _VALID_FLOOR_KEYWORDS)
+
+
+def _get_unit_factor(loader, room_areas: list) -> float:
+    """Ermittelt Umrechnungsfaktor für Flächen zu m²."""
+    try:
+        analysis = loader.get_analysis()
+        units = getattr(analysis, "units", None)
+        if units:
+            units_lower = str(units).lower()
+            if "mm" in units_lower:
+                return 1 / 1_000_000
+            if "cm" in units_lower:
+                return 1 / 10_000
+            if "m" in units_lower:
+                return 1.0
+    except Exception:
+        pass
+    if not room_areas:
+        return 1.0
+    max_area = max(a.get("area", 0) for a in room_areas)
+    if max_area > 1_000_000:
+        return 1 / 1_000_000
+    if max_area > 10_000:
+        return 1 / 10_000
+    return 1.0
 
 
 class RoomAnalysisHandler(BaseCADHandler):
     """
     Handler für Raum-Analyse und DIN 277 Klassifikation.
 
-    Funktionen:
-    - Raumerkennung aus CAD-Daten (Text + Geometrie)
-    - Flächenberechnung geschlossener Polygone
-    - DIN 277 Klassifikation
-    - Tür/Fenster-Zuordnung
-    - Raumbuch-Generierung
+    Nutzt nl2cad.core.models.ifc.IFCRoom + nl2cad.areas.din277.DIN277Calculator.
 
     Input:
-        loader: CADLoaderService (von CADFileInputHandler)
-        ifc_result: Optional - IFC Parse Result
-        classify_din277: Optional - DIN 277 Klassifikation aktivieren
+        loader: CADLoaderService (von CADFileInputHandler) — DXF-Pfad
+        ifc_result: IFCModel — IFC-Pfad
+        classify_din277: bool (default True)
 
     Output:
-        rooms: Liste der erkannten Räume
-        total_area: Gesamtfläche in m²
-        din277_summary: DIN 277 Zusammenfassung
+        rooms: Liste der erkannten Räume (dicts)
+        total_area_m2: Gesamtfläche in m²
+        din277_result: DIN277Result.to_dict()
+        din277_summary: Rückwärtscompat. summary dict
         doors: Erkannte Türen
         windows: Erkannte Fenster
     """
 
     name = "RoomAnalysisHandler"
-    description = "Raum-Extraktion & DIN 277 Klassifikation"
-    required_inputs = []  # Either loader or ifc_result
+    description = "Raum-Extraktion & DIN 277 Klassifikation (via nl2cad)"
+    required_inputs = []
     optional_inputs = ["loader", "ifc_result", "classify_din277"]
 
-    # Layer die KEINE echten Raumflächen (Nutzflächen) enthalten
-    EXCLUDED_LAYER_KEYWORDS = [
-        # Symbole & Grafik
-        "symbol", "symbole",
-        "schraffur", "hatch",
-        "text", "beschriftung", "annotation",
-        "bemaßung", "dimension", "dim",
-        # Hilfslinien
-        "achse", "axis", "grid",
-        "hilfslin", "construction", "hilfslinie",
-        # Möbel & Einrichtung
-        "möbel", "furniture", "einrichtung",
-        # Haustechnik
-        "elektro", "electric",
-        "sanitär", "sanitary",
-        "heizung", "heating",
-        "lüftung", "hvac",
-        # Legende & Rahmen
-        "legende", "legend",
-        "rahmen", "frame", "border",
-        "logo", "titel", "title",
-        "north", "nord", "maßstab", "scale",
-        "viewport", "defpoints",
-        # Ergänzungen
-        "ergänzung", "ergaenzung", "supplement",
-        "notiz", "note", "comment",
-        # KONSTRUKTION - keine Nutzflächen!
-        "decken", "ceiling", "decken",
-        "deckenkonstruktion", "deckenbelag",
-        "fußbodenaufbau", "fussbodenaufbau", "bodenaufbau",
-        "wand", "wände", "wall", "außenwand", "innenwand",
-        "sandwichwand", "sandwich",
-        "konstruktion", "tragwerk", "statik",
-        "fundament", "foundation",
-        "dach", "roof",
-        "fassade", "facade",
-        "treppe", "stair",
-        "aufzug", "elevator", "lift",
-    ]
-
-    # Layer die GÜLTIGE Raumflächen enthalten (Whitelist)
-    VALID_FLOOR_KEYWORDS = [
-        "raum", "räume", "room",
-        "nutzfläche", "nutzflaeche", "nuf",
-        "bodenplatte", "grundriss",
-        "wohnfläche", "wohnflaeche",
-        "büro", "buero", "office",
-        "flur", "corridor",
-        "küche", "kueche", "kitchen",
-        "bad", "wc", "bathroom",
-        "schlaf", "bedroom",
-        "wohn", "living",
-        "lager", "storage",
-        "keller", "basement",
-        "garage",
-    ]
-
-    # DIN 277 Kategorien
-    DIN277_CATEGORIES = {
-        "NUF": "Nutzungsfläche",
-        "TF": "Technikfläche",
-        "VF": "Verkehrsfläche",
-        "NRF": "Netto-Raumfläche",
-        "KGF": "Konstruktions-Grundfläche",
-        "BGF": "Brutto-Grundfläche",
-    }
-
-    # Raum-Klassifikation basierend auf Namen
-    ROOM_CLASSIFICATION = {
-        # NUF 1 - Wohnen
-        "wohn": ("NUF 1", "Wohnen und Aufenthalt"),
-        "schlaf": ("NUF 1", "Wohnen und Aufenthalt"),
-        "kinder": ("NUF 1", "Wohnen und Aufenthalt"),
-        "gäste": ("NUF 1", "Wohnen und Aufenthalt"),
-
-        # NUF 2 - Büro
-        "büro": ("NUF 2", "Büroarbeit"),
-        "office": ("NUF 2", "Büroarbeit"),
-        "arbeits": ("NUF 2", "Büroarbeit"),
-
-        # NUF 3 - Produktion
-        "werkstatt": ("NUF 3", "Produktion"),
-        "lager": ("NUF 3", "Produktion"),
-
-        # NUF 4 - Sanitär
-        "bad": ("NUF 4", "Sanitär"),
-        "wc": ("NUF 4", "Sanitär"),
-        "dusche": ("NUF 4", "Sanitär"),
-        "toilette": ("NUF 4", "Sanitär"),
-
-        # NUF 5 - Küche
-        "küche": ("NUF 5", "Zubereitung"),
-        "kitchen": ("NUF 5", "Zubereitung"),
-
-        # VF - Verkehrsfläche
-        "flur": ("VF", "Verkehrsfläche"),
-        "diele": ("VF", "Verkehrsfläche"),
-        "treppe": ("VF", "Verkehrsfläche"),
-        "gang": ("VF", "Verkehrsfläche"),
-        "eingang": ("VF", "Verkehrsfläche"),
-
-        # TF - Technikfläche
-        "technik": ("TF", "Technikfläche"),
-        "heizung": ("TF", "Technikfläche"),
-        "server": ("TF", "Technikfläche"),
-    }
+    def __init__(self) -> None:
+        super().__init__()
+        self._din277 = DIN277Calculator()
 
     def execute(self, input_data: dict) -> CADHandlerResult:
-        """Analysiert Räume."""
+        """Analysiert Räume und berechnet DIN 277."""
         result = CADHandlerResult(
             success=True,
             handler_name=self.name,
@@ -186,36 +122,38 @@ class RoomAnalysisHandler(BaseCADHandler):
             result.add_error("Keine CAD-Daten (loader oder ifc_result)")
             return result
 
-        rooms = []
-        doors = []
-        windows = []
+        rooms: list[IFCRoom] = []
+        doors: list[dict] = []
+        windows: list[dict] = []
 
-        # Process based on data source
         if ifc_result:
-            rooms = self._analyze_ifc_rooms(ifc_result, result)
+            rooms = list(ifc_result.rooms)
         elif loader:
-            rooms = self._analyze_dxf_rooms(loader, result)
+            rooms = self._extract_dxf_rooms(loader, result)
             doors = self._get_doors(loader)
             windows = self._get_windows(loader)
 
-        # Remove duplicates (same layer + same area)
-        rooms = self._deduplicate_rooms(rooms, result)
+        rooms = self._deduplicate(rooms, result)
 
-        # DIN 277 Classification
-        if classify_din277:
-            rooms = self._classify_din277(rooms)
+        total_area_m2 = sum(r.area_m2 for r in rooms)
 
-        # Calculate totals
-        total_area = sum(r.area for r in rooms)
-
-        # DIN 277 Summary
-        din277_summary = self._create_din277_summary(rooms)
+        din277_result = None
+        din277_summary: dict = {}
+        if classify_din277 and rooms:
+            rooms_data = [
+                {"name": r.name, "area_m2": r.area_m2, "din277_code": r.din277_code}
+                for r in rooms
+            ]
+            din277_result = self._din277.calculate(rooms_data)
+            din277_summary = self._build_summary(din277_result)
 
         result.data.update({
             "rooms": [self._room_to_dict(r) for r in rooms],
             "room_count": len(rooms),
-            "total_area": total_area,
-            "total_area_formatted": f"{total_area:.2f} m²",
+            "total_area_m2": total_area_m2,
+            "total_area": total_area_m2,
+            "total_area_formatted": f"{total_area_m2:.2f} m²",
+            "din277_result": din277_result.to_dict() if din277_result else {},
             "din277_summary": din277_summary,
             "doors": doors,
             "door_count": len(doors),
@@ -224,318 +162,153 @@ class RoomAnalysisHandler(BaseCADHandler):
         })
 
         result.status = HandlerStatus.SUCCESS
-        logger.info(f"[{self.name}] {len(rooms)} Räume, {total_area:.1f} m²")
-
+        logger.info(
+            "[%s] %d Räume, %.1f m²",
+            self.name, len(rooms), total_area_m2,
+        )
         return result
 
-    def _analyze_ifc_rooms(self, ifc_result, result: CADHandlerResult) -> list[RoomInfo]:
-        """Extrahiert Räume aus IFC."""
-        rooms = []
-
-        for ifc_room in ifc_result.rooms:
-            room = RoomInfo(
-                name=ifc_room.name or "Unbekannt",
-                area=ifc_room.area or 0.0,
-                layer="IFC",
-                floor=getattr(ifc_room, 'floor', 0),
-            )
-            rooms.append(room)
-
-        return rooms
-
-    def _analyze_dxf_rooms(self, loader, result: CADHandlerResult) -> list[RoomInfo]:
-        """Extrahiert Räume aus DXF."""
-        rooms = []
+    def _extract_dxf_rooms(self, loader, result: CADHandlerResult) -> list[IFCRoom]:
+        """Extrahiert Räume aus DXF-Loader als IFCRoom-Liste."""
+        rooms: list[IFCRoom] = []
 
         # 1. Text-basierte Raumerkennung
         try:
-            text_rooms = loader.get_rooms()
-            for tr in text_rooms:
-                room = RoomInfo(
+            for tr in loader.get_rooms():
+                rooms.append(IFCRoom(
                     name=tr.get("name", "Unbekannt"),
-                    layer=tr.get("layer", ""),
-                    position=(tr.get("x", 0), tr.get("y", 0)),
-                )
-                rooms.append(room)
+                    floor_name=tr.get("layer", ""),
+                ))
         except Exception as e:
             result.add_warning(f"Text-Raumerkennung fehlgeschlagen: {e}")
 
         # 2. Geometrie-basierte Flächenberechnung
         try:
             room_areas = loader.get_room_areas()
-
-            if not room_areas:
-                result.add_warning("Keine geschlossenen Polylinien (LWPOLYLINE) gefunden")
-            else:
-                # Detect units for conversion
-                unit_factor = self._get_unit_factor(loader, room_areas)
-                logger.info(f"[{self.name}] Unit factor: {unit_factor}, {len(room_areas)} areas found")
-
-                # Match areas to rooms or create new
-                excluded_count = 0
+            if room_areas:
+                unit_factor = _get_unit_factor(loader, room_areas)
                 valid_count = 0
-                use_llm = input_data.get("use_llm", True)  # LLM-Fallback default AN
-                classifier = get_area_classifier(use_llm=use_llm)
+                excluded_count = 0
 
                 for area_info in room_areas:
                     layer = area_info.get("layer", "")
 
-                    # Klassifiziere Layer mit dem neuen Classifier
-                    category, confidence = classifier.classify(layer)
-
-                    # Nur GRUNDFLÄCHE zählt als Nutzfläche
-                    if category != AreaCategory.GRUNDFLAECHE:
+                    if _is_excluded_layer(layer):
+                        excluded_count += 1
+                        continue
+                    if not _is_valid_floor_layer(layer):
                         excluded_count += 1
                         continue
 
-                    area_raw = area_info.get("area", 0)
-                    perimeter_raw = area_info.get("perimeter", 0)
+                    area_m2 = area_info.get("area", 0) * unit_factor
+                    perimeter_m = area_info.get("perimeter", 0) * (unit_factor ** 0.5)
 
-                    # Apply unit conversion
-                    area_m2 = area_raw * unit_factor
-                    perimeter_m = perimeter_raw * (unit_factor ** 0.5)  # sqrt for linear
-
-                    # Skip unrealistic areas (< 1m² or > 10000m²)
-                    if area_m2 < 1.0 or area_m2 > 10000:
+                    if area_m2 < 1.0 or area_m2 > 10_000:
                         continue
 
-                    # Try to find matching room
                     matched = False
                     for room in rooms:
-                        if room.layer == layer and room.area == 0:
-                            room.area = area_m2
-                            room.perimeter = perimeter_m
+                        if room.floor_name == layer and room.area_m2 == 0:
+                            room.area_m2 = area_m2
+                            room.perimeter_m = perimeter_m
                             matched = True
                             break
 
-                    # Create new room if no match
                     if not matched:
-                        room = RoomInfo(
+                        rooms.append(IFCRoom(
                             name=f"Fläche_{layer}" if layer else "Unbenannt",
-                            area=area_m2,
-                            perimeter=perimeter_m,
-                            layer=layer,
-                        )
-                        rooms.append(room)
+                            area_m2=area_m2,
+                            perimeter_m=perimeter_m,
+                            floor_name=layer,
+                        ))
                         valid_count += 1
 
                 if excluded_count > 0:
-                    result.add_warning(f"{excluded_count} Layer übersprungen (Konstruktion/Symbole)")
-                logger.info(f"[{self.name}] {valid_count} gültige Nutzflächen gefunden")
+                    result.add_warning(f"{excluded_count} Layer übersprungen")
+                logger.info("[%s] %d gültige Nutzflächen", self.name, valid_count)
 
         except Exception as e:
             result.add_warning(f"Flächen-Berechnung fehlgeschlagen: {e}")
 
-        # 3. Fallback: Estimate from bounding box if no areas found
-        if not any(r.area > 0 for r in rooms):
+        # 3. Fallback: Bounding Box
+        if not any(r.area_m2 > 0 for r in rooms):
             try:
                 stats = loader.get_statistics()
                 bbox = stats.get("bounding_box", {})
-                if bbox:
-                    width = bbox.get("width", 0)
-                    height = bbox.get("height", 0)
-                    if width > 0 and height > 0:
-                        # Estimate ~60% of bounding box as usable area
-                        estimated_area = width * height * 0.6
-                        # Apply unit conversion
-                        if estimated_area > 1_000_000:
-                            estimated_area /= 1_000_000
-                        elif estimated_area > 10_000:
-                            estimated_area /= 10_000
-
-                        if estimated_area > 1:
-                            result.add_warning(f"Keine Polylinien - Schätzung aus Bounding Box: ~{estimated_area:.0f} m²")
-                            rooms.append(RoomInfo(
-                                name="Geschätzte Gesamtfläche",
-                                area=estimated_area,
-                                layer="ESTIMATE",
-                            ))
+                w, h = bbox.get("width", 0), bbox.get("height", 0)
+                if w > 0 and h > 0:
+                    estimated = w * h * 0.6
+                    if estimated > 1_000_000:
+                        estimated /= 1_000_000
+                    elif estimated > 10_000:
+                        estimated /= 10_000
+                    if estimated > 1:
+                        result.add_warning(
+                            f"Keine Polylinien — Schätzung aus Bounding Box: ~{estimated:.0f} m²"
+                        )
+                        rooms.append(IFCRoom(
+                            name="Geschätzte Gesamtfläche",
+                            area_m2=estimated,
+                            floor_name="ESTIMATE",
+                        ))
             except Exception as e:
-                logger.warning(f"Bounding box estimation failed: {e}")
+                logger.warning("[%s] Bounding-Box-Fallback fehlgeschlagen: %s", self.name, e)
 
         return rooms
 
-    def _deduplicate_rooms(self, rooms: list[RoomInfo], result: CADHandlerResult) -> list[RoomInfo]:
-        """
-        Entfernt Duplikate basierend auf Layer + Fläche.
-
-        Duplikate entstehen wenn:
-        - Gleiche Polyline mehrfach vorkommt
-        - Gleicher Layer mit gleicher Fläche
-        """
-        if not rooms:
-            return rooms
-
-        seen = set()
-        unique_rooms = []
-        duplicates = 0
-
+    def _deduplicate(self, rooms: list[IFCRoom], result: CADHandlerResult) -> list[IFCRoom]:
+        """Entfernt Duplikate (gleicher Layer + gleiche Fläche)."""
+        seen: set[tuple] = set()
+        unique: list[IFCRoom] = []
+        dupes = 0
         for room in rooms:
-            # Key: Layer + gerundete Fläche (auf 0.1 m²)
-            key = (room.layer, round(room.area, 1))
-
+            key = (room.floor_name, round(room.area_m2, 1))
             if key in seen:
-                duplicates += 1
+                dupes += 1
                 continue
-
             seen.add(key)
-            unique_rooms.append(room)
-
-        if duplicates > 0:
-            result.add_warning(f"{duplicates} Duplikate entfernt")
-            logger.info(f"[{self.name}] Removed {duplicates} duplicate rooms")
-
-        return unique_rooms
-
-    def _is_excluded_layer(self, layer_name: str) -> bool:
-        """
-        Prüft ob Layer von Flächenberechnung ausgeschlossen werden soll.
-
-        Ausgeschlossen werden:
-        - Symbole, Schraffuren, Beschriftungen
-        - Konstruktionen (Decken, Wände, etc.)
-        - TEXT-Formatierungen
-        """
-        if not layer_name:
-            return False
-
-        layer_lower = layer_name.lower()
-
-        # TEXT-Formatierungscodes filtern (z.B. \A1;{\pql;\fArial...)
-        if layer_name.startswith("\\") or "{\\p" in layer_name or "\\f" in layer_name:
-            return True
-
-        # Prüfe Ausschluss-Keywords
-        for keyword in self.EXCLUDED_LAYER_KEYWORDS:
-            if keyword in layer_lower:
-                return True
-
-        return False
-
-    def _is_valid_floor_layer(self, layer_name: str) -> bool:
-        """
-        Prüft ob Layer eine gültige Raumfläche ist (Whitelist).
-
-        Gültig sind nur:
-        - Räume, Nutzflächen, Bodenplatten
-        - Spezifische Raumtypen (Büro, Flur, etc.)
-        """
-        if not layer_name:
-            return False
-
-        layer_lower = layer_name.lower()
-
-        for keyword in self.VALID_FLOOR_KEYWORDS:
-            if keyword in layer_lower:
-                return True
-
-        return False
-
-    def _get_unit_factor(self, loader, room_areas: list) -> float:
-        """
-        Ermittelt Umrechnungsfaktor für Flächen zu m².
-
-        Strategie:
-        1. Prüfe DXF-Einheiten
-        2. Analysiere Größenordnung der Flächen
-        3. Wähle passenden Faktor
-        """
-        # Try to get units from analysis
-        try:
-            analysis = loader.get_analysis()
-            units = getattr(analysis, 'units', None)
-            if units:
-                units_lower = str(units).lower()
-                if 'mm' in units_lower or 'millimeter' in units_lower:
-                    return 1 / 1_000_000  # mm² to m²
-                elif 'cm' in units_lower or 'centimeter' in units_lower:
-                    return 1 / 10_000  # cm² to m²
-                elif 'm' in units_lower and 'mm' not in units_lower:
-                    return 1.0  # Already m²
-        except:
-            pass
-
-        # Fallback: Analyze magnitude of areas
-        if not room_areas:
-            return 1.0
-
-        max_area = max(a.get("area", 0) for a in room_areas)
-
-        if max_area > 1_000_000:  # Likely mm² (>1m² in mm² = 1,000,000)
-            return 1 / 1_000_000
-        elif max_area > 10_000:  # Likely cm²
-            return 1 / 10_000
-        elif max_area > 1:  # Reasonable m² values
-            return 1.0
-        else:  # Very small, might be km² or already normalized
-            return 1.0
+            unique.append(room)
+        if dupes:
+            result.add_warning(f"{dupes} Duplikate entfernt")
+        return unique
 
     def _get_doors(self, loader) -> list[dict]:
-        """Holt Tür-Informationen."""
         try:
             return loader.get_doors()
-        except:
+        except Exception:
             return []
 
     def _get_windows(self, loader) -> list[dict]:
-        """Holt Fenster-Informationen."""
         try:
             return loader.get_windows()
-        except:
+        except Exception:
             return []
 
-    def _classify_din277(self, rooms: list[RoomInfo]) -> list[RoomInfo]:
-        """Klassifiziert Räume nach DIN 277."""
-        for room in rooms:
-            name_lower = room.name.lower()
-
-            for keyword, (code, category) in self.ROOM_CLASSIFICATION.items():
-                if keyword in name_lower:
-                    room.din277_code = code
-                    room.din277_category = category
-                    break
-
-            # Default to NUF if not classified
-            if not room.din277_code:
-                room.din277_code = "NUF"
-                room.din277_category = "Nutzungsfläche"
-
-        return rooms
-
-    def _create_din277_summary(self, rooms: list[RoomInfo]) -> dict:
-        """Erstellt DIN 277 Zusammenfassung."""
-        summary = {}
-
-        for room in rooms:
-            code = room.din277_code or "Unbekannt"
-            if code not in summary:
-                summary[code] = {
-                    "category": room.din277_category,
-                    "count": 0,
-                    "area": 0.0,
-                }
-            summary[code]["count"] += 1
-            summary[code]["area"] += room.area
-
-        # Format areas
-        for code in summary:
-            summary[code]["area_formatted"] = f"{summary[code]['area']:.2f} m²"
-
+    def _build_summary(self, din277_result) -> dict:
+        """Baut Rückwärtskompatibles summary-Dict aus DIN277Result."""
+        summary: dict = {}
+        for code, cat in din277_result.categories.items():
+            summary[code] = {
+                "category": cat.name,
+                "count": cat.room_count,
+                "area": cat.area_m2,
+                "area_formatted": cat.area_formatted,
+            }
         return summary
 
-    def _room_to_dict(self, room: RoomInfo) -> dict:
-        """Konvertiert RoomInfo zu Dictionary."""
+    def _room_to_dict(self, room: IFCRoom) -> dict:
+        """Serialisiert IFCRoom für Template-Nutzung."""
         return {
             "name": room.name,
-            "area": room.area,
-            "area_formatted": f"{room.area:.2f} m²",
-            "perimeter": room.perimeter,
-            "layer": room.layer,
+            "area_m2": room.area_m2,
+            "area": room.area_m2,
+            "area_formatted": f"{room.area_m2:.2f} m²",
+            "perimeter_m": room.perimeter_m,
+            "perimeter": room.perimeter_m,
+            "layer": room.floor_name,
             "din277_code": room.din277_code,
             "din277_category": room.din277_category,
-            "floor": room.floor,
-            "has_door": room.has_door,
-            "has_window": room.has_window,
-            "furniture_count": room.furniture_count,
-            "position": room.position,
+            "floor": room.floor_number,
+            "ifc_id": room.ifc_id,
+            "number": room.number,
         }
