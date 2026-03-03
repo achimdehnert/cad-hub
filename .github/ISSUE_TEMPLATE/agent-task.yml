@@ -1,0 +1,66 @@
+name: Agent Task
+description: Standardisiertes Task-Format für AI-Agent-Ausführung (ADR-086)
+title: "[Task] "
+labels: ["agent-task"]
+body:
+  - type: dropdown
+    id: task_type
+    attributes:
+      label: Task-Typ
+      options: [feature, bugfix, refactor, test, infra, adr]
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Komplexität
+      options: [trivial, simple, moderate, complex]
+    validations:
+      required: true
+  - type: input
+    id: parent_issue
+    attributes:
+      label: Parent Issue
+      placeholder: "#NNN"
+  - type: input
+    id: affected_app
+    attributes:
+      label: Betroffene Django-App
+      placeholder: "z.B. apps/MODULE"
+    validations:
+      required: true
+  - type: textarea
+    id: affected_paths
+    attributes:
+      label: Affected Paths (ScopeLock ADR-081)
+      placeholder: |
+        - apps/MODULE/
+        - tests/MODULE/
+    validations:
+      required: true
+  - type: textarea
+    id: forbidden_paths
+    attributes:
+      label: Forbidden Paths
+      value: "- (Platform-Defaults: migrations/, .env*, prod settings, *.pem, *.key)"
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] Criterion 1
+    validations:
+      required: true
+  - type: textarea
+    id: test_requirements
+    attributes:
+      label: Test Requirements
+      placeholder: |
+        - [ ] test_should_...
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      value: "keine"
