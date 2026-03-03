@@ -344,8 +344,8 @@ class AVBService:
         Returns:
             BytesIO mit GAEB XML
         """
-        from .gaeb_generator import (
-            GAEBGenerator,
+        from nl2cad.gaeb.generator import GAEBGenerator
+        from nl2cad.gaeb.models import (
             GAEBPhase,
             Leistungsverzeichnis,
             LosGruppe,
@@ -360,7 +360,7 @@ class AVBService:
                 kurztext=pos.short_text,
                 langtext=pos.long_text,
                 menge=pos.quantity,
-                einheit=pos.unit,
+                einheit=str(pos.unit),
                 stlb_code=pos.stlb_code,
             ))
 
@@ -457,6 +457,7 @@ class AVBService:
 
 # Singleton
 _avb_service = None
+
 
 def get_avb_service() -> AVBService:
     """Get singleton instance."""
