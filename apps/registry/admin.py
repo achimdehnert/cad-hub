@@ -222,15 +222,33 @@ class TenantSubscriptionAdmin(admin.ModelAdmin):
         )
     status_badge.short_description = "Status"
 
-    @admin.action(description="Ausgewählte Subscriptions aktivieren")
+    @admin.action(description="Ausgewählte Subscriptions aktivieren + Onboarding triggern")
     def activate_subscriptions(
         self, request: HttpRequest, queryset: QuerySet[TenantSubscription]
     ) -> None:
         from django.utils import timezone
-        updated = queryset.filter(
-            status__in=["pending", "trial"]
-        ).update(status="active", activated_at=timezone.now())
-        self.message_user(request, f"{updated} Subscription(s) aktiviert.")
+        from .signals import _trigger_onboarding_workflow
+
+        to_activate = list(queryset.filter(status__in=["pending", "trial"]))
+        for sub in to_activate:
+            sub.status = "active"
+            sub.activated_at = timezone.now()
+            sub._trigger_workflow = True
+            sub.save()
+
+        if to_activate:
+            # Einmal pro Organisation triggern (nicht je Modul)
+            orgs_done: set = set()
+            for sub in to_activate:
+                if sub.organization_id not in orgs_done:
+                    _trigger_onboarding_workflow(sub)
+                    orgs_done.add(sub.organization_id)
+
+        self.message_user(
+            request,
+            f"{len(to_activate)} Subscription(s) aktiviert"
+            + (f" — Onboarding-Workflow für {len(orgs_done)} Organisation(en) getriggert." if to_activate else "."),
+        )
 
     @admin.action(description="Ausgewählte Subscriptions sperren")
     def suspend_subscriptions(
