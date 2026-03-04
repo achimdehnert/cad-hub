@@ -52,6 +52,11 @@ jobs:
           docker compose -f docker-compose.prod.yml up migrate
           docker compose -f docker-compose.prod.yml rm -f migrate 2>/dev/null || true
 
+          echo "=== Registry Seed (idempotent upsert) ==="
+          docker compose -f docker-compose.prod.yml run --rm \
+            -e DJANGO_SETTINGS_MODULE=config.settings.production \
+            web python manage.py import_registry_seed 2>/dev/null || true
+
           echo "=== Recreating web + worker ==="
           docker compose -f docker-compose.prod.yml up -d --force-recreate web worker
 
