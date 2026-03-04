@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.brandschutz",
     "apps.avb",
     "apps.export",
+    "apps.registry",
 ]
 
 MIDDLEWARE = [

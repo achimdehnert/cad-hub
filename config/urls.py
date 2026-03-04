@@ -25,4 +25,7 @@ urlpatterns = [
     path("brandschutz/", include("apps.brandschutz.urls", namespace="brandschutz")),
     path("avb/", include("apps.avb.urls", namespace="avb")),
     path("export/", include("apps.export.urls", namespace="export")),
+
+    # Registry API — Modul-Katalog, Berufsprofile
+    path("api/registry/", include("apps.registry.urls", namespace="registry")),
 ]
