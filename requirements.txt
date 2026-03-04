@@ -1,6 +1,5 @@
 # Core
 Django>=5.1,<5.2
-# Platform packages vendored in vendor/ (PYTHONPATH=/app/vendor)
 gunicorn>=22.0,<23.0
 psycopg2-binary>=2.9,<3.0
 
@@ -8,16 +7,12 @@ psycopg2-binary>=2.9,<3.0
 celery>=5.4,<6.0
 redis>=5.0,<6.0
 
-# CAD/BIM
-ezdxf>=0.19
-ifcopenshell>=0.8.0
-
-# nl2cad-* Packages
-nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-core
-nl2cad-areas @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-areas
-nl2cad-brandschutz @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-brandschutz
-nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb
-nl2cad-nlp @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-nlp
+# nl2cad-* Packages (published on PyPI)
+nl2cad-core[ifc]>=0.1.0,<1.0
+nl2cad-areas>=0.1.0,<1.0
+nl2cad-brandschutz>=0.1.0,<1.0
+nl2cad-gaeb>=0.1.0,<1.0
+nl2cad-nlp>=0.1.0,<1.0
 
 # HTTP
 httpx>=0.27,<1.0
@@ -36,7 +31,7 @@ iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
 iil-nl2cad>=0.1.0,<1
 
-# openai kept as transitive dep for nl2cad-* packages (will be removed after nl2cad migration)
+# openai kept as transitive dep for aifw
 # DO NOT use openai directly — use aifw instead.
 openai>=1.0,<2.0
 
