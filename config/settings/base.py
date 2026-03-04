@@ -101,6 +101,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 
+# Registry — GitHub Actions Tenant-Onboarding
+GITHUB_REGISTRY_TOKEN = os.environ.get("GITHUB_REGISTRY_TOKEN", "")
+GITHUB_REGISTRY_OWNER = os.environ.get("GITHUB_REGISTRY_OWNER", "achimdehnert")
+GITHUB_REGISTRY_REPO  = os.environ.get("GITHUB_REGISTRY_REPO", "nl2cad")
+
 # Celery
 CELERY_BROKER_URL = os.environ.get(
     "CELERY_BROKER_URL", "redis://localhost:6379/0"
