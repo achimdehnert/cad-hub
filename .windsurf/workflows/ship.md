@@ -1,29 +1,41 @@
 ---
-description: cad-hub auf Production deployen — Image bauen, migrate, seed, health check
+description: cad-hub auf Production deployen — verify, push, CI, migrate, seed, health check
+version: "2.0"
+last_reviewed: 2026-03-04
+review_interval_days: 90
+scope: cad-hub
+health_port: 8094
+cd_workflow: cd-production.yml
+web_container: cad_hub_web
 ---
 
-## Kontext
+## Schritt 1 — Branch + Status verifizieren
 
-- **Repo:** `achimdehnert/cad-hub`
-- **Server:** `88.198.191.108`, Pfad: `/opt/cad-hub`
-- **Compose:** `docker-compose.prod.yml`
-- **Web-Container:** `cad_hub_web` (Port 8094)
-- **Deploy-Mechanismus:** GitHub Actions `cd-production.yml` (self-hosted runner `hetzner/dev`)
-- **Health-URL:** `http://127.0.0.1:8094/livez/`
+**KEIN auto-run. User-Bestätigung vor Push erforderlich.**
+
+```bash
+git -C /home/dehnert/github/cad-hub branch --show-current
+git -C /home/dehnert/github/cad-hub status
+git -C /home/dehnert/github/cad-hub diff --stat HEAD
+```
+
+Erwartung: Branch = `main`, keine uncommitted WIP-Änderungen.
+**Abbruch wenn:** Branch != main ODER uncommitted Änderungen vorhanden.
 
 ---
 
-## Schritt 1 — Änderungen pushen
+## Schritt 2 — Änderungen pushen
+
+Erst nach User-Bestätigung aus Schritt 1:
 
 // turbo
 ```bash
-git -C /home/dehnert/github/cad-hub status
 git -C /home/dehnert/github/cad-hub push origin main
 ```
 
 ---
 
-## Schritt 2 — GitHub Actions CD-Workflow triggern
+## Schritt 3 — GitHub Actions CD-Workflow triggern
 
 ```
 mcp5_cicd_manage:
@@ -34,17 +46,17 @@ mcp5_cicd_manage:
   ref: main
 ```
 
-Der self-hosted Runner auf dem Hetzner-Server übernimmt automatisch:
-1. `docker compose -f docker-compose.prod.yml pull web`
-2. `docker compose -f docker-compose.prod.yml up migrate`
+Self-hosted Runner übernimmt:
+1. `docker compose pull web`
+2. `docker compose up migrate`
 3. `python manage.py import_registry_seed` (idempotent)
-4. `docker compose -f docker-compose.prod.yml up -d --force-recreate web worker`
+4. `docker compose up -d --force-recreate web worker`
 5. `collectstatic`
-6. Health check `http://127.0.0.1:8094/livez/`
+6. Health check `/livez/`
 
 ---
 
-## Schritt 3 — Deploy-Status prüfen
+## Schritt 4 — Deploy-Status verfolgen
 
 ```
 mcp5_cicd_manage:
@@ -55,18 +67,30 @@ mcp5_cicd_manage:
   per_page: 1
 ```
 
-Warte auf `conclusion: success`.
+Warte auf `conclusion: success`. Bei `failure` → Schritt 6 (Rollback).
 
 ---
 
-## Schritt 4 — Health Check bestätigen
+## Schritt 5 — Health Check
 
 ```
-mcp5_docker_manage:
-  action: container_status
-  host: 88.198.191.108
-  container_id: cad_hub_web
+mcp5_ssh_manage:
+  action: http_check
+  host: ${{ secrets.PROD_SERVER_IP }}
+  url: http://127.0.0.1:8094/livez/
+  expect_status: 200
 ```
+
+---
+
+## Schritt 6 — Rollback (nur bei Health-Check-Failure)
+
+```bash
+docker compose -f docker-compose.prod.yml pull web:<previous-tag>
+docker compose -f docker-compose.prod.yml up -d --force-recreate web worker
+```
+
+Dann Health Check wiederholen.
 
 ---
 
@@ -74,8 +98,8 @@ mcp5_docker_manage:
 
 | Problem | Lösung |
 |---------|--------|
-| `GITHUB_TOKEN not set` in MCP | GitHub Actions manuell triggern: https://github.com/achimdehnert/cad-hub/actions/workflows/cd-production.yml |
-| Migration fehlgeschlagen | `container_logs container_id=cad-hub-migrate-1 lines=50 host=88.198.191.108` |
+| Migration fehlgeschlagen | `container_logs container_id=cad-hub-migrate-1 lines=80` |
 | Seed fehlgeschlagen | `container_exec container_id=cad_hub_web command="python manage.py import_registry_seed --dry-run"` |
-| Health check schlägt fehl | `container_logs container_id=cad_hub_web lines=50 host=88.198.191.108` |
-| Image nicht aktuell | CI muss zuerst gebaut haben — `workflow_runs repo=cad-hub workflow_id=ci.yml` prüfen |
+| Health check schlägt fehl | `container_logs container_id=cad_hub_web lines=80` |
+| Image nicht aktuell | `workflow_runs repo=cad-hub workflow_id=ci.yml` prüfen |
+| Branch falsch | `git checkout main && git pull origin main` |
