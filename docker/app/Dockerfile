@@ -56,11 +56,9 @@ RUN pip install --no-cache-dir /tmp/wheels/*.whl && \
 WORKDIR /app
 COPY --chown=app:app . .
 
-RUN DJANGO_SETTINGS_MODULE=config.settings.production \
-    SECRET_KEY=build-dummy-key-not-for-production \
-    DATABASE_URL=sqlite:///tmp/build.db \
-    ALLOWED_HOSTS=* \
-    python manage.py collectstatic --noinput 2>/dev/null || true
+RUN DJANGO_SETTINGS_MODULE=config.settings.development \
+    python manage.py collectstatic --noinput
+RUN chown -R app:app /app/staticfiles
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
