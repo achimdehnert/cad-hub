@@ -1,17 +1,12 @@
-# tests/conftest.py — ADR-058 §Confirmation
+# tests/conftest.py — ADR-058
 import pytest
 
-# Shared platform fixtures (platform-context[testing])
-from platform_context.testing.fixtures import (  # noqa: F401
-    admin_client,
-    admin_user,
-    auth_client,
-    htmx_client,
-)
+pytest_plugins = ["iil_testkit.fixtures"]
 
-# Repo-specific: user via UserFactory (cad-hub uses standard Django User)
-@pytest.fixture
-def user(db):
-    """Standard authenticated user."""
-    from tests.factories import UserFactory
-    return UserFactory()
+# Shared platform fixtures (platform-context[testing])
+try:
+    from platform_context.testing.fixtures import (  # noqa: F401
+        htmx_client,
+    )
+except ImportError:
+    pass

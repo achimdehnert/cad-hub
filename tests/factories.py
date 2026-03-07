@@ -1,13 +1,12 @@
-# tests/factories.py — ADR-057 §2.5
+# tests/factories.py — ADR-057 §2.5, ADR-100
 import factory
-from django.contrib.auth.models import User
+
+from iil_testkit.factories import UserFactory  # noqa: F401 — re-exported
 
 
-class UserFactory(factory.django.DjangoModelFactory):
+class CADProjectFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = User
+        model = "cad.CADProject"
 
-    username = factory.Sequence(lambda n: f"user_{n}")
-    email = factory.LazyAttribute(lambda obj: f"{obj.username}@example.com")
-    password = factory.PostGenerationMethodCall("set_password", "testpass123")
-    is_active = True
+    user = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda n: f"CAD Project {n}")
