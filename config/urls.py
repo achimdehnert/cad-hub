@@ -9,6 +9,7 @@ urlpatterns = [
     # Health endpoints (no auth, no tenant)
     path("livez/", liveness, name="health-liveness"),
     path("healthz/", readiness, name="health-readiness"),
+    path("readyz/", readiness, name="readyz"),
     path("health/", liveness, name="health-compat"),
 
     # Public pages
