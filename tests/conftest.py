@@ -1,7 +1,5 @@
-# tests/conftest.py — ADR-058
+# tests/conftest.py
 import pytest
-
-pytest_plugins = ["iil_testkit.fixtures"]
 
 # Shared platform fixtures (platform-context[testing])
 try:
