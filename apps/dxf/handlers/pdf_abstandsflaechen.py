@@ -331,29 +331,9 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
         return af_info
 
     def _extract_with_llm(self, text: str, af_info: AbstandsflaechenInfo, lbo: dict) -> AbstandsflaechenInfo:
-        """Extrahiert komplexe Informationen mit LLM."""
+        """Extrahiert komplexe Informationen mit LLM (via aifw)."""
         try:
-            try:
-                from apps.core.services.llm_client import generate_text
-            except ImportError:
-                import os
-
-                import openai
-
-                api_key = os.environ.get("OPENAI_API_KEY")
-                if not api_key:
-                    return af_info
-
-                client = openai.OpenAI(api_key=api_key)
-
-                def generate_text(prompt, max_tokens=500):
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=max_tokens,
-                        temperature=0.1,
-                    )
-                    return response.choices[0].message.content
+            from apps.core.services.llm_client import generate_text
 
             prompt = f"""Analysiere diesen Abstandsflächenplan-Text und extrahiere die Informationen.
 

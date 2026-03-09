@@ -307,30 +307,7 @@ class AreaClassifier:
             (Kategorie, Konfidenz) oder None
         """
         try:
-            # Versuche zuerst den existierenden LLM-Client
-            try:
-                from apps.core.services.llm_client import generate_text
-            except ImportError:
-                # Fallback: Direkter OpenAI-Aufruf
-                import os
-
-                import openai
-
-                api_key = os.environ.get("OPENAI_API_KEY")
-                if not api_key:
-                    logger.debug("[AreaClassifier] No OpenAI API key available")
-                    return None
-
-                client = openai.OpenAI(api_key=api_key)
-
-                def generate_text(prompt, max_tokens=50):
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=max_tokens,
-                        temperature=0.1,
-                    )
-                    return response.choices[0].message.content
+            from apps.core.services.llm_client import generate_text
 
             prompt = f"""Klassifiziere diesen CAD-Layer-Namen in EINE Kategorie.
 

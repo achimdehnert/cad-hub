@@ -51,18 +51,12 @@ def _get_session_backend():
 def _get_agent(model_id: str):
     """Erstellt einen ChatAgent für ein IFC-Modell (lazy import)."""
     from chat_agent.agent import ChatAgent
-    from creative_services.core.llm_client import LLMClient, LLMConfig, LLMProvider
 
     from .toolkit import CADToolkit
 
     toolkit = CADToolkit()
-    llm = LLMClient(
-        LLMConfig(
-            provider=LLMProvider.OPENAI,
-            model="gpt-4o-mini",
-            max_tokens=2048,
-        )
-    )
+    from apps.core.services.llm_client import AifwChatCompletion
+    llm = AifwChatCompletion()
     return ChatAgent(
         toolkit=toolkit,
         completion=llm,
