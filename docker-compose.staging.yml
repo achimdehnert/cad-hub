@@ -1,0 +1,89 @@
+# cad-hub — Staging Docker Compose
+# Domain: staging.nl2cad.de | Port: 8100
+
+services:
+  migrate:
+    image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
+    entrypoint: ["python", "manage.py", "migrate", "--noinput", "--skip-checks"]
+    env_file: .env.staging
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cad_hub_staging_network
+    restart: "no"
+    deploy:
+      restart_policy:
+        condition: none
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  web:
+    image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
+    container_name: cad_hub_staging_web
+    command: ["web"]
+    env_file: .env.staging
+    ports:
+      - "127.0.0.1:8100:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    networks:
+      - cad_hub_staging_network
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: postgres:16-alpine
+    container_name: cad_hub_staging_db
+    restart: unless-stopped
+    env_file: .env.staging
+    volumes:
+      - cad_hub_staging_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cad_hub_staging_network
+    shm_size: 64m
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  cad_hub_staging_pgdata:
+
+networks:
+  cad_hub_staging_network:
+    driver: bridge
