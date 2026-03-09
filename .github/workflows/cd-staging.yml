@@ -46,18 +46,20 @@ jobs:
             mkdir -p ~/.docker
             printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${GHCR_AUTH_B64}" > ~/.docker/config.json
             cd /opt/cad-hub-staging
-            docker pull ghcr.io/achimdehnert/cad-hub/cad-hub-web:latest 2>/dev/null \
-              || docker pull ghcr.io/achimdehnert/cad-hub:latest
+            docker pull ghcr.io/achimdehnert/cad-hub/cad-hub-web:latest
             sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=latest/' .env.staging 2>/dev/null || echo 'IMAGE_TAG=latest' >> .env.staging
+            # Full reset to avoid stale volumes/state
+            docker compose -f docker-compose.staging.yml --env-file .env.staging down --volumes 2>&1 | tail -3 || true
             docker compose -f docker-compose.staging.yml --env-file .env.staging \
-              up -d --force-recreate --remove-orphans
-            sleep 20
+              up -d --remove-orphans 2>&1 | tail -10
+            sleep 30
+            docker ps | grep cad_hub_staging_web || (docker logs cad_hub_staging_web --tail 20 2>&1; exit 1)
             echo "[cad-hub staging] Done."
 
       - name: Health Check
         continue-on-error: true
         run: |
-          sleep 10
+          sleep 15
           for i in 1 2 3; do
-            curl -sf https://staging.nl2cad.de/livez/ --max-time 10 && exit 0 || sleep 5
+            curl -sf https://staging.nl2cad.de/livez/ --max-time 10 && exit 0 || sleep 10
           done; echo "health check timed out"
