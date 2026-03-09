@@ -1,6 +1,4 @@
 # cad-hub — CD Staging Pipeline
-# Deploys to hetzner-dev on push to develop branch
-
 name: Deploy Staging
 
 on:
@@ -59,19 +57,15 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/cad-hub-staging
-
             IMAGE_TAG="${{ steps.tag.outputs.tag }}"
             docker pull "ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG}"
-
             if grep -q "^IMAGE_TAG=" .env.staging 2>/dev/null; then
               sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env.staging
             else
               echo "IMAGE_TAG=${IMAGE_TAG}" >> .env.staging
             fi
-
             docker compose -f docker-compose.staging.yml --env-file .env.staging \
               up -d --force-recreate --remove-orphans
-
             sleep 20
             echo "[staging] Done."
 
@@ -105,8 +99,7 @@ jobs:
           sleep 10
           for i in 1 2 3; do
             if curl -sf https://staging.nl2cad.de/livez/ --max-time 10; then
-              echo "Health check passed"
-              exit 0
+              echo "Health check passed"; exit 0
             fi
             sleep 5
           done
