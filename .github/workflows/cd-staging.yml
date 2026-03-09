@@ -1,16 +1,10 @@
-# cad-hub — CD Staging Pipeline
+# cad-hub — CD Staging
 name: Deploy Staging
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag to deploy (default: latest)'
-        required: false
-        default: 'latest'
   push:
-    branches:
-      - develop
+    branches: [develop]
 
 concurrency:
   group: deploy-staging
@@ -25,62 +19,45 @@ jobs:
       url: https://staging.nl2cad.de
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Determine Image Tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Copy compose file to server
+      - name: Copy compose to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HETZNER_DEV_HOST }}
           username: ${{ secrets.HETZNER_DEV_USER }}
           key: ${{ secrets.HETZNER_DEV_SSH_KEY }}
-          source: "docker-compose.staging.yml"
-          target: "/opt/cad-hub-staging/"
+          source: docker-compose.staging.yml
+          target: /opt/cad-hub-staging/
           strip_components: 0
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
-          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GHCR_AUTH_B64: ${{ secrets.GHCR_AUTH_B64 }}
         with:
           host: ${{ secrets.HETZNER_DEV_HOST }}
           username: ${{ secrets.HETZNER_DEV_USER }}
           key: ${{ secrets.HETZNER_DEV_SSH_KEY }}
-          envs: GHCR_PAT
+          envs: GHCR_AUTH_B64
           script_stop: true
           script: |
             set -euo pipefail
-            echo "${GHCR_PAT}" | docker login ghcr.io -u achimdehnert --password-stdin
+            mkdir -p ~/.docker
+            printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${GHCR_AUTH_B64}" > ~/.docker/config.json
             cd /opt/cad-hub-staging
-            IMAGE_TAG="${{ steps.tag.outputs.tag }}"
-            docker pull "ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG}"
-            if grep -q "^IMAGE_TAG=" .env.staging 2>/dev/null; then
-              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env.staging
-            else
-              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env.staging
-            fi
+            docker pull ghcr.io/achimdehnert/cad-hub/cad-hub-web:latest 2>/dev/null \
+              || docker pull ghcr.io/achimdehnert/cad-hub:latest
+            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=latest/' .env.staging 2>/dev/null || echo 'IMAGE_TAG=latest' >> .env.staging
             docker compose -f docker-compose.staging.yml --env-file .env.staging \
               up -d --force-recreate --remove-orphans
             sleep 20
-            echo "[staging] Done."
+            echo "[cad-hub staging] Done."
 
       - name: Health Check
         continue-on-error: true
         run: |
           sleep 10
           for i in 1 2 3; do
-            if curl -sf https://staging.nl2cad.de/livez/ --max-time 10; then
-              echo "Health check passed"; exit 0
-            fi
-            sleep 5
-          done
-          echo "Health check failed (may need time to start)"
+            curl -sf https://staging.nl2cad.de/livez/ --max-time 10 && exit 0 || sleep 5
+          done; echo "health check timed out"
