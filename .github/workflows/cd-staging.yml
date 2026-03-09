@@ -49,13 +49,17 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.HETZNER_DEV_HOST }}
           username: ${{ secrets.HETZNER_DEV_USER }}
           key: ${{ secrets.HETZNER_DEV_SSH_KEY }}
+          envs: GHCR_TOKEN
           script_stop: true
           script: |
             set -euo pipefail
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u achimdehnert --password-stdin
             cd /opt/cad-hub-staging
             IMAGE_TAG="${{ steps.tag.outputs.tag }}"
             docker pull "ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG}"
