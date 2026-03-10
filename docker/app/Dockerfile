@@ -56,8 +56,7 @@ RUN pip install --no-cache-dir /tmp/wheels/*.whl && \
 WORKDIR /app
 COPY --chown=app:app . .
 
-RUN SECRET_KEY=build-dummy-not-used-in-prod \
-    DJANGO_SETTINGS_MODULE=config.settings.development \
+RUN DJANGO_SETTINGS_MODULE=config.settings.build \
     python manage.py collectstatic --noinput
 RUN chown -R app:app /app/staticfiles
 
