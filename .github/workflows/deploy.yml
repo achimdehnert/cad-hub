@@ -1,0 +1,30 @@
+name: "Deploy"
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      image_tag_override:
+        description: "Rollback auf Image-Tag (z.B. v1.2.1) — leer = auto"
+        required: false
+        default: ""
+
+jobs:
+  ci:
+    uses: achimdehnert/platform/.github/workflows/_ci-python.yml@main
+    if: startsWith(github.ref, 'refs/heads/')
+    secrets: inherit
+
+  deploy:
+    needs: [ci]
+    if: always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped')
+    uses: achimdehnert/platform/.github/workflows/_deploy-unified.yml@main
+    with:
+      app_name: "cad-hub"
+      app_path: "/opt/cad-hub"
+      health_check_url: "https://cad-hub.iil.pet/healthz/"
+      image_tag_override: ${{ inputs.image_tag_override || '' }}
+      notify_discord: true
+    secrets: inherit
