@@ -10,6 +10,15 @@ on:
         description: "Rollback auf Image-Tag (z.B. v1.2.1) — leer = auto"
         required: false
         default: ""
+      target_environment:
+        description: "Ziel-Environment (leer=auto, staging, production)"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - staging
+          - production
 
 jobs:
   ci:
@@ -24,7 +33,8 @@ jobs:
     with:
       app_name: "cad-hub"
       app_path: "/opt/cad-hub"
-      health_check_url: "https://cad-hub.iil.pet/healthz/"
+      health_check_url: "https://cad.iil.pet/healthz/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
+      target_environment: ${{ inputs.target_environment || '' }}
       notify_discord: true
     secrets: inherit
