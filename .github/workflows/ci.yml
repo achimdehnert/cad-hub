@@ -6,90 +6,50 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-  packages: write
-
-concurrency:
-  group: ci-${{ github.repository }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
-    name: "Test (Python ${{ matrix.python-version }})"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
 
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: cad_hub_test
-          POSTGRES_USER: cad_hub
-          POSTGRES_PASSWORD: cad_hub
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci_test
         ports:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
+          --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
-      DJANGO_SETTINGS_MODULE: config.settings.test
-      DATABASE_URL: "postgres://cad_hub:cad_hub@localhost:5432/cad_hub_test"
-      SECRET_KEY: "test-secret-key-not-for-production"
-      CELERY_BROKER_URL: "redis://localhost:6379/0"
+      DB_NAME: ci_test
+      DB_USER: ci
+      DB_PASSWORD: ci
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      SECRET_KEY: ci-test-key
+      PYTHONPATH: /home/runner/work/cad-hub/cad-hub/vendor
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt || true
-          pip install pytest pytest-django pytest-cov ruff
+          pip install -U pip
+          pip install -r requirements.txt
 
-      - name: Install iil-packages
+      - name: Lint with ruff
         run: |
-          pip install \
-            "aifw>=0.5.0,<1" \
-            "iil-promptfw>=0.5.1,<1" \
-            "iil-authoringfw>=0.3.0,<1" \
-            2>/dev/null || true
+          pip install ruff
+          ruff check . --exit-zero
 
-      - name: Ruff Lint (non-blocking)
-        run: ruff check apps/ config/ || true
-
-      - name: Ruff Format Check (non-blocking)
-        run: ruff format --check apps/ config/ || true
-
-      - name: Run Tests
-        run: |
-          python -m pytest tests/ \
-            --tb=short \
-            --no-header \
-            -q \
-            -p no:xdist \
-            --ignore=tests/e2e \
-            --cov=apps \
-            --cov-report=term-missing:skip-covered \
-            --cov-fail-under=0 \
-            || true
+      - name: Run tests
+        run: python -m pytest --tb=short -q
