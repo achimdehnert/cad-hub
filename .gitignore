@@ -36,3 +36,4 @@ docker-compose.override.yml
 .coverage
 htmlcov/
 .pytest_cache/
+env_loader.py

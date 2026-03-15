@@ -17,6 +17,7 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
 
     # Admin
+        path("oidc/", include("mozilla_django_oidc.urls")),
     path("admin/", admin.site.urls),
 
     # App URLs
