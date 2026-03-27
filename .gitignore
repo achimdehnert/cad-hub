@@ -37,3 +37,6 @@ docker-compose.override.yml
 htmlcov/
 .pytest_cache/
 env_loader.py
+
+# IDE agent workflows (symlinked, not repo-specific)
+.windsurf/
