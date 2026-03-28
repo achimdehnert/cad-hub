@@ -306,7 +306,7 @@ Antwort als JSON:
                     try:
                         analysis = loader.get_analysis()
                         units = getattr(analysis, 'units', 'Unknown')
-                    except:
+                    except Exception:
                         units = 'Unknown'
 
                     total_raw = sum(a.get("area", 0) for a in areas)

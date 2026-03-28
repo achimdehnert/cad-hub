@@ -514,7 +514,7 @@ class DXFAnalyzer:
         for dim in self.msp.query("DIMENSION"):
             try:
                 measurement = dim.get_measurement()
-            except:
+            except Exception:
                 measurement = None
 
             dimensions.append(DimensionInfo(
@@ -657,7 +657,7 @@ class DXFAnalyzer:
         try:
             insunits = self.doc.header.get("$INSUNITS", 0)
             units = units_map.get(insunits, "Unknown")
-        except:
+        except Exception:
             units = "Unknown"
 
         return AnalysisReport(

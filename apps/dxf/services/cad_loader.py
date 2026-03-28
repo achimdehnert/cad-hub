@@ -285,7 +285,7 @@ class CADLoaderService:
         if hasattr(self, '_is_temp') and self._is_temp:
             try:
                 self.filepath.unlink(missing_ok=True)
-            except:
+            except Exception:
                 pass
 
     def __del__(self):

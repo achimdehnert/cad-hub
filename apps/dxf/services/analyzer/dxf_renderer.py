@@ -324,7 +324,7 @@ class DXFRendererService:
                         "color": color,
                         "points": points
                     }
-                except:
+                except Exception:
                     return None
 
             elif etype == "ELLIPSE":

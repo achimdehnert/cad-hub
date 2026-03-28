@@ -368,7 +368,7 @@ class MassenHandler(BaseCADHandler):
                 )
                 category.items.append(item)
                 category.total += len(doors)
-        except:
+        except Exception:
             pass
 
         try:
@@ -384,7 +384,7 @@ class MassenHandler(BaseCADHandler):
                 )
                 category.items.append(item)
                 category.total += len(windows)
-        except:
+        except Exception:
             pass
 
         return category
