@@ -1,0 +1,1 @@
+/home/dehnert/github/platform/scripts/subdomain-health-check.sh
