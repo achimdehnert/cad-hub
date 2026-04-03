@@ -29,7 +29,7 @@ openpyxl>=3.1,<4.0
 aifw>=0.5.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
-iil-nl2cad>=0.1.0,<1
+iil-nl2cadfw>=0.1.0,<1
 
 # openai kept as transitive dep for aifw
 # DO NOT use openai directly — use aifw instead.
