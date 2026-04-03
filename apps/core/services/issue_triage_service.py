@@ -25,11 +25,12 @@ import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub")
+GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
+GITHUB_REPO = config("GITHUB_REPOSITORY", default="achimdehnert/cad-hub")
 
 
 # ── Label-Definitionen ────────────────────────────────────────────────────────

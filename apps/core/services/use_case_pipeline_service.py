@@ -16,7 +16,7 @@ Typische Nutzung in cad-hub:
         tier="standard",
     )
     for task in result["tasks"]:
-        print(f"[{task['type']}/{task['complexity']}] {task['title']}")
+        logger.info(f"[{task['type']}/{task['complexity']}] {task['title']}")
 
     # Issue-Triage (schnell + günstig)
     result = service.decompose(
@@ -32,10 +32,11 @@ import logging
 import os
 import uuid
 from typing import Any
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
-_ORCHESTRATOR_URL = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")
+_ORCHESTRATOR_URL = config("ORCHESTRATOR_MCP_URL", default="http://127.0.0.1:8101")
 
 
 class UseCasePipelineService:

@@ -11,7 +11,7 @@ Usage:
 
     # Alle Räume mit Brandschutz
     for space in project.spaces:
-        print(f"{space.name}: {space.fire_rating}")
+        logger.info(f"{space.name}: {space.fire_rating}")
 
     # Export als JSON
     project.save_json("output.json")
@@ -40,6 +40,9 @@ from .models import (  # Enums; Properties & Quantities; Spatial Structure; Elem
     PropertyDataType,
 )
 from .parser import IfcCompleteParser
+import logging
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     # Parser

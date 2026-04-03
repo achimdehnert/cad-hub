@@ -3,6 +3,7 @@ Base settings shared across all environments.
 """
 import os
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -70,11 +71,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "cad_hub"),
-        "USER": os.environ.get("POSTGRES_USER", "cad_hub"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-        "HOST": os.environ.get("POSTGRES_HOST", "db"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        "NAME": config("POSTGRES_DB", default="cad_hub"),
+        "USER": config("POSTGRES_USER", default="cad_hub"),
+        "PASSWORD": config("POSTGRES_PASSWORD", default=""),
+        "HOST": config("POSTGRES_HOST", default="db"),
+        "PORT": config("POSTGRES_PORT", default="5432"),
     }
 }
 
@@ -108,9 +109,9 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 
 # Registry — GitHub Actions Tenant-Onboarding
-GITHUB_REGISTRY_TOKEN = os.environ.get("GITHUB_REGISTRY_TOKEN", "")
-GITHUB_REGISTRY_OWNER = os.environ.get("GITHUB_REGISTRY_OWNER", "achimdehnert")
-GITHUB_REGISTRY_REPO  = os.environ.get("GITHUB_REGISTRY_REPO", "nl2cad")
+GITHUB_REGISTRY_TOKEN = config("GITHUB_REGISTRY_TOKEN", default="")
+GITHUB_REGISTRY_OWNER = config("GITHUB_REGISTRY_OWNER", default="achimdehnert")
+GITHUB_REGISTRY_REPO  = config("GITHUB_REGISTRY_REPO", default="nl2cad")
 
 # Celery
 CELERY_BROKER_URL = os.environ.get(
@@ -160,9 +161,9 @@ LOGGING = {
 }
 
 # --- authentik OIDC (ADR-142) ---
-OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
-OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_RP_CLIENT_SECRET", "")
-_OIDC_APP_SLUG = os.environ.get("OIDC_APP_SLUG", "cad-hub")
+OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
+_OIDC_APP_SLUG = config("OIDC_APP_SLUG", default="cad-hub")
 _IDP = "https://id.iil.pet/application/o"
 OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
 OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"

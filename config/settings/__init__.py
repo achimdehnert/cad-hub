@@ -5,8 +5,9 @@ Default: development (for local `manage.py runserver`).
 Production: set DJANGO_SETTINGS_MODULE=config.settings.production in .env.prod.
 """
 import os
+from decouple import config
 
-env = os.environ.get("DJANGO_ENV", "development")
+env = config("DJANGO_ENV", default="development")
 
 if env == "production":
     from .production import *  # noqa: F401, F403

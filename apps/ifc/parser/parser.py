@@ -57,8 +57,8 @@ class IfcCompleteParser:
 
         # Zugriff auf Daten
         for space in project.spaces:
-            print(f"{space.name}: {space.net_floor_area} m²")
-            print(f"  Brandschutz: {space.fire_rating}")
+            logger.info(f"{space.name}: {space.net_floor_area} m²")
+            logger.info(f"  Brandschutz: {space.fire_rating}")
 
         # Export als JSON
         project.save_json("output.json")

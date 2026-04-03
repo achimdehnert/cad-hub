@@ -2,10 +2,11 @@
 import os
 
 from .base import *  # noqa: F401, F403
+from decouple import config
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 # Security
 SECURE_BROWSER_XSS_FILTER = True
@@ -20,9 +21,9 @@ SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CSRF trusted origins (required behind reverse proxy)
-_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+_csrf = config("CSRF_TRUSTED_ORIGINS", default="")
 if _csrf:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
 
 # Redis (for Chat-Agent session backend)
-REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/1")
+REDIS_URL = config("REDIS_URL", default="redis://redis:6379/1")

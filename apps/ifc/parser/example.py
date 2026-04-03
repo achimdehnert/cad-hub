@@ -8,6 +8,9 @@ Zeigt wie man alle Informationen aus einer IFC-Datei extrahiert.
 from pathlib import Path
 
 from ifc_complete_parser import IfcCompleteParser, ParsedProject
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -18,99 +21,99 @@ def main():
     project: ParsedProject = parser.parse()
 
     # === 2. Projekt-Informationen ===
-    print("=" * 60)
-    print(f"PROJEKT: {project.name}")
-    print(f"Schema: {project.schema_version.value}")
-    print(f"Authoring: {project.authoring_app}")
-    print(f"Datei: {project.file_path}")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info(f"PROJEKT: {project.name}")
+    logger.info(f"Schema: {project.schema_version.value}")
+    logger.info(f"Authoring: {project.authoring_app}")
+    logger.info(f"Datei: {project.file_path}")
+    logger.info("=" * 60)
 
     # === 3. Räumliche Struktur ===
-    print(f"\n📍 Sites: {len(project.sites)}")
+    logger.info(f"\n📍 Sites: {len(project.sites)}")
     for site in project.sites:
-        print(f"   - {site.name}")
+        logger.info(f"   - {site.name}")
         if site.latitude and site.longitude:
-            print(f"     Koordinaten: {site.latitude:.6f}, {site.longitude:.6f}")
+            logger.info(f"     Koordinaten: {site.latitude:.6f}, {site.longitude:.6f}")
 
-    print(f"\n🏢 Gebäude: {len(project.buildings)}")
+    logger.info(f"\n🏢 Gebäude: {len(project.buildings)}")
     for building in project.buildings:
-        print(f"   - {building.name}")
+        logger.info(f"   - {building.name}")
 
-    print(f"\n🏗️ Geschosse: {len(project.storeys)}")
+    logger.info(f"\n🏗️ Geschosse: {len(project.storeys)}")
     for storey in project.storeys:
-        print(f"   - {storey.name} (Elevation: {storey.elevation}m)")
+        logger.info(f"   - {storey.name} (Elevation: {storey.elevation}m)")
 
     # === 4. Räume mit Details ===
-    print(f"\n🚪 Räume: {len(project.spaces)}")
-    print("-" * 60)
+    logger.info(f"\n🚪 Räume: {len(project.spaces)}")
+    logger.info("-" * 60)
 
     for space in project.spaces:
-        print(f"\n📦 {space.space_number or space.name} - {space.long_name or ''}")
+        logger.info(f"\n📦 {space.space_number or space.name} - {space.long_name or ''}")
 
         # Geometrie
         if space.net_floor_area:
-            print(f"   Fläche: {float(space.net_floor_area):.2f} m²")
+            logger.info(f"   Fläche: {float(space.net_floor_area):.2f} m²")
         if space.net_volume:
-            print(f"   Volumen: {float(space.net_volume):.2f} m³")
+            logger.info(f"   Volumen: {float(space.net_volume):.2f} m³")
         if space.net_height:
-            print(f"   Höhe: {float(space.net_height):.2f} m")
+            logger.info(f"   Höhe: {float(space.net_height):.2f} m")
 
         # Brandschutz
         if space.fire_rating or space.fire_compartment:
-            print("   🔥 Brandschutz:")
+            logger.info("   🔥 Brandschutz:")
             if space.fire_rating:
-                print(f"      - Feuerwiderstand: {space.fire_rating}")
+                logger.info(f"      - Feuerwiderstand: {space.fire_rating}")
             if space.fire_compartment:
-                print(f"      - Brandabschnitt: {space.fire_compartment}")
+                logger.info(f"      - Brandabschnitt: {space.fire_compartment}")
             if space.sprinkler_protected:
-                print("      - Sprinkler: Ja")
+                logger.info("      - Sprinkler: Ja")
 
         # Ex-Zone
         if space.ex_zone:
-            print(f"   ⚡ Ex-Zone: {space.ex_zone}")
+            logger.info(f"   ⚡ Ex-Zone: {space.ex_zone}")
 
         # Akustik
         if space.acoustic_rating:
-            print(f"   🔊 Akustik: {space.acoustic_rating}")
+            logger.info(f"   🔊 Akustik: {space.acoustic_rating}")
 
         # Thermik
         if space.design_temperature_heating or space.design_temperature_cooling:
-            print("   🌡️ Thermik:")
+            logger.info("   🌡️ Thermik:")
             if space.design_temperature_heating:
-                print(f"      - Heizung: {float(space.design_temperature_heating):.1f}°C")
+                logger.info(f"      - Heizung: {float(space.design_temperature_heating):.1f}°C")
             if space.design_temperature_cooling:
-                print(f"      - Kühlung: {float(space.design_temperature_cooling):.1f}°C")
+                logger.info(f"      - Kühlung: {float(space.design_temperature_cooling):.1f}°C")
 
         # Oberflächen
         if space.finish_floor or space.finish_wall or space.finish_ceiling:
-            print("   🎨 Oberflächen:")
+            logger.info("   🎨 Oberflächen:")
             if space.finish_floor:
-                print(f"      - Boden: {space.finish_floor}")
+                logger.info(f"      - Boden: {space.finish_floor}")
             if space.finish_wall:
-                print(f"      - Wand: {space.finish_wall}")
+                logger.info(f"      - Wand: {space.finish_wall}")
             if space.finish_ceiling:
-                print(f"      - Decke: {space.finish_ceiling}")
+                logger.info(f"      - Decke: {space.finish_ceiling}")
 
         # Alle Properties anzeigen
         if space.properties:
-            print(f"   📋 Properties ({len(space.properties)}):")
+            logger.info(f"   📋 Properties ({len(space.properties)}):")
             for prop in space.properties[:5]:  # Max 5 anzeigen
-                print(f"      - {prop.pset_name}.{prop.name} = {prop.value}")
+                logger.info(f"      - {prop.pset_name}.{prop.name} = {prop.value}")
             if len(space.properties) > 5:
-                print(f"      ... und {len(space.properties) - 5} weitere")
+                logger.info(f"      ... und {len(space.properties) - 5} weitere")
 
     # === 5. Element-Statistiken ===
-    print("\n" + "=" * 60)
-    print("ELEMENT-STATISTIKEN")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("ELEMENT-STATISTIKEN")
+    logger.info("=" * 60)
 
     for ifc_class, count in sorted(project.element_counts.items(), key=lambda x: -x[1]):
-        print(f"   {ifc_class}: {count}")
+        logger.info(f"   {ifc_class}: {count}")
 
     # === 6. Wände mit Brandschutz ===
-    print("\n" + "-" * 60)
-    print("WÄNDE MIT BRANDSCHUTZ")
-    print("-" * 60)
+    logger.info("\n" + "-" * 60)
+    logger.info("WÄNDE MIT BRANDSCHUTZ")
+    logger.info("-" * 60)
 
     walls_with_fire = [
         e
@@ -119,32 +122,32 @@ def main():
     ]
 
     for wall in walls_with_fire[:10]:
-        print(f"   {wall.name or wall.global_id[:8]}")
-        print(f"      - Brandschutz: {wall.fire_rating}")
-        print(f"      - Außen: {wall.is_external}")
-        print(f"      - Tragend: {wall.is_load_bearing}")
+        logger.info(f"   {wall.name or wall.global_id[:8]}")
+        logger.info(f"      - Brandschutz: {wall.fire_rating}")
+        logger.info(f"      - Außen: {wall.is_external}")
+        logger.info(f"      - Tragend: {wall.is_load_bearing}")
         if wall.thermal_transmittance:
-            print(f"      - U-Wert: {float(wall.thermal_transmittance):.3f} W/(m²·K)")
+            logger.info(f"      - U-Wert: {float(wall.thermal_transmittance):.3f} W/(m²·K)")
 
     # === 7. Materialien ===
-    print("\n" + "-" * 60)
-    print(f"VERWENDETE MATERIALIEN ({len(project.all_materials)})")
-    print("-" * 60)
+    logger.info("\n" + "-" * 60)
+    logger.info(f"VERWENDETE MATERIALIEN ({len(project.all_materials)})")
+    logger.info("-" * 60)
 
     for mat in sorted(project.all_materials):
-        print(f"   - {mat}")
+        logger.info(f"   - {mat}")
 
     # === 8. Export ===
     output_path = Path("ifc_export.json")
     project.save_json(output_path)
-    print(f"\n✅ JSON exportiert nach: {output_path}")
+    logger.info(f"\n✅ JSON exportiert nach: {output_path}")
 
     # Statistik
-    print("\n📊 Zusammenfassung:")
-    print(f"   - {len(project.spaces)} Räume")
-    print(f"   - {len(project.elements)} Bauelemente")
-    print(f"   - {len(project.element_types)} Element-Typen")
-    print(f"   - {len(project.all_materials)} Materialien")
+    logger.info("\n📊 Zusammenfassung:")
+    logger.info(f"   - {len(project.spaces)} Räume")
+    logger.info(f"   - {len(project.elements)} Bauelemente")
+    logger.info(f"   - {len(project.element_types)} Element-Typen")
+    logger.info(f"   - {len(project.all_materials)} Materialien")
 
 
 def extract_fire_protection_report(project: ParsedProject) -> str:

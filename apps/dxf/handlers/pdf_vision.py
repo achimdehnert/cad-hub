@@ -20,6 +20,7 @@ import re
 from dataclasses import asdict, dataclass, field
 
 from apps.core.handlers.base import (
+from decouple import config
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,
@@ -311,7 +312,7 @@ Antworte als JSON.""",
 
             import openai
 
-            api_key = os.environ.get("OPENAI_API_KEY")
+            api_key = config("OPENAI_API_KEY", default="")
             if not api_key:
                 logger.warning(f"[{self.name}] Kein OpenAI API Key")
                 return None
@@ -352,7 +353,7 @@ Antworte als JSON.""",
 
             import anthropic
 
-            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            api_key = config("ANTHROPIC_API_KEY", default="")
             if not api_key:
                 logger.warning(f"[{self.name}] Kein Anthropic API Key")
                 return None

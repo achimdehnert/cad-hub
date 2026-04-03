@@ -279,7 +279,7 @@ class DXFParserService:
 
         # Access data
         for line in result.lines:
-            print(f"Line: {line.start} -> {line.end}")
+            logger.info(f"Line: {line.start} -> {line.end}")
 
         # Export to dict/JSON
         data = result.to_dict()
