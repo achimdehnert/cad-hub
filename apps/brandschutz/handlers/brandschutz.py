@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import logging
 
-from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
-from nl2cad.brandschutz.models import BrandschutzAnalyse
+from nl2cad_brandschutz.analyzer import BrandschutzAnalyzer
+from nl2cad_brandschutz.models import BrandschutzAnalyse
 
 from apps.core.handlers.base import (
     BaseCADHandler,

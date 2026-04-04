@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/hotfix.md
+/home/devuser/github/platform/.windsurf/workflows/hotfix.md

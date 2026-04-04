@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/testing-conventions.md
+/home/devuser/github/platform/.windsurf/workflows/testing-conventions.md

@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/deploy-check.md
+/home/devuser/github/platform/.windsurf/workflows/deploy-check.md

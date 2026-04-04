@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 
-from nl2cad.brandschutz.models import (
+from nl2cad_brandschutz.models import (
     Brandabschnitt,
     BrandschutzAnalyse,
     BrandschutzKategorie,

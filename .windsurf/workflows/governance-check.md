@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/governance-check.md
+/home/devuser/github/platform/.windsurf/workflows/governance-check.md

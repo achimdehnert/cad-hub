@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/adr-review.md
+/home/devuser/github/platform/.windsurf/workflows/adr-review.md

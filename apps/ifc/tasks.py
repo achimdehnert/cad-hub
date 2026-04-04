@@ -12,8 +12,8 @@ from pathlib import Path
 from celery import shared_task
 from django.utils import timezone
 
-from nl2cad.core.parsers.ifc_parser import IFCParser
-from nl2cad.core.exceptions import IFCParseError
+from nl2cad_core.parsers.ifc_parser import IFCParser
+from nl2cad_core.exceptions import IFCParseError
 
 logger = logging.getLogger(__name__)
 

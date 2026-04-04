@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/repo-health-check.md
+/home/devuser/github/platform/.windsurf/workflows/repo-health-check.md

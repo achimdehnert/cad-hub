@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/sync-repo.md
+/home/devuser/github/platform/.windsurf/workflows/sync-repo.md
