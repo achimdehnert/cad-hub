@@ -15,8 +15,12 @@ from __future__ import annotations
 
 import logging
 
-from nl2cad_brandschutz.analyzer import BrandschutzAnalyzer
-from nl2cad_brandschutz.models import BrandschutzAnalyse
+try:
+    from nl2cad_brandschutz.analyzer import BrandschutzAnalyzer
+    from nl2cad_brandschutz.models import BrandschutzAnalyse
+except ImportError:
+    BrandschutzAnalyzer = None  # nl2cad-brandschutz deprecated
+    BrandschutzAnalyse = None
 
 from apps.core.handlers.base import (
     BaseCADHandler,

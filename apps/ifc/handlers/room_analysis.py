@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import logging
 
-from nl2cad_areas.din277 import DIN277Calculator
-from nl2cad_core.models.ifc import IFCRoom
+from nl2cad.areas.din277 import DIN277Calculator
+from nl2cad.core.models.ifc import IFCRoom
 
 from apps.core.handlers.base import (
     BaseCADHandler,

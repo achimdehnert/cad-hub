@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import logging
 
-from nl2cad_areas.din277 import DIN277Calculator as _NL2CADCalculator
-from nl2cad_areas.din277 import DIN277Result
+from nl2cad.areas.din277 import DIN277Calculator as _NL2CADCalculator
+from nl2cad.areas.din277 import DIN277Result
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ compat shim: ifc_parser_models -> nl2cad.core.models.ifc
 Diese Datei existiert nur für Backward-Kompatibilität.
 Neu-Code soll direkt nl2cad.core.models.ifc importieren.
 """
-from nl2cad_core.models.ifc import (
+from nl2cad.core.models.ifc import (
     IFCDoor,
     IFCFloor,
     IFCModel,

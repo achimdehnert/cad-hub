@@ -9,15 +9,25 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 
-from nl2cad_brandschutz.models import (
-    Brandabschnitt,
-    BrandschutzAnalyse,
-    BrandschutzKategorie,
-    Brandschutzeinrichtung,
-    ExBereich,
-    ExZone,
-    Fluchtweg,
-)
+try:
+    from nl2cad_brandschutz.models import (
+        Brandabschnitt,
+        BrandschutzAnalyse,
+        BrandschutzKategorie,
+        Brandschutzeinrichtung,
+        ExBereich,
+        ExZone,
+        Fluchtweg,
+    )
+except ImportError:
+    # nl2cad-brandschutz deprecated — provide minimal stubs
+    Brandabschnitt = None
+    BrandschutzAnalyse = None
+    BrandschutzKategorie = None
+    Brandschutzeinrichtung = None
+    ExBereich = None
+    ExZone = None
+    Fluchtweg = None
 
 __all__ = [
     "Brandabschnitt",

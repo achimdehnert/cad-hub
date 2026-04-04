@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from nl2cad_core.exceptions import IFCParseError
-from nl2cad_core.models.ifc import IFCModel
-from nl2cad_core.parsers.ifc_parser import IFCParser
+from nl2cad.core.exceptions import IFCParseError
+from nl2cad.core.models.ifc import IFCModel
+from nl2cad.core.parsers.ifc_parser import IFCParser
 
 logger = logging.getLogger(__name__)
 
