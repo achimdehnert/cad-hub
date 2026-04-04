@@ -1,6 +1,4 @@
 """Production settings — security hardened, env-driven."""
-import os
-
 from .base import *  # noqa: F401, F403
 from decouple import config
 
@@ -12,6 +10,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = False  # Nginx handles SSL termination
+SECURE_REDIRECT_EXEMPT = [r"^livez/$", r"^healthz/$"]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
