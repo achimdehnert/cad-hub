@@ -1,0 +1,13 @@
+name: Test Deploy Only
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: achimdehnert/platform/.github/workflows/_deploy-unified.yml@main
+    with:
+      app_name: "cad-hub"
+      app_path: "/opt/cad-hub"
+      dockerfile_path: "docker/app/Dockerfile"
+      health_check_url: "https://cad.iil.pet/healthz/"
+    secrets: inherit
