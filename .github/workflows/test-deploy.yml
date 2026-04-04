@@ -3,7 +3,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  test-reusable:
+    uses: achimdehnert/platform/.github/workflows/_test-reusable.yml@main
+    with:
+      app_name: "cad-hub"
+
+  test-deploy:
+    needs: [test-reusable]
+    if: always()
     uses: achimdehnert/platform/.github/workflows/_deploy-unified.yml@main
     with:
       app_name: "cad-hub"
