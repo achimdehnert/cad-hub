@@ -4,7 +4,7 @@ on:
 
 jobs:
   deploy:
-    uses: achimdehnert/platform/.github/workflows/_deploy-unified-debug.yml@main
+    uses: achimdehnert/platform/.github/workflows/_deploy-unified.yml@main
     with:
       app_name: "cad-hub"
       app_path: "/opt/cad-hub"
