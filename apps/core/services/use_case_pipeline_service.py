@@ -92,15 +92,19 @@ class UseCasePipelineService:
         """
         if self._direct_available:
             return self._direct_run_pipeline(use_case, context, tier)
-        return self._http_call(
-            "run_use_case_pipeline",
-            {
-                "use_case": use_case,
-                "context": context,
-                "tier": tier,
-                "output_format": "json",
-            },
-        )
+        try:
+            return self._http_call(
+                "run_use_case_pipeline",
+                {
+                    "use_case": use_case,
+                    "context": context,
+                    "tier": tier,
+                    "output_format": "json",
+                },
+            )
+        except Exception as exc:
+            logger.error("HTTP pipeline failed: %s", exc)
+            return self._stub(use_case, str(exc))
 
     def decompose(
         self,
