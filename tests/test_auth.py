@@ -4,8 +4,8 @@ import pytest
 from platform_context.testing.assertions import assert_login_required, assert_no_data_leak
 
 PROTECTED_URLS = [
-    "/dashboard/",
-    "/projects/",
+    "/ifc/",
+    "/avb/",
     "/admin/",
 ]
 
@@ -20,7 +20,7 @@ def test_should_protected_url_require_login(client, url):
 @pytest.mark.django_db
 def test_should_authenticated_user_reach_dashboard(auth_client):
     """U1: Authenticated user can access dashboard."""
-    response = auth_client.get("/dashboard/")
+    response = auth_client.get("/ifc/")
     assert response.status_code in (200, 302)
 
 

@@ -28,6 +28,8 @@ from typing import Any
 
 from decouple import config
 
+from apps.core.services.use_case_pipeline_service import UseCasePipelineService
+
 logger = logging.getLogger(__name__)
 
 GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
@@ -144,8 +146,6 @@ class IssueTriageService:
         self.github_repo = github_repo or GITHUB_REPO
         self.tier = tier
         self.dry_run = dry_run
-
-        from apps.core.services.use_case_pipeline_service import UseCasePipelineService
 
         self._pipeline = UseCasePipelineService()
 

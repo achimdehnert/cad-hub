@@ -28,6 +28,23 @@ def tenant_b_id():
     return uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
 
+def _make_project(tenant_id, project_number="P-001"):
+    """Helper: create IFCProject + ConstructionProject for a tenant."""
+    from apps.avb.models import ConstructionProject
+    from apps.ifc.models import IFCProject
+
+    ifc = IFCProject.objects.create(
+        tenant_id=tenant_id,
+        name=f"IFC {project_number}",
+    )
+    return ConstructionProject.objects.create(
+        tenant_id=tenant_id,
+        ifc_project=ifc,
+        project_number=project_number,
+        client="Test Client",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Layer 1: Isolation Tests — TenantAwareManager
 # ---------------------------------------------------------------------------
@@ -38,11 +55,7 @@ def test_construction_project_isolated_by_tenant(tenant_a_id, tenant_b_id):
     """KRITISCH: ConstructionProject von Tenant A darf bei Tenant B nicht sichtbar sein."""
     from apps.avb.models import ConstructionProject
 
-    project_a = ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="Projekt Tenant A",
-        project_number="P-A-001",
-    )
+    project_a = _make_project(tenant_a_id, "P-A-001")
 
     results_b = ConstructionProject.objects.for_tenant(tenant_b_id)
     assert not results_b.filter(pk=project_a.pk).exists(), (
@@ -55,11 +68,7 @@ def test_construction_project_visible_within_own_tenant(tenant_a_id):
     """Tenant A sieht eigene Projekte."""
     from apps.avb.models import ConstructionProject
 
-    project = ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="Eigenes Projekt",
-        project_number="P-A-002",
-    )
+    project = _make_project(tenant_a_id, "P-A-002")
 
     results = ConstructionProject.objects.for_tenant(tenant_a_id)
     assert results.filter(pk=project.pk).exists()
@@ -70,21 +79,9 @@ def test_two_tenants_have_independent_project_counts(tenant_a_id, tenant_b_id):
     """Tenant A und B haben unabhängige Datensätze."""
     from apps.avb.models import ConstructionProject
 
-    ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="Projekt A1",
-        project_number="P-A-003",
-    )
-    ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="Projekt A2",
-        project_number="P-A-004",
-    )
-    ConstructionProject.objects.create(
-        tenant_id=tenant_b_id,
-        name="Projekt B1",
-        project_number="P-B-001",
-    )
+    _make_project(tenant_a_id, "P-A-003")
+    _make_project(tenant_a_id, "P-A-004")
+    _make_project(tenant_b_id, "P-B-001")
 
     assert ConstructionProject.objects.for_tenant(tenant_a_id).count() == 2
     assert ConstructionProject.objects.for_tenant(tenant_b_id).count() == 1
@@ -98,13 +95,7 @@ def test_two_tenants_have_independent_project_counts(tenant_a_id, tenant_b_id):
 @pytest.mark.django_db
 def test_construction_project_requires_tenant_id(tenant_a_id):
     """tenant_id muss explizit gesetzt werden — kein Default."""
-    from apps.avb.models import ConstructionProject
-
-    project = ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="Pflichtfeld-Test",
-        project_number="P-A-005",
-    )
+    project = _make_project(tenant_a_id, "P-A-005")
     assert project.tenant_id == tenant_a_id
 
 
@@ -113,16 +104,8 @@ def test_for_tenant_returns_only_matching_tenant(tenant_a_id, tenant_b_id):
     """for_tenant() filtert strikt nach tenant_id."""
     from apps.avb.models import ConstructionProject
 
-    ConstructionProject.objects.create(
-        tenant_id=tenant_a_id,
-        name="A Projekt",
-        project_number="P-A-006",
-    )
-    ConstructionProject.objects.create(
-        tenant_id=tenant_b_id,
-        name="B Projekt",
-        project_number="P-B-002",
-    )
+    _make_project(tenant_a_id, "P-A-006")
+    _make_project(tenant_b_id, "P-B-002")
 
     qs_a = ConstructionProject.objects.for_tenant(tenant_a_id)
     for obj in qs_a:

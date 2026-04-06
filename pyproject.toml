@@ -27,7 +27,7 @@ DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["tests.py", "test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--tb=short -q"
+addopts = "--tb=short -q --ignore=tests/e2e"
 markers = [
     "e2e: Playwright end-to-end tests (require --playwright flag)",
 ]
