@@ -38,7 +38,7 @@ class HtmxMixin:
 # =============================================================================
 
 
-class DashboardView(TenantMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, TenantMixin, TemplateView):
     """Haupt-Dashboard mit Übersicht"""
 
     template_name = "cad_hub/dashboard.html"
