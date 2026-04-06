@@ -32,6 +32,7 @@ import logging
 import os
 import uuid
 from typing import Any
+
 from decouple import config
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ class UseCasePipelineService:
     def _check_direct(self) -> bool:
         try:
             from orchestrator_mcp.agent_team.use_case_pipeline import UseCasePipeline  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -90,12 +92,15 @@ class UseCasePipelineService:
         """
         if self._direct_available:
             return self._direct_run_pipeline(use_case, context, tier)
-        return self._http_call("run_use_case_pipeline", {
-            "use_case": use_case,
-            "context": context,
-            "tier": tier,
-            "output_format": "json",
-        })
+        return self._http_call(
+            "run_use_case_pipeline",
+            {
+                "use_case": use_case,
+                "context": context,
+                "tier": tier,
+                "output_format": "json",
+            },
+        )
 
     def decompose(
         self,
@@ -114,12 +119,15 @@ class UseCasePipelineService:
         """
         if self._direct_available:
             return self._direct_decompose(use_case, context, tier)
-        return self._http_call("decompose_use_case", {
-            "use_case": use_case,
-            "context": context,
-            "tier": tier,
-            "output_format": "json",
-        })
+        return self._http_call(
+            "decompose_use_case",
+            {
+                "use_case": use_case,
+                "context": context,
+                "tier": tier,
+                "output_format": "json",
+            },
+        )
 
     def health_check(self) -> bool:
         """Prüft ob Orchestrator MCP erreichbar ist."""
@@ -127,6 +135,7 @@ class UseCasePipelineService:
             return True
         try:
             import httpx
+
             with httpx.Client(timeout=5.0) as client:
                 r = client.get(f"{self.base_url}/health")
                 return r.status_code == 200
@@ -137,8 +146,10 @@ class UseCasePipelineService:
 
     def _direct_run_pipeline(self, use_case: str, context: str, tier: str) -> dict[str, Any]:
         import asyncio
+
         try:
             from orchestrator_mcp.agent_team.use_case_pipeline import UseCasePipeline
+
             pipeline = UseCasePipeline(tier=tier)
             result = asyncio.run(pipeline.run(use_case=use_case, context=context))
             return {"success": True, **result.to_dict()}
@@ -148,8 +159,10 @@ class UseCasePipelineService:
 
     def _direct_decompose(self, use_case: str, context: str, tier: str) -> dict[str, Any]:
         import asyncio
+
         try:
             from orchestrator_mcp.agent_team.use_case_decomposer import UseCaseDecomposer
+
             decomposer = UseCaseDecomposer(tier=tier)
             result = asyncio.run(decomposer.decompose_async(use_case=use_case, context=context))
             return {
@@ -182,6 +195,7 @@ class UseCasePipelineService:
     def _http_call(self, tool_name: str, arguments: dict) -> dict[str, Any]:
         try:
             import httpx
+
             with httpx.Client(timeout=self.timeout) as client:
                 response = client.post(
                     f"{self.base_url}/mcp/call",
@@ -211,19 +225,21 @@ class UseCasePipelineService:
             "task_count": 1,
             "total_sub_tasks": 1,
             "summary": f"Pipeline nicht verfügbar ({reason})",
-            "tasks": [{
-                "task_id": f"T-stub-{uuid.uuid4().hex[:6]}",
-                "title": f"Implement: {use_case[:80]}",
-                "type": "feature",
-                "complexity": "moderate",
-                "risk_level": "medium",
-                "affected_paths": [],
-                "acceptance_criteria": ["All tests pass"],
-                "context": use_case,
-                "graph_id": None,
-                "branches": 1,
-                "sub_task_details": [],
-            }],
+            "tasks": [
+                {
+                    "task_id": f"T-stub-{uuid.uuid4().hex[:6]}",
+                    "title": f"Implement: {use_case[:80]}",
+                    "type": "feature",
+                    "complexity": "moderate",
+                    "risk_level": "medium",
+                    "affected_paths": [],
+                    "acceptance_criteria": ["All tests pass"],
+                    "context": use_case,
+                    "graph_id": None,
+                    "branches": 1,
+                    "sub_task_details": [],
+                }
+            ],
             "warnings": [f"Pipeline fallback: {reason}"],
         }
 

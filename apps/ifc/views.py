@@ -2,6 +2,7 @@
 """
 Views für IFC Dashboard
 """
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
@@ -46,7 +47,9 @@ class DashboardView(TenantMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         tid = self._tenant_id()
 
-        ctx["recent_projects"] = IFCProject.objects.filter(tenant_id=tid)[:5] if tid else IFCProject.objects.none()
+        ctx["recent_projects"] = (
+            IFCProject.objects.filter(tenant_id=tid)[:5] if tid else IFCProject.objects.none()
+        )
         ctx["stats"] = {
             "projects": IFCProject.objects.filter(tenant_id=tid).count() if tid else 0,
             "models": IFCModel.objects.filter(tenant_id=tid, status="ready").count() if tid else 0,
@@ -241,6 +244,7 @@ class ModelUploadView(TenantMixin, LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         from .tasks import process_ifc_upload
+
         process_ifc_upload.delay(str(self.object.pk))
 
         return response
@@ -399,7 +403,6 @@ class AreaSummaryView(HtmxMixin, TemplateView):
         return ctx
 
 
-
 class WoFlVSummaryView(HtmxMixin, TemplateView):
     """WoFlV Wohnflächenübersicht"""
 
@@ -424,6 +427,3 @@ class WoFlVSummaryView(HtmxMixin, TemplateView):
         ctx["ifc_model"] = ifc_model
 
         return ctx
-
-
-

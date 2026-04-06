@@ -1,4 +1,5 @@
 """Development settings — DEBUG=True, sqlite fallback."""
+
 from .base import *  # noqa: F401, F403
 
 DEBUG = True
@@ -14,6 +15,7 @@ DATABASES = {
 
 # Disable tenant middleware in dev (optional)
 MIDDLEWARE = [
-    m for m in MIDDLEWARE  # noqa: F405
+    m
+    for m in MIDDLEWARE  # noqa: F405
     if m != "django_tenancy.middleware.SubdomainTenantMiddleware"
 ]

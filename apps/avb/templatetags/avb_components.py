@@ -1,4 +1,5 @@
 """Component inclusion tags for AVB templates (ADR-041)."""
+
 from __future__ import annotations
 
 from django import template

@@ -4,6 +4,7 @@ CADFileInputHandler - Format-Erkennung & Konvertierung.
 Verarbeitet IFC, DXF und DWG Dateien und stellt sie
 für nachfolgende Handler bereit.
 """
+
 import logging
 import tempfile
 from pathlib import Path
@@ -109,15 +110,17 @@ class CADFileInputHandler(BaseCADHandler):
                 result.add_error(f"IFC-Parsing fehlgeschlagen: {ifc_result.error}")
                 return result
 
-            result.data.update({
-                "format": "ifc",
-                "file_path": str(file_path),
-                "was_converted": False,
-                "ifc_result": ifc_result,
-                "rooms": ifc_result.rooms,
-                "room_count": len(ifc_result.rooms),
-                "total_area": sum(r.area for r in ifc_result.rooms if r.area),
-            })
+            result.data.update(
+                {
+                    "format": "ifc",
+                    "file_path": str(file_path),
+                    "was_converted": False,
+                    "ifc_result": ifc_result,
+                    "rooms": ifc_result.rooms,
+                    "room_count": len(ifc_result.rooms),
+                    "total_area": sum(r.area for r in ifc_result.rooms if r.area),
+                }
+            )
 
             result.status = HandlerStatus.SUCCESS
             logger.info(f"[{self.name}] IFC geladen: {len(ifc_result.rooms)} Räume")
@@ -137,7 +140,7 @@ class CADFileInputHandler(BaseCADHandler):
             converter = DWGConverterService()
             available = converter.get_available_methods()
 
-            if not any(m in available for m in ['oda', 'libredwg']):
+            if not any(m in available for m in ["oda", "libredwg"]):
                 result.add_error(
                     "DWG-Konvertierung nicht verfügbar. "
                     "Bitte ODA File Converter installieren: "
@@ -177,18 +180,20 @@ class CADFileInputHandler(BaseCADHandler):
             stats = loader.get_statistics()
             analysis = loader.get_analysis()
 
-            result.data.update({
-                "format": "dxf",
-                "file_path": str(file_path),
-                "was_converted": result.data.get("was_converted", False),
-                "_loader": loader,  # Prefix with _ to mark as non-serializable
-                "statistics": stats,
-                "total_entities": stats.get("total_entities", 0),
-                "layer_count": stats.get("layer_count", 0),
-                "dxf_version": analysis.dxf_version,
-                "units": analysis.units,
-                "bounding_box": stats.get("bounding_box"),
-            })
+            result.data.update(
+                {
+                    "format": "dxf",
+                    "file_path": str(file_path),
+                    "was_converted": result.data.get("was_converted", False),
+                    "_loader": loader,  # Prefix with _ to mark as non-serializable
+                    "statistics": stats,
+                    "total_entities": stats.get("total_entities", 0),
+                    "layer_count": stats.get("layer_count", 0),
+                    "dxf_version": analysis.dxf_version,
+                    "units": analysis.units,
+                    "bounding_box": stats.get("bounding_box"),
+                }
+            )
 
             result.status = HandlerStatus.SUCCESS
             logger.info(

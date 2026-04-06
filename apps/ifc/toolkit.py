@@ -7,6 +7,7 @@ Provides 4 query tools for the ChatAgent:
   3. query_components — Fenster, Türen, Decken
   4. query_summary    — Aggregierte Statistiken für ein IFC-Modell
 """
+
 from __future__ import annotations
 
 import logging
@@ -103,9 +104,7 @@ QUERY_COMPONENTS_TOOL: dict[str, Any] = {
     "type": "function",
     "function": {
         "name": "query_components",
-        "description": (
-            "Gibt Bauteile (Fenster, Türen oder Decken) eines IFC-Modells zurück."
-        ),
+        "description": ("Gibt Bauteile (Fenster, Türen oder Decken) eines IFC-Modells zurück."),
         "parameters": {
             "type": "object",
             "properties": {
@@ -203,9 +202,7 @@ class CADToolkit(DomainToolkit):
     # Tool handlers
     # ------------------------------------------------------------------
 
-    async def _query_rooms(
-        self, args: dict[str, Any], ctx: AgentContext
-    ) -> ToolResult:
+    async def _query_rooms(self, args: dict[str, Any], ctx: AgentContext) -> ToolResult:
         try:
             model_id = args["model_id"]
             limit = int(args.get("limit", 20))
@@ -223,8 +220,13 @@ class CADToolkit(DomainToolkit):
 
             rooms = list(
                 qs.select_related("floor").values(
-                    "ifc_guid", "number", "name", "area",
-                    "height", "usage_category", "floor__name",
+                    "ifc_guid",
+                    "number",
+                    "name",
+                    "area",
+                    "height",
+                    "usage_category",
+                    "floor__name",
                 )[:limit]
             )
 
@@ -233,18 +235,14 @@ class CADToolkit(DomainToolkit):
                 data={
                     "count": len(rooms),
                     "rooms": rooms,
-                    "total_area": sum(
-                        float(r["area"]) for r in rooms if r["area"]
-                    ),
+                    "total_area": sum(float(r["area"]) for r in rooms if r["area"]),
                 },
             )
         except Exception as exc:
             logger.exception("query_rooms failed: %s", exc)
             return ToolResult(success=False, error=str(exc))
 
-    async def _query_walls(
-        self, args: dict[str, Any], ctx: AgentContext
-    ) -> ToolResult:
+    async def _query_walls(self, args: dict[str, Any], ctx: AgentContext) -> ToolResult:
         try:
             model_id = args["model_id"]
             limit = int(args.get("limit", 20))
@@ -265,9 +263,17 @@ class CADToolkit(DomainToolkit):
 
             walls = list(
                 qs.select_related("floor").values(
-                    "ifc_guid", "name", "length", "height", "width",
-                    "gross_area", "net_area", "is_external",
-                    "is_load_bearing", "material", "floor__name",
+                    "ifc_guid",
+                    "name",
+                    "length",
+                    "height",
+                    "width",
+                    "gross_area",
+                    "net_area",
+                    "is_external",
+                    "is_load_bearing",
+                    "material",
+                    "floor__name",
                 )[:limit]
             )
 
@@ -285,9 +291,7 @@ class CADToolkit(DomainToolkit):
             logger.exception("query_walls failed: %s", exc)
             return ToolResult(success=False, error=str(exc))
 
-    async def _query_components(
-        self, args: dict[str, Any], ctx: AgentContext
-    ) -> ToolResult:
+    async def _query_components(self, args: dict[str, Any], ctx: AgentContext) -> ToolResult:
         try:
             model_id = args["model_id"]
             component_type = args["component_type"]
@@ -295,9 +299,45 @@ class CADToolkit(DomainToolkit):
             floor_name = args.get("floor_name")
 
             model_map = {
-                "windows": (Window, ["ifc_guid", "number", "name", "width", "height", "area", "material", "floor__name"]),
-                "doors": (Door, ["ifc_guid", "number", "name", "width", "height", "door_type", "material", "fire_rating", "floor__name"]),
-                "slabs": (Slab, ["ifc_guid", "name", "slab_type", "area", "thickness", "material", "floor__name"]),
+                "windows": (
+                    Window,
+                    [
+                        "ifc_guid",
+                        "number",
+                        "name",
+                        "width",
+                        "height",
+                        "area",
+                        "material",
+                        "floor__name",
+                    ],
+                ),
+                "doors": (
+                    Door,
+                    [
+                        "ifc_guid",
+                        "number",
+                        "name",
+                        "width",
+                        "height",
+                        "door_type",
+                        "material",
+                        "fire_rating",
+                        "floor__name",
+                    ],
+                ),
+                "slabs": (
+                    Slab,
+                    [
+                        "ifc_guid",
+                        "name",
+                        "slab_type",
+                        "area",
+                        "thickness",
+                        "material",
+                        "floor__name",
+                    ],
+                ),
             }
 
             if component_type not in model_map:
@@ -329,18 +369,14 @@ class CADToolkit(DomainToolkit):
             logger.exception("query_components failed: %s", exc)
             return ToolResult(success=False, error=str(exc))
 
-    async def _query_summary(
-        self, args: dict[str, Any], ctx: AgentContext
-    ) -> ToolResult:
+    async def _query_summary(self, args: dict[str, Any], ctx: AgentContext) -> ToolResult:
         try:
             from django.db.models import Sum
 
             model_id = args["model_id"]
             tid = ctx.tenant_id
 
-            ifc_model = IFCModel.objects.filter(
-                pk=model_id, tenant_id=tid
-            ).first()
+            ifc_model = IFCModel.objects.filter(pk=model_id, tenant_id=tid).first()
             if not ifc_model:
                 return ToolResult(
                     success=False,
@@ -361,21 +397,15 @@ class CADToolkit(DomainToolkit):
                 "status": ifc_model.status,
                 "floors": floors_qs.count(),
                 "rooms": rooms_qs.count(),
-                "total_room_area": float(
-                    rooms_qs.aggregate(s=Sum("area"))["s"] or 0
-                ),
+                "total_room_area": float(rooms_qs.aggregate(s=Sum("area"))["s"] or 0),
                 "walls": walls_qs.count(),
                 "external_walls": walls_qs.filter(is_external=True).count(),
                 "load_bearing_walls": walls_qs.filter(is_load_bearing=True).count(),
-                "total_wall_gross_area": float(
-                    walls_qs.aggregate(s=Sum("gross_area"))["s"] or 0
-                ),
+                "total_wall_gross_area": float(walls_qs.aggregate(s=Sum("gross_area"))["s"] or 0),
                 "windows": windows_qs.count(),
                 "doors": doors_qs.count(),
                 "slabs": slabs_qs.count(),
-                "total_slab_area": float(
-                    slabs_qs.aggregate(s=Sum("area"))["s"] or 0
-                ),
+                "total_slab_area": float(slabs_qs.aggregate(s=Sum("area"))["s"] or 0),
             }
 
             return ToolResult(success=True, data=summary)

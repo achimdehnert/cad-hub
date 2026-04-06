@@ -4,6 +4,7 @@ Brandschutz models — symbols, inspections, defects, proposals, regulations.
 Source: bfagent/apps/cad_hub/models/brandschutz.py
 Changes: app_label → brandschutz, tenant_id added.
 """
+
 import uuid
 
 from django.db import models
@@ -55,12 +56,8 @@ class BrandschutzSymbol(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     name = models.CharField(max_length=100)
     din_nummer = models.CharField(max_length=20)
     kategorie = models.CharField(
@@ -71,7 +68,8 @@ class BrandschutzSymbol(models.Model):
     beschreibung = models.TextField(blank=True)
     block_dxf = models.FileField(
         upload_to="brandschutz/symbole/",
-        blank=True, null=True,
+        blank=True,
+        null=True,
     )
     block_json = models.JSONField(blank=True, null=True)
     farbe = models.CharField(max_length=20, default="rot")
@@ -96,42 +94,34 @@ class BrandschutzPruefung(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     titel = models.CharField(max_length=200)
     projekt_name = models.CharField(max_length=200)
     projekt_id = models.UUIDField(blank=True, null=True)
     gebaeude_typ = models.CharField(max_length=50, blank=True)
-    etage = models.CharField(
-        max_length=50, blank=True, default="EG"
-    )
+    etage = models.CharField(max_length=50, blank=True, default="EG")
     flaeche_qm = models.FloatField(blank=True, null=True)
     beschreibung = models.TextField(blank=True)
     quelldatei = models.FileField(
         upload_to="brandschutz/plaene/",
-        blank=True, null=True,
+        blank=True,
+        null=True,
     )
     report_pdf = models.FileField(
         upload_to="brandschutz/reports/",
-        blank=True, null=True,
+        blank=True,
+        null=True,
     )
     status = models.CharField(
         max_length=50,
         choices=PruefStatus.choices,
         default=PruefStatus.ENTWURF,
     )
-    analyse_ergebnis = models.JSONField(
-        blank=True, null=True
-    )
+    analyse_ergebnis = models.JSONField(blank=True, null=True)
     pruefer = models.CharField(max_length=200, blank=True)
     pruef_datum = models.DateField(blank=True, null=True)
-    naechste_pruefung = models.DateField(
-        blank=True, null=True
-    )
+    naechste_pruefung = models.DateField(blank=True, null=True)
     erstellt_am = models.DateTimeField(auto_now_add=True)
     aktualisiert_am = models.DateTimeField(auto_now=True)
 
@@ -157,12 +147,8 @@ class BrandschutzMangel(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     pruefung = models.ForeignKey(
         BrandschutzPruefung,
         on_delete=models.CASCADE,
@@ -185,7 +171,8 @@ class BrandschutzMangel(models.Model):
         default="mittel",
     )
     regelwerk_referenz = models.CharField(
-        max_length=100, blank=True,
+        max_length=100,
+        blank=True,
     )
     position_x = models.FloatField(blank=True, null=True)
     position_y = models.FloatField(blank=True, null=True)
@@ -194,7 +181,8 @@ class BrandschutzMangel(models.Model):
     behoben_kommentar = models.TextField(blank=True)
     foto = models.ImageField(
         upload_to="brandschutz/maengel/",
-        blank=True, null=True,
+        blank=True,
+        null=True,
     )
     notizen = models.TextField(blank=True)
     erstellt_am = models.DateTimeField(auto_now_add=True)
@@ -216,12 +204,8 @@ class BrandschutzSymbolVorschlag(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     pruefung = models.ForeignKey(
         BrandschutzPruefung,
         on_delete=models.CASCADE,
@@ -230,13 +214,9 @@ class BrandschutzSymbolVorschlag(models.Model):
     symbol_typ = models.CharField(max_length=50)
     position_x = models.FloatField(default=0)
     position_y = models.FloatField(default=0)
-    raum_referenz = models.CharField(
-        max_length=100, blank=True
-    )
+    raum_referenz = models.CharField(max_length=100, blank=True)
     begruendung = models.TextField(blank=True)
-    regelwerk_basis = models.CharField(
-        max_length=100, blank=True
-    )
+    regelwerk_basis = models.CharField(max_length=100, blank=True)
     prioritaet = models.IntegerField(default=2)
     status = models.CharField(
         max_length=20,
@@ -264,12 +244,8 @@ class BrandschutzSymbolVorschlag(models.Model):
 class BrandschutzRegelwerk(models.Model):
     """Regelwerk-Referenz für Brandschutz-Prüfungen."""
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     kuerzel = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)
     TYP_CHOICES = [
@@ -281,9 +257,7 @@ class BrandschutzRegelwerk(models.Model):
         ("indbauril", "Industriebaurichtlinie"),
         ("sonstige", "Sonstige"),
     ]
-    typ = models.CharField(
-        max_length=20, choices=TYP_CHOICES, default="din"
-    )
+    typ = models.CharField(max_length=20, choices=TYP_CHOICES, default="din")
     kategorien = models.JSONField(default=list)
     regeln = models.JSONField(default=dict)
     url = models.URLField(blank=True)

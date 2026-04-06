@@ -3,6 +3,7 @@ IFC Parser Element Models
 
 ParsedElement, ParsedElementType, ParsedProject dataclasses.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

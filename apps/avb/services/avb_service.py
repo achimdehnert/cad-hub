@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BidComparison:
     """Angebotsvergleich für eine Position"""
+
     position_oz: str
     position_text: str
     quantity: Decimal
@@ -38,6 +39,7 @@ class BidComparison:
 @dataclass
 class PriceRanking:
     """Preisranking eines Bieters"""
+
     bidder_id: str
     bidder_name: str
     total_price: Decimal
@@ -88,8 +90,8 @@ class AVBService:
             ifc_project=ifc_model.project,
             defaults={
                 "client": "N/A",
-                "project_number": f"P-{ifc_model.project.pk.hex[:8].upper()}"
-            }
+                "project_number": f"P-{ifc_model.project.pk.hex[:8].upper()}",
+            },
         )
 
         # Ausschreibungsnummer generieren
@@ -145,29 +147,33 @@ class AVBService:
         """Extrahiert IFC-Daten aus der Datenbank."""
         from ..models import Door, Room, Slab, Wall, Window
 
-        rooms = list(Room.objects.filter(ifc_model=ifc_model).values(
-            "name", "number", "area", "perimeter", "height", "volume"
-        ))
+        rooms = list(
+            Room.objects.filter(ifc_model=ifc_model).values(
+                "name", "number", "area", "perimeter", "height", "volume"
+            )
+        )
 
-        walls = list(Wall.objects.filter(ifc_model=ifc_model).values(
-            "name", "ifc_guid", "length", "height", "thickness"
-        ))
+        walls = list(
+            Wall.objects.filter(ifc_model=ifc_model).values(
+                "name", "ifc_guid", "length", "height", "thickness"
+            )
+        )
         for wall in walls:
             wall["area"] = (wall.get("length", 0) or 0) * (wall.get("height", 0) or 0)
 
-        doors = list(Door.objects.filter(ifc_model=ifc_model).values(
-            "name", "ifc_guid", "width", "height"
-        ))
+        doors = list(
+            Door.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
+        )
         for door in doors:
             door["type"] = "Standard"
 
-        windows = list(Window.objects.filter(ifc_model=ifc_model).values(
-            "name", "ifc_guid", "width", "height"
-        ))
+        windows = list(
+            Window.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
+        )
 
-        slabs = list(Slab.objects.filter(ifc_model=ifc_model).values(
-            "name", "ifc_guid", "area", "thickness"
-        ))
+        slabs = list(
+            Slab.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "area", "thickness")
+        )
 
         return {
             "rooms": rooms,
@@ -207,13 +213,15 @@ class AVBService:
                 try:
                     bp = BidPosition.objects.get(bid=bid, tender_position=position)
                     prices.append(bp.unit_price)
-                    bid_data.append({
-                        "bidder": bid.bidder.company_name,
-                        "bidder_id": str(bid.bidder.pk),
-                        "unit_price": bp.unit_price,
-                        "total": bp.total_price,
-                        "rank": 0,  # Wird später berechnet
-                    })
+                    bid_data.append(
+                        {
+                            "bidder": bid.bidder.company_name,
+                            "bidder_id": str(bid.bidder.pk),
+                            "unit_price": bp.unit_price,
+                            "total": bp.total_price,
+                            "rank": 0,  # Wird später berechnet
+                        }
+                    )
                 except BidPosition.DoesNotExist:
                     continue
 
@@ -230,16 +238,18 @@ class AVBService:
             average = sum(prices) / len(prices)
             spread = ((highest - lowest) / lowest * 100) if lowest > 0 else 0
 
-            comparisons.append(BidComparison(
-                position_oz=position.oz,
-                position_text=position.short_text,
-                quantity=position.quantity,
-                unit=position.unit,
-                bids=bid_data,
-                lowest_price=lowest,
-                average_price=average,
-                spread_percent=float(spread),
-            ))
+            comparisons.append(
+                BidComparison(
+                    position_oz=position.oz,
+                    position_text=position.short_text,
+                    quantity=position.quantity,
+                    unit=position.unit,
+                    bids=bid_data,
+                    lowest_price=lowest,
+                    average_price=average,
+                    spread_percent=float(spread),
+                )
+            )
 
         return comparisons
 
@@ -257,7 +267,7 @@ class AVBService:
 
         bids = tender.bids.filter(
             status__in=[BidStatus.RECEIVED, BidStatus.EVALUATED, BidStatus.NEGOTIATION]
-        ).select_related('bidder')
+        ).select_related("bidder")
 
         if not bids.exists():
             return []
@@ -268,7 +278,7 @@ class AVBService:
         rankings = []
         lowest_total = None
 
-        for bid in bids.order_by('total_price'):
+        for bid in bids.order_by("total_price"):
             # Zähle Positionen wo dieser Bieter günstigster ist
             lowest_count = 0
             for comp in comparisons:
@@ -284,16 +294,18 @@ class AVBService:
             # Preisscore: 100 für günstigsten, linear abnehmend
             price_score = Decimal("100") * lowest_total / final if final > 0 else Decimal("0")
 
-            rankings.append(PriceRanking(
-                bidder_id=str(bid.bidder.pk),
-                bidder_name=bid.bidder.company_name,
-                total_price=bid.total_price,
-                final_price=final,
-                rank=len(rankings) + 1,
-                price_score=price_score.quantize(Decimal("0.1")),
-                positions_count=bid.positions.count(),
-                lowest_positions=lowest_count,
-            ))
+            rankings.append(
+                PriceRanking(
+                    bidder_id=str(bid.bidder.pk),
+                    bidder_name=bid.bidder.company_name,
+                    total_price=bid.total_price,
+                    final_price=final,
+                    rank=len(rankings) + 1,
+                    price_score=price_score.quantize(Decimal("0.1")),
+                    positions_count=bid.positions.count(),
+                    lowest_positions=lowest_count,
+                )
+            )
 
         return rankings
 
@@ -322,7 +334,9 @@ class AVBService:
             "savings_vs_estimate": tender.estimated_value - winner.final_price,
             "savings_percent": float(
                 (tender.estimated_value - winner.final_price) / tender.estimated_value * 100
-            ) if tender.estimated_value > 0 else 0,
+            )
+            if tender.estimated_value > 0
+            else 0,
             "ranking": rankings,
             "reason": "Günstigster Bieter nach Endpreis",
         }
@@ -355,14 +369,16 @@ class AVBService:
         # LV erstellen
         positionen = []
         for pos in tender.positions.all():
-            positionen.append(Position(
-                oz=pos.oz,
-                kurztext=pos.short_text,
-                langtext=pos.long_text,
-                menge=pos.quantity,
-                einheit=str(pos.unit),
-                stlb_code=pos.stlb_code,
-            ))
+            positionen.append(
+                Position(
+                    oz=pos.oz,
+                    kurztext=pos.short_text,
+                    langtext=pos.long_text,
+                    menge=pos.quantity,
+                    einheit=str(pos.unit),
+                    stlb_code=pos.stlb_code,
+                )
+            )
 
         lv = Leistungsverzeichnis(
             projekt_name=tender.project.ifc_project.name,

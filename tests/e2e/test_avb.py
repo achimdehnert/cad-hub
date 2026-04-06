@@ -12,7 +12,6 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-
 BASE_URL = "http://localhost:8094"
 pytestmark = pytest.mark.e2e
 

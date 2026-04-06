@@ -26,8 +26,8 @@ from apps.core.services.issue_triage_service import (
     get_triage_service,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_task(
     title: str = "Add IFC upload",
@@ -61,9 +61,7 @@ def _make_decomp_result(tasks: list[dict], success: bool = True) -> dict:
 
 
 def _make_service(dry_run: bool = False) -> IssueTriageService:
-    with patch(
-        "apps.core.services.issue_triage_service.UseCasePipelineService"
-    ) as MockPipeline:
+    with patch("apps.core.services.issue_triage_service.UseCasePipelineService") as MockPipeline:
         service = IssueTriageService(
             github_token="test-token",
             github_repo="achimdehnert/cad-hub",
@@ -75,6 +73,7 @@ def _make_service(dry_run: bool = False) -> IssueTriageService:
 
 
 # ── TriageResult ──────────────────────────────────────────────────────────────
+
 
 class TestTriageResult:
     def test_summary_no_tasks(self):
@@ -107,6 +106,7 @@ class TestTriageResult:
 
 # ── Label-Berechnung ──────────────────────────────────────────────────────────
 
+
 class TestComputeLabels:
     def _service(self) -> IssueTriageService:
         return _make_service(dry_run=True)
@@ -134,9 +134,7 @@ class TestComputeLabels:
 
     def test_should_map_architectural_complexity(self):
         service = self._service()
-        labels = service._compute_labels(
-            [_make_task(complexity="architectural")], []
-        )
+        labels = service._compute_labels([_make_task(complexity="architectural")], [])
         assert "complexity:architectural" in labels
 
     def test_should_add_risk_label_only_for_high_and_critical(self):
@@ -151,16 +149,12 @@ class TestComputeLabels:
 
     def test_should_map_ifc_path_to_app_label(self):
         service = self._service()
-        labels = service._compute_labels(
-            [_make_task(paths=["apps/ifc/models.py"])], []
-        )
+        labels = service._compute_labels([_make_task(paths=["apps/ifc/models.py"])], [])
         assert "app:ifc" in labels
 
     def test_should_map_dxf_path(self):
         service = self._service()
-        labels = service._compute_labels(
-            [_make_task(paths=["apps/dxf/views.py"])], []
-        )
+        labels = service._compute_labels([_make_task(paths=["apps/dxf/views.py"])], [])
         assert "app:dxf" in labels
 
     def test_should_map_avb_path(self):
@@ -172,9 +166,7 @@ class TestComputeLabels:
 
     def test_should_map_tests_path_to_scope(self):
         service = self._service()
-        labels = service._compute_labels(
-            [_make_task(paths=["tests/test_ifc.py"])], []
-        )
+        labels = service._compute_labels([_make_task(paths=["tests/test_ifc.py"])], [])
         assert "scope:tests" in labels
 
     def test_should_not_duplicate_existing_labels(self):
@@ -208,13 +200,13 @@ class TestComputeLabels:
 
 # ── Triage (dry_run) ──────────────────────────────────────────────────────────
 
+
 class TestTriageDryRun:
     def test_should_return_labels_without_github_call(self):
         service = _make_service(dry_run=True)
-        service._pipeline.decompose.return_value = _make_decomp_result([
-            _make_task("Add IFC upload", "feature", "complex", "medium",
-                       ["apps/ifc/models.py"])
-        ])
+        service._pipeline.decompose.return_value = _make_decomp_result(
+            [_make_task("Add IFC upload", "feature", "complex", "medium", ["apps/ifc/models.py"])]
+        )
         result = service.triage(42, "Add IFC upload", "Users need IFC upload")
         assert "type:feature" in result.labels
         assert "complexity:complex" in result.labels
@@ -247,12 +239,13 @@ class TestTriageDryRun:
 
 # ── Triage (live — GitHub API gemockt) ───────────────────────────────────────
 
+
 class TestTriageLive:
     def test_should_call_github_api_with_labels(self):
         service = _make_service(dry_run=False)
-        service._pipeline.decompose.return_value = _make_decomp_result([
-            _make_task("Add IFC", "feature", "complex", "medium", ["apps/ifc/models.py"])
-        ])
+        service._pipeline.decompose.return_value = _make_decomp_result(
+            [_make_task("Add IFC", "feature", "complex", "medium", ["apps/ifc/models.py"])]
+        )
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -284,13 +277,16 @@ class TestTriageLive:
         service._pipeline.decompose.return_value = _make_decomp_result([_make_task()])
 
         with patch("httpx.Client") as mock_cls:
-            mock_cls.return_value.__enter__.return_value.post.side_effect = Exception("network error")
+            mock_cls.return_value.__enter__.return_value.post.side_effect = Exception(
+                "network error"
+            )
             result = service.triage(1, "test", "body")
 
         assert result.github_updated is False
 
 
 # ── triage_batch ──────────────────────────────────────────────────────────────
+
 
 class TestTriageBatch:
     def test_should_process_multiple_issues(self):
@@ -308,11 +304,10 @@ class TestTriageBatch:
 
     def test_should_skip_existing_labels(self):
         service = _make_service(dry_run=True)
-        service._pipeline.decompose.return_value = _make_decomp_result([
-            _make_task(task_type="feature")
-        ])
-        issues = [{"number": 1, "title": "t", "body": "",
-                   "labels": [{"name": "type:feature"}]}]
+        service._pipeline.decompose.return_value = _make_decomp_result(
+            [_make_task(task_type="feature")]
+        )
+        issues = [{"number": 1, "title": "t", "body": "", "labels": [{"name": "type:feature"}]}]
         results = service.triage_batch(issues)
         assert "type:feature" not in results[0].labels
 
@@ -335,6 +330,7 @@ class TestTriageBatch:
 
 # ── Label-Definitionen Vollständigkeit ────────────────────────────────────────
 
+
 class TestLabelDefinitions:
     def test_all_task_types_have_labels(self):
         expected_types = ["feature", "bugfix", "refactor", "test", "docs", "adr", "chore"]
@@ -348,16 +344,25 @@ class TestLabelDefinitions:
 
     def test_app_path_labels_cover_cad_hub_apps(self):
         app_labels = {label for _, label in PATH_APP_LABELS}
-        expected_apps = {"app:ifc", "app:dxf", "app:avb", "app:areas",
-                         "app:brandschutz", "app:export", "app:core"}
+        expected_apps = {
+            "app:ifc",
+            "app:dxf",
+            "app:avb",
+            "app:areas",
+            "app:brandschutz",
+            "app:export",
+            "app:core",
+        }
         assert expected_apps.issubset(app_labels)
 
 
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
+
 class TestSingleton:
     def test_get_triage_service_singleton(self):
         import apps.core.services.issue_triage_service as mod
+
         mod._default_triage = None
         with patch("apps.core.services.issue_triage_service.UseCasePipelineService"):
             s1 = get_triage_service(dry_run=True)

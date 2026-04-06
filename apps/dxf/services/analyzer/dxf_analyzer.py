@@ -46,6 +46,7 @@ def load_cad_file(filepath):
     elif suffix == ".dwg":
         try:
             from ezdxf.addons import odafc
+
             doc = odafc.readfile(str(filepath))
             return doc, True, "DWG"
         except ImportError:
@@ -54,6 +55,7 @@ def load_cad_file(filepath):
             pass
 
         from .dwg_converter import DWGConverterService
+
         converter = DWGConverterService()
         result = converter.convert(str(filepath))
         if result.success and result.dxf_path:
@@ -61,18 +63,17 @@ def load_cad_file(filepath):
             return doc, True, "DWG"
 
         raise RuntimeError(
-            f"Kann DWG-Datei nicht laden: {filepath}\n"
-            "ODA File Converter nicht gefunden."
+            f"Kann DWG-Datei nicht laden: {filepath}\nODA File Converter nicht gefunden."
         )
 
     else:
-        raise ValueError(
-            f"Nicht unterstuetztes Format: {suffix}"
-        )
+        raise ValueError(f"Nicht unterstuetztes Format: {suffix}")
+
 
 # ============================================================================
 # HAUPT-ANALYSEKLASSE
 # ============================================================================
+
 
 class DXFAnalyzer:
     """
@@ -149,7 +150,8 @@ class DXFAnalyzer:
     def get_entities_by_category(self, category: EntityCategory) -> list:
         """Filtert Entities nach Kategorie."""
         return [
-            e for e in self.entities
+            e
+            for e in self.entities
             if ENTITY_CATEGORIES.get(e.dxftype(), EntityCategory.OTHER) == category
         ]
 
@@ -185,7 +187,7 @@ class DXFAnalyzer:
                 is_frozen=is_frozen,
                 is_locked=is_locked,
                 entity_count=layer_entities[name]["count"],
-                entity_types=dict(layer_entities[name]["types"])
+                entity_types=dict(layer_entities[name]["types"]),
             )
             layers.append(info)
 
@@ -246,7 +248,7 @@ class DXFAnalyzer:
                 has_attributes=len(attdefs) > 0,
                 attribute_tags=attr_tags,
                 insert_count=insert_counts.get(block.name, 0),
-                insert_positions=insert_positions.get(block.name, [])
+                insert_positions=insert_positions.get(block.name, []),
             )
             blocks.append(info)
 
@@ -263,14 +265,16 @@ class DXFAnalyzer:
                 for attrib in insert.attribs:
                     attribs[attrib.dxf.tag] = attrib.dxf.text
 
-            inserts.append({
-                "handle": insert.dxf.handle,
-                "position": tuple(insert.dxf.insert),
-                "rotation": insert.dxf.rotation,
-                "scale": (insert.dxf.xscale, insert.dxf.yscale, insert.dxf.zscale),
-                "layer": insert.dxf.layer,
-                "attributes": attribs
-            })
+            inserts.append(
+                {
+                    "handle": insert.dxf.handle,
+                    "position": tuple(insert.dxf.insert),
+                    "rotation": insert.dxf.rotation,
+                    "scale": (insert.dxf.xscale, insert.dxf.yscale, insert.dxf.zscale),
+                    "layer": insert.dxf.layer,
+                    "attributes": attribs,
+                }
+            )
 
         return inserts
 
@@ -290,7 +294,7 @@ class DXFAnalyzer:
         for entity in self.entities:
             try:
                 # Verschiedene Entity-Typen haben unterschiedliche Vertex-Methoden
-                if hasattr(entity, 'vertices'):
+                if hasattr(entity, "vertices"):
                     for v in entity.vertices():
                         bbox.extend([v])
                 elif entity.dxftype() == "LINE":
@@ -298,17 +302,11 @@ class DXFAnalyzer:
                 elif entity.dxftype() == "CIRCLE":
                     c = entity.dxf.center
                     r = entity.dxf.radius
-                    bbox.extend([
-                        Vec3(c.x - r, c.y - r, c.z),
-                        Vec3(c.x + r, c.y + r, c.z)
-                    ])
+                    bbox.extend([Vec3(c.x - r, c.y - r, c.z), Vec3(c.x + r, c.y + r, c.z)])
                 elif entity.dxftype() == "ARC":
                     c = entity.dxf.center
                     r = entity.dxf.radius
-                    bbox.extend([
-                        Vec3(c.x - r, c.y - r, c.z),
-                        Vec3(c.x + r, c.y + r, c.z)
-                    ])
+                    bbox.extend([Vec3(c.x - r, c.y - r, c.z), Vec3(c.x + r, c.y + r, c.z)])
                 elif entity.dxftype() == "POINT":
                     bbox.extend([entity.dxf.location])
                 elif entity.dxftype() in ("TEXT", "MTEXT"):
@@ -331,7 +329,7 @@ class DXFAnalyzer:
                     "x": (bbox.extmin.x + bbox.extmax.x) / 2,
                     "y": (bbox.extmin.y + bbox.extmax.y) / 2,
                     "z": (bbox.extmin.z + bbox.extmax.z) / 2,
-                }
+                },
             }
         return None
 
@@ -352,13 +350,15 @@ class DXFAnalyzer:
 
             geom_data = self._extract_entity_geometry(entity)
             if geom_data:
-                geometries.append(GeometryInfo(
-                    entity_type=etype,
-                    layer=entity.dxf.layer,
-                    color=entity.dxf.color,
-                    handle=entity.dxf.handle,
-                    geometry=geom_data
-                ))
+                geometries.append(
+                    GeometryInfo(
+                        entity_type=etype,
+                        layer=entity.dxf.layer,
+                        color=entity.dxf.color,
+                        handle=entity.dxf.handle,
+                        geometry=geom_data,
+                    )
+                )
 
         return geometries
 
@@ -370,15 +370,15 @@ class DXFAnalyzer:
             return {
                 "start": tuple(entity.dxf.start),
                 "end": tuple(entity.dxf.end),
-                "length": entity.dxf.start.distance(entity.dxf.end)
+                "length": entity.dxf.start.distance(entity.dxf.end),
             }
 
         elif etype == "CIRCLE":
             return {
                 "center": tuple(entity.dxf.center),
                 "radius": entity.dxf.radius,
-                "area": math.pi * entity.dxf.radius ** 2,
-                "circumference": 2 * math.pi * entity.dxf.radius
+                "area": math.pi * entity.dxf.radius**2,
+                "circumference": 2 * math.pi * entity.dxf.radius,
             }
 
         elif etype == "ARC":
@@ -387,7 +387,7 @@ class DXFAnalyzer:
                 "radius": entity.dxf.radius,
                 "start_angle": entity.dxf.start_angle,
                 "end_angle": entity.dxf.end_angle,
-                "arc_length": self._calculate_arc_length(entity)
+                "arc_length": self._calculate_arc_length(entity),
             }
 
         elif etype == "LWPOLYLINE":
@@ -397,7 +397,7 @@ class DXFAnalyzer:
                 "closed": entity.closed,
                 "vertex_count": len(points),
                 "perimeter": self._calculate_polyline_length(points, entity.closed),
-                "area": self._calculate_polygon_area(points) if entity.closed else None
+                "area": self._calculate_polygon_area(points) if entity.closed else None,
             }
 
         elif etype == "POINT":
@@ -409,7 +409,7 @@ class DXFAnalyzer:
                 "major_axis": tuple(entity.dxf.major_axis),
                 "ratio": entity.dxf.ratio,
                 "start_param": entity.dxf.start_param,
-                "end_param": entity.dxf.end_param
+                "end_param": entity.dxf.end_param,
             }
 
         return None
@@ -425,14 +425,14 @@ class DXFAnalyzer:
         """Berechnet die Länge einer Polylinie."""
         length = 0.0
         for i in range(len(points) - 1):
-            dx = points[i+1][0] - points[i][0]
-            dy = points[i+1][1] - points[i][1]
-            length += math.sqrt(dx*dx + dy*dy)
+            dx = points[i + 1][0] - points[i][0]
+            dy = points[i + 1][1] - points[i][1]
+            length += math.sqrt(dx * dx + dy * dy)
 
         if closed and len(points) > 2:
             dx = points[0][0] - points[-1][0]
             dy = points[0][1] - points[-1][1]
-            length += math.sqrt(dx*dx + dy*dy)
+            length += math.sqrt(dx * dx + dy * dy)
 
         return length
 
@@ -462,25 +462,29 @@ class DXFAnalyzer:
             etype = entity.dxftype()
 
             if etype == "TEXT":
-                texts.append(TextInfo(
-                    content=entity.dxf.text,
-                    position=tuple(entity.dxf.insert),
-                    height=entity.dxf.height,
-                    rotation=entity.dxf.rotation,
-                    layer=entity.dxf.layer,
-                    entity_type="TEXT",
-                    style=entity.dxf.style
-                ))
+                texts.append(
+                    TextInfo(
+                        content=entity.dxf.text,
+                        position=tuple(entity.dxf.insert),
+                        height=entity.dxf.height,
+                        rotation=entity.dxf.rotation,
+                        layer=entity.dxf.layer,
+                        entity_type="TEXT",
+                        style=entity.dxf.style,
+                    )
+                )
             else:  # MTEXT
-                texts.append(TextInfo(
-                    content=entity.text,  # Bereinigter Text
-                    position=tuple(entity.dxf.insert),
-                    height=entity.dxf.char_height,
-                    rotation=entity.dxf.rotation,
-                    layer=entity.dxf.layer,
-                    entity_type="MTEXT",
-                    style=entity.dxf.style
-                ))
+                texts.append(
+                    TextInfo(
+                        content=entity.text,  # Bereinigter Text
+                        position=tuple(entity.dxf.insert),
+                        height=entity.dxf.char_height,
+                        rotation=entity.dxf.rotation,
+                        layer=entity.dxf.layer,
+                        entity_type="MTEXT",
+                        style=entity.dxf.style,
+                    )
+                )
 
         return texts
 
@@ -494,7 +498,7 @@ class DXFAnalyzer:
                     "block_name": insert.dxf.name,
                     "position": tuple(insert.dxf.insert),
                     "layer": insert.dxf.layer,
-                    "attributes": {}
+                    "attributes": {},
                 }
                 for attrib in insert.attribs:
                     block_attribs["attributes"][attrib.dxf.tag] = attrib.dxf.text
@@ -517,17 +521,19 @@ class DXFAnalyzer:
             except Exception:
                 measurement = None
 
-            dimensions.append(DimensionInfo(
-                measurement=measurement,
-                text_override=dim.dxf.text if dim.dxf.text else "",
-                dim_type=str(dim.dimtype),
-                layer=dim.dxf.layer,
-                definition_points=[
-                    tuple(dim.dxf.defpoint),
-                    tuple(dim.dxf.defpoint2) if hasattr(dim.dxf, 'defpoint2') else None,
-                    tuple(dim.dxf.defpoint3) if hasattr(dim.dxf, 'defpoint3') else None,
-                ]
-            ))
+            dimensions.append(
+                DimensionInfo(
+                    measurement=measurement,
+                    text_override=dim.dxf.text if dim.dxf.text else "",
+                    dim_type=str(dim.dimtype),
+                    layer=dim.dxf.layer,
+                    definition_points=[
+                        tuple(dim.dxf.defpoint),
+                        tuple(dim.dxf.defpoint2) if hasattr(dim.dxf, "defpoint2") else None,
+                        tuple(dim.dxf.defpoint3) if hasattr(dim.dxf, "defpoint3") else None,
+                    ],
+                )
+            )
 
         return dimensions
 
@@ -548,62 +554,74 @@ class DXFAnalyzer:
         for line in self.msp.query("LINE"):
             length = line.dxf.start.distance(line.dxf.end)
             if length < 0.1:
-                issues.append({
-                    "type": "SHORT_LINE",
-                    "severity": "info",
-                    "handle": line.dxf.handle,
-                    "message": f"Sehr kurze Linie ({length:.4f})",
-                    "layer": line.dxf.layer
-                })
+                issues.append(
+                    {
+                        "type": "SHORT_LINE",
+                        "severity": "info",
+                        "handle": line.dxf.handle,
+                        "message": f"Sehr kurze Linie ({length:.4f})",
+                        "layer": line.dxf.layer,
+                    }
+                )
 
         # 2. Entities auf Layer "0"
         layer0_count = sum(1 for e in self.entities if e.dxf.layer == "0")
         if layer0_count > 0:
-            issues.append({
-                "type": "LAYER_ZERO",
-                "severity": "info",
-                "message": f"{layer0_count} Entities auf Layer '0'",
-            })
+            issues.append(
+                {
+                    "type": "LAYER_ZERO",
+                    "severity": "info",
+                    "message": f"{layer0_count} Entities auf Layer '0'",
+                }
+            )
 
         # 3. Leere Layer
         empty_layers = self.get_empty_layers()
         if empty_layers:
-            issues.append({
-                "type": "EMPTY_LAYERS",
-                "severity": "info",
-                "message": f"{len(empty_layers)} leere Layer",
-                "layers": empty_layers
-            })
+            issues.append(
+                {
+                    "type": "EMPTY_LAYERS",
+                    "severity": "info",
+                    "message": f"{len(empty_layers)} leere Layer",
+                    "layers": empty_layers,
+                }
+            )
 
         # 4. Unbenutzte Blöcke
         unused_blocks = self.get_unused_blocks()
         if unused_blocks:
-            issues.append({
-                "type": "UNUSED_BLOCKS",
-                "severity": "info",
-                "message": f"{len(unused_blocks)} unbenutzte Block-Definitionen",
-                "blocks": unused_blocks
-            })
+            issues.append(
+                {
+                    "type": "UNUSED_BLOCKS",
+                    "severity": "info",
+                    "message": f"{len(unused_blocks)} unbenutzte Block-Definitionen",
+                    "blocks": unused_blocks,
+                }
+            )
 
         # 5. Doppelte Entities (gleiche Geometrie)
         duplicates = self._find_duplicate_entities()
         if duplicates:
-            issues.append({
-                "type": "DUPLICATES",
-                "severity": "warning",
-                "message": f"{len(duplicates)} mögliche Duplikate gefunden",
-                "count": len(duplicates)
-            })
+            issues.append(
+                {
+                    "type": "DUPLICATES",
+                    "severity": "warning",
+                    "message": f"{len(duplicates)} mögliche Duplikate gefunden",
+                    "count": len(duplicates),
+                }
+            )
 
         # 6. Nicht geschlossene Polylinien (die es sein sollten)
         open_polylines = self._find_nearly_closed_polylines()
         if open_polylines:
-            issues.append({
-                "type": "UNCLOSED_POLYLINES",
-                "severity": "warning",
-                "message": f"{len(open_polylines)} fast geschlossene Polylinien",
-                "handles": open_polylines
-            })
+            issues.append(
+                {
+                    "type": "UNCLOSED_POLYLINES",
+                    "severity": "warning",
+                    "message": f"{len(open_polylines)} fast geschlossene Polylinien",
+                    "handles": open_polylines,
+                }
+            )
 
         return issues
 
@@ -613,9 +631,11 @@ class DXFAnalyzer:
         lines = list(self.msp.query("LINE"))
 
         for i, line1 in enumerate(lines):
-            for line2 in lines[i+1:]:
-                if (line1.dxf.start.distance(line2.dxf.start) < tolerance and
-                    line1.dxf.end.distance(line2.dxf.end) < tolerance):
+            for line2 in lines[i + 1 :]:
+                if (
+                    line1.dxf.start.distance(line2.dxf.start) < tolerance
+                    and line1.dxf.end.distance(line2.dxf.end) < tolerance
+                ):
                     duplicates.append((line1.dxf.handle, line2.dxf.handle))
 
         return duplicates
@@ -630,7 +650,7 @@ class DXFAnalyzer:
                 if len(points) >= 3:
                     first = points[0]
                     last = points[-1]
-                    dist = math.sqrt((first[0]-last[0])**2 + (first[1]-last[1])**2)
+                    dist = math.sqrt((first[0] - last[0]) ** 2 + (first[1] - last[1]) ** 2)
                     if dist < tolerance:
                         nearly_closed.append(pline.dxf.handle)
 
@@ -651,8 +671,14 @@ class DXFAnalyzer:
 
         # Einheiten aus Header
         units_map = {
-            0: "Unitless", 1: "Inches", 2: "Feet", 3: "Miles",
-            4: "Millimeters", 5: "Centimeters", 6: "Meters", 7: "Kilometers"
+            0: "Unitless",
+            1: "Inches",
+            2: "Feet",
+            3: "Miles",
+            4: "Millimeters",
+            5: "Centimeters",
+            6: "Meters",
+            7: "Kilometers",
         }
         try:
             insunits = self.doc.header.get("$INSUNITS", 0)
@@ -676,7 +702,7 @@ class DXFAnalyzer:
             dimensions=[asdict(d) for d in self.extract_dimensions()],
             issues=self.check_quality(),
             source_format=self._source_format,
-            was_converted=self._was_converted
+            was_converted=self._was_converted,
         )
 
     # -------------------------------------------------------------------------
@@ -687,7 +713,7 @@ class DXFAnalyzer:
         """Exportiert vollständige Analyse als JSON."""
         report = self.full_analysis()
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(asdict(report), f, indent=indent, default=str, ensure_ascii=False)
 
         return filepath
@@ -698,18 +724,20 @@ class DXFAnalyzer:
 
         geometries = self.extract_geometry(["LINE", "CIRCLE", "ARC", "LWPOLYLINE"])
 
-        with open(filepath, 'w', newline='', encoding='utf-8') as f:
+        with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(["handle", "type", "layer", "color", "geometry"])
 
             for geom in geometries:
-                writer.writerow([
-                    geom.handle,
-                    geom.entity_type,
-                    geom.layer,
-                    geom.color,
-                    json.dumps(geom.geometry)
-                ])
+                writer.writerow(
+                    [
+                        geom.handle,
+                        geom.entity_type,
+                        geom.layer,
+                        geom.color,
+                        json.dumps(geom.geometry),
+                    ]
+                )
 
         return filepath
 
@@ -719,21 +747,23 @@ class DXFAnalyzer:
 
         texts = self.extract_texts()
 
-        with open(filepath, 'w', newline='', encoding='utf-8') as f:
+        with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["content", "position_x", "position_y", "height",
-                           "rotation", "layer", "type"])
+            writer.writerow(
+                ["content", "position_x", "position_y", "height", "rotation", "layer", "type"]
+            )
 
             for text in texts:
-                writer.writerow([
-                    text.content,
-                    text.position[0],
-                    text.position[1],
-                    text.height,
-                    text.rotation,
-                    text.layer,
-                    text.entity_type
-                ])
+                writer.writerow(
+                    [
+                        text.content,
+                        text.position[0],
+                        text.position[1],
+                        text.height,
+                        text.rotation,
+                        text.layer,
+                        text.entity_type,
+                    ]
+                )
 
         return filepath
-

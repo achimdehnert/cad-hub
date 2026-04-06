@@ -4,6 +4,7 @@ NLQueryHandler - Natural Language Query Processing.
 Verarbeitet natürlichsprachliche Anfragen zu CAD-Daten
 mittels Pattern-Matching und optionalem LLM.
 """
+
 import logging
 import re
 from dataclasses import dataclass
@@ -23,22 +24,24 @@ logger = logging.getLogger(__name__)
 
 class QueryIntent(Enum):
     """Erkannte Absichten aus NL-Queries."""
-    ROOM_LIST = "room_list"           # "Zeige alle Räume"
-    ROOM_AREA = "room_area"           # "Wie groß ist Raum X?"
-    TOTAL_AREA = "total_area"         # "Gesamtfläche?"
-    LAYER_INFO = "layer_info"         # "Welche Layer gibt es?"
-    ENTITY_COUNT = "entity_count"     # "Wie viele Linien?"
-    DIMENSION_INFO = "dimension_info" # "Welche Maße?"
-    DOOR_COUNT = "door_count"         # "Wie viele Türen?"
-    WINDOW_COUNT = "window_count"     # "Wie viele Fenster?"
-    QUALITY_CHECK = "quality_check"   # "Prüfe Qualität"
-    EXPORT = "export"                 # "Exportiere als JSON"
+
+    ROOM_LIST = "room_list"  # "Zeige alle Räume"
+    ROOM_AREA = "room_area"  # "Wie groß ist Raum X?"
+    TOTAL_AREA = "total_area"  # "Gesamtfläche?"
+    LAYER_INFO = "layer_info"  # "Welche Layer gibt es?"
+    ENTITY_COUNT = "entity_count"  # "Wie viele Linien?"
+    DIMENSION_INFO = "dimension_info"  # "Welche Maße?"
+    DOOR_COUNT = "door_count"  # "Wie viele Türen?"
+    WINDOW_COUNT = "window_count"  # "Wie viele Fenster?"
+    QUALITY_CHECK = "quality_check"  # "Prüfe Qualität"
+    EXPORT = "export"  # "Exportiere als JSON"
     UNKNOWN = "unknown"
 
 
 @dataclass
 class ParsedQuery:
     """Ergebnis der Query-Analyse."""
+
     original: str
     intent: QueryIntent
     entities: dict
@@ -189,7 +192,9 @@ class NLQueryHandler(BaseCADHandler):
 
                 # Offer to learn
                 result.data["can_learn"] = True
-                result.data["available_intents"] = [i.value for i in QueryIntent if i != QueryIntent.UNKNOWN]
+                result.data["available_intents"] = [
+                    i.value for i in QueryIntent if i != QueryIntent.UNKNOWN
+                ]
 
         # Generate response based on intent
         if loader:
@@ -305,16 +310,16 @@ Antwort als JSON:
                     # Get units from analysis to determine conversion factor
                     try:
                         analysis = loader.get_analysis()
-                        units = getattr(analysis, 'units', 'Unknown')
+                        units = getattr(analysis, "units", "Unknown")
                     except Exception:
-                        units = 'Unknown'
+                        units = "Unknown"
 
                     total_raw = sum(a.get("area", 0) for a in areas)
 
                     # Smart unit conversion based on detected units and magnitude
-                    if units and 'mm' in str(units).lower():
+                    if units and "mm" in str(units).lower():
                         total = total_raw / 1_000_000  # mm² to m²
-                    elif units and 'cm' in str(units).lower():
+                    elif units and "cm" in str(units).lower():
                         total = total_raw / 10_000  # cm² to m²
                     elif total_raw > 100_000:  # Likely mm²
                         total = total_raw / 1_000_000
@@ -347,9 +352,11 @@ Antwort als JSON:
                         query=parsed.original,
                         intent="door_count",
                         result_type="türen",
-                        context={"loader_type": "dxf"}
+                        context={"loader_type": "dxf"},
                     )
-                    return f"🚪 Keine Türen erkannt. [Feature-Request #{uc.request_count}x gemeldet]"
+                    return (
+                        f"🚪 Keine Türen erkannt. [Feature-Request #{uc.request_count}x gemeldet]"
+                    )
                 return f"Erkannte Türen: {count}"
 
             elif parsed.intent == QueryIntent.WINDOW_COUNT:
@@ -362,9 +369,11 @@ Antwort als JSON:
                         query=parsed.original,
                         intent="window_count",
                         result_type="fenster",
-                        context={"loader_type": "dxf"}
+                        context={"loader_type": "dxf"},
                     )
-                    return f"🪟 Keine Fenster erkannt. [Feature-Request #{uc.request_count}x gemeldet]"
+                    return (
+                        f"🪟 Keine Fenster erkannt. [Feature-Request #{uc.request_count}x gemeldet]"
+                    )
                 return f"Erkannte Fenster: {count}"
 
             elif parsed.intent == QueryIntent.QUALITY_CHECK:

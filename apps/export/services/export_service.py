@@ -5,6 +5,7 @@ Raumbuch Export Service
 Basiert auf BauCAD Hub MCP generators/raumbuch.py und ifc_mcp Excel patterns.
 Integriert DIN 277 Calculator für korrekte Flächenklassifizierung.
 """
+
 import logging
 from io import BytesIO
 
@@ -71,7 +72,6 @@ class RaumbuchExportService:
         3. Geschosse - Zusammenfassung pro Geschoss
         """
         from openpyxl import Workbook
-
 
         wb = Workbook()
 

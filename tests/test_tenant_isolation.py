@@ -13,10 +13,10 @@ import uuid
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def tenant_a_id():
@@ -31,6 +31,7 @@ def tenant_b_id():
 # ---------------------------------------------------------------------------
 # Layer 1: Isolation Tests — TenantAwareManager
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_construction_project_isolated_by_tenant(tenant_a_id, tenant_b_id):
@@ -92,6 +93,7 @@ def test_two_tenants_have_independent_project_counts(tenant_a_id, tenant_b_id):
 # ---------------------------------------------------------------------------
 # Layer 2: Propagation Tests — tenant_id muss bei Create gesetzt sein
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_construction_project_requires_tenant_id(tenant_a_id):

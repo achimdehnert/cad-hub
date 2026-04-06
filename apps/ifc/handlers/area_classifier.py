@@ -14,6 +14,7 @@ Hybrid-Ansatz:
 2. LLM-Fallback für unsichere Fälle
 3. Lernen aus LLM-Entscheidungen
 """
+
 import json
 import logging
 from dataclasses import asdict, dataclass, field
@@ -28,20 +29,22 @@ CLASSIFIER_DATA_PATH = Path(__file__).parent.parent / "data" / "area_classifier.
 
 class AreaCategory(Enum):
     """Kategorien für Flächentypen."""
-    GRUNDFLAECHE = "grundfläche"      # Nutzfläche, Bodenfläche, Räume
-    DECKENFLAECHE = "deckenfläche"    # Decken, Deckenbeläge
-    WANDFLAECHE = "wandfläche"        # Wände, Fassaden
-    KONSTRUKTION = "konstruktion"     # Tragwerk, Fundamente
-    TECHNIK = "technik"               # Elektro, Sanitär, Heizung
-    EINRICHTUNG = "einrichtung"       # Möbel, Symbole
-    ANNOTATION = "annotation"         # Text, Bemaßung, Legende
-    IGNORIEREN = "ignorieren"         # Hilfslinien, Viewport
-    UNBEKANNT = "unbekannt"           # Nicht klassifiziert
+
+    GRUNDFLAECHE = "grundfläche"  # Nutzfläche, Bodenfläche, Räume
+    DECKENFLAECHE = "deckenfläche"  # Decken, Deckenbeläge
+    WANDFLAECHE = "wandfläche"  # Wände, Fassaden
+    KONSTRUKTION = "konstruktion"  # Tragwerk, Fundamente
+    TECHNIK = "technik"  # Elektro, Sanitär, Heizung
+    EINRICHTUNG = "einrichtung"  # Möbel, Symbole
+    ANNOTATION = "annotation"  # Text, Bemaßung, Legende
+    IGNORIEREN = "ignorieren"  # Hilfslinien, Viewport
+    UNBEKANNT = "unbekannt"  # Nicht klassifiziert
 
 
 @dataclass
 class ClassifierRule:
     """Eine Klassifizierungsregel."""
+
     keywords: list[str]
     category: AreaCategory
     priority: int = 0  # Höher = wird zuerst geprüft
@@ -51,6 +54,7 @@ class ClassifierRule:
 @dataclass
 class LearnedClassification:
     """Gelernte Klassifizierung von LLM."""
+
     layer_name: str
     layer_normalized: str
     category: str
@@ -78,122 +82,252 @@ class AreaClassifier:
         # GRUNDFLÄCHE - echte Nutzflächen
         AreaCategory.GRUNDFLAECHE: [
             # Deutsch
-            "grundfläche", "grundflaeche", "bodenfläche", "bodenflaeche",
-            "nutzfläche", "nutzflaeche", "nuf", "nrf",
-            "bodenplatte", "bodenplatten",
-            "raum", "räume", "raeume", "room",
-            "wohnfläche", "wohnflaeche", "wohnraum",
-            "geschossfläche", "geschossflaeche",
+            "grundfläche",
+            "grundflaeche",
+            "bodenfläche",
+            "bodenflaeche",
+            "nutzfläche",
+            "nutzflaeche",
+            "nuf",
+            "nrf",
+            "bodenplatte",
+            "bodenplatten",
+            "raum",
+            "räume",
+            "raeume",
+            "room",
+            "wohnfläche",
+            "wohnflaeche",
+            "wohnraum",
+            "geschossfläche",
+            "geschossflaeche",
             # Raumtypen
-            "büro", "buero", "office",
-            "flur", "corridor", "gang",
-            "küche", "kueche", "kitchen",
-            "bad", "badezimmer", "bathroom", "wc", "toilette",
-            "schlafzimmer", "schlaf", "bedroom",
-            "wohnzimmer", "wohn", "living",
-            "esszimmer", "essen", "dining",
-            "kinderzimmer", "kind",
-            "arbeitszimmer", "arbeit",
-            "lager", "lagerraum", "storage",
-            "keller", "kellerraum", "basement",
-            "dachboden", "dachgeschoss", "attic",
-            "garage", "carport",
-            "terrasse", "balkon", "loggia",
-            "eingang", "entrance", "foyer",
-            "empfang", "reception",
+            "büro",
+            "buero",
+            "office",
+            "flur",
+            "corridor",
+            "gang",
+            "küche",
+            "kueche",
+            "kitchen",
+            "bad",
+            "badezimmer",
+            "bathroom",
+            "wc",
+            "toilette",
+            "schlafzimmer",
+            "schlaf",
+            "bedroom",
+            "wohnzimmer",
+            "wohn",
+            "living",
+            "esszimmer",
+            "essen",
+            "dining",
+            "kinderzimmer",
+            "kind",
+            "arbeitszimmer",
+            "arbeit",
+            "lager",
+            "lagerraum",
+            "storage",
+            "keller",
+            "kellerraum",
+            "basement",
+            "dachboden",
+            "dachgeschoss",
+            "attic",
+            "garage",
+            "carport",
+            "terrasse",
+            "balkon",
+            "loggia",
+            "eingang",
+            "entrance",
+            "foyer",
+            "empfang",
+            "reception",
         ],
-
         # DECKENFLÄCHE
         AreaCategory.DECKENFLAECHE: [
-            "decke", "decken", "ceiling",
-            "deckenfläche", "deckenflaeche",
-            "deckenbelag", "deckenaufbau",
+            "decke",
+            "decken",
+            "ceiling",
+            "deckenfläche",
+            "deckenflaeche",
+            "deckenbelag",
+            "deckenaufbau",
             "deckenkonstruktion",
-            "abhangdecke", "abhängedecke",
+            "abhangdecke",
+            "abhängedecke",
             "akustikdecke",
         ],
-
         # WANDFLÄCHE
         AreaCategory.WANDFLAECHE: [
-            "wand", "wände", "waende", "wall",
-            "wandfläche", "wandflaeche",
-            "außenwand", "aussenwand", "exterior",
-            "innenwand", "interior",
-            "trennwand", "partition",
-            "fassade", "facade",
-            "sandwichwand", "sandwich",
-            "brüstung", "bruestung", "parapet",
+            "wand",
+            "wände",
+            "waende",
+            "wall",
+            "wandfläche",
+            "wandflaeche",
+            "außenwand",
+            "aussenwand",
+            "exterior",
+            "innenwand",
+            "interior",
+            "trennwand",
+            "partition",
+            "fassade",
+            "facade",
+            "sandwichwand",
+            "sandwich",
+            "brüstung",
+            "bruestung",
+            "parapet",
         ],
-
         # KONSTRUKTION
         AreaCategory.KONSTRUKTION: [
-            "konstruktion", "construction",
-            "tragwerk", "struktur", "structure",
-            "fundament", "foundation",
-            "stütze", "stuetze", "column", "pillar",
-            "träger", "traeger", "beam",
-            "balken", "joist",
-            "bewehrung", "reinforcement",
-            "schalung", "formwork",
-            "beton", "concrete",
-            "stahl", "steel",
-            "holzbau", "timber",
+            "konstruktion",
+            "construction",
+            "tragwerk",
+            "struktur",
+            "structure",
+            "fundament",
+            "foundation",
+            "stütze",
+            "stuetze",
+            "column",
+            "pillar",
+            "träger",
+            "traeger",
+            "beam",
+            "balken",
+            "joist",
+            "bewehrung",
+            "reinforcement",
+            "schalung",
+            "formwork",
+            "beton",
+            "concrete",
+            "stahl",
+            "steel",
+            "holzbau",
+            "timber",
         ],
-
         # TECHNIK
         AreaCategory.TECHNIK: [
-            "elektro", "electric", "electrical",
-            "sanitär", "sanitaer", "sanitary", "plumbing",
-            "heizung", "heating", "hvac",
-            "lüftung", "lueftung", "ventilation",
-            "klima", "climate", "aircon",
-            "sprinkler", "brandschutz", "fire",
-            "entwässerung", "entwaesserung", "drainage",
-            "rohr", "leitung", "pipe",
-            "kanal", "duct",
-            "schacht", "shaft",
+            "elektro",
+            "electric",
+            "electrical",
+            "sanitär",
+            "sanitaer",
+            "sanitary",
+            "plumbing",
+            "heizung",
+            "heating",
+            "hvac",
+            "lüftung",
+            "lueftung",
+            "ventilation",
+            "klima",
+            "climate",
+            "aircon",
+            "sprinkler",
+            "brandschutz",
+            "fire",
+            "entwässerung",
+            "entwaesserung",
+            "drainage",
+            "rohr",
+            "leitung",
+            "pipe",
+            "kanal",
+            "duct",
+            "schacht",
+            "shaft",
         ],
-
         # EINRICHTUNG
         AreaCategory.EINRICHTUNG: [
-            "möbel", "moebel", "furniture",
-            "einrichtung", "interior",
-            "küchenmöbel", "kuechenmoebel",
-            "badmöbel", "badmoebel",
-            "schrank", "cabinet",
-            "tisch", "table",
-            "stuhl", "chair",
-            "sofa", "couch",
-            "bett", "bed",
-            "regal", "shelf",
+            "möbel",
+            "moebel",
+            "furniture",
+            "einrichtung",
+            "interior",
+            "küchenmöbel",
+            "kuechenmoebel",
+            "badmöbel",
+            "badmoebel",
+            "schrank",
+            "cabinet",
+            "tisch",
+            "table",
+            "stuhl",
+            "chair",
+            "sofa",
+            "couch",
+            "bett",
+            "bed",
+            "regal",
+            "shelf",
         ],
-
         # ANNOTATION
         AreaCategory.ANNOTATION: [
-            "text", "beschriftung", "annotation", "label",
-            "bemaßung", "bemassung", "dimension", "dim",
-            "symbol", "symbole",
-            "schraffur", "hatch", "pattern",
-            "legende", "legend",
-            "titel", "title",
-            "rahmen", "frame", "border",
-            "logo", "stamp",
-            "notiz", "note", "comment",
-            "ergänzung", "ergaenzung", "supplement",
-            "maßstab", "massstab", "scale",
-            "north", "nord", "compass",
+            "text",
+            "beschriftung",
+            "annotation",
+            "label",
+            "bemaßung",
+            "bemassung",
+            "dimension",
+            "dim",
+            "symbol",
+            "symbole",
+            "schraffur",
+            "hatch",
+            "pattern",
+            "legende",
+            "legend",
+            "titel",
+            "title",
+            "rahmen",
+            "frame",
+            "border",
+            "logo",
+            "stamp",
+            "notiz",
+            "note",
+            "comment",
+            "ergänzung",
+            "ergaenzung",
+            "supplement",
+            "maßstab",
+            "massstab",
+            "scale",
+            "north",
+            "nord",
+            "compass",
         ],
-
         # IGNORIEREN
         AreaCategory.IGNORIEREN: [
-            "viewport", "defpoints",
-            "hilfslinie", "hilfslin", "auxiliary",
-            "achse", "axis", "grid",
-            "raster", "gridline",
-            "schnitt", "section",
-            "ansicht", "view", "elevation",
+            "viewport",
+            "defpoints",
+            "hilfslinie",
+            "hilfslin",
+            "auxiliary",
+            "achse",
+            "axis",
+            "grid",
+            "raster",
+            "gridline",
+            "schnitt",
+            "section",
+            "ansicht",
+            "view",
+            "elevation",
             "detail",
-            "0", "layer0",  # Standard-Layer oft ignorieren
+            "0",
+            "layer0",  # Standard-Layer oft ignorieren
         ],
     }
 
@@ -221,11 +355,16 @@ class AreaClassifier:
         try:
             self.data_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.data_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "version": "1.0",
-                    "updated_at": datetime.now().isoformat(),
-                    "learned": [lc.to_dict() for lc in self.learned.values()],
-                }, f, indent=2, ensure_ascii=False)
+                json.dump(
+                    {
+                        "version": "1.0",
+                        "updated_at": datetime.now().isoformat(),
+                        "learned": [lc.to_dict() for lc in self.learned.values()],
+                    },
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
         except Exception as e:
             logger.error(f"[AreaClassifier] Could not save: {e}")
 
@@ -233,16 +372,17 @@ class AreaClassifier:
     def normalize(name: str) -> str:
         """Normalisiert Layer-Namen für Vergleich."""
         import re
+
         if not name:
             return ""
         # Lowercase
         normalized = name.lower().strip()
         # Remove numbers at start (like "324 - ")
-        normalized = re.sub(r'^\d+[\s\-_\.]*', '', normalized)
+        normalized = re.sub(r"^\d+[\s\-_\.]*", "", normalized)
         # Remove special chars
-        normalized = re.sub(r'[^\w\s]', ' ', normalized)
+        normalized = re.sub(r"[^\w\s]", " ", normalized)
         # Collapse whitespace
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized
 
     def classify(self, layer_name: str) -> tuple[AreaCategory, float]:
@@ -328,7 +468,9 @@ Keine Erklärung, nur das eine Wort."""
 
             response = generate_text(prompt, max_tokens=20)
             if response:
-                response_lower = response.strip().lower().replace("ä", "a").replace("ö", "o").replace("ü", "u")
+                response_lower = (
+                    response.strip().lower().replace("ä", "a").replace("ö", "o").replace("ü", "u")
+                )
 
                 # Mapping für verschiedene Schreibweisen
                 category_map = {
@@ -410,6 +552,7 @@ Keine Erklärung, nur das eine Wort."""
 
 # Singleton
 _classifier: AreaClassifier | None = None
+
 
 def get_area_classifier(use_llm: bool = False) -> AreaClassifier:
     """Gibt Singleton AreaClassifier zurück."""

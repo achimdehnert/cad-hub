@@ -5,15 +5,15 @@ Background Tasks für IFC-Verarbeitung.
 Nutzt nl2cad.core.parsers.IFCParser als einzige Parse-Schicht.
 Kein eigener Parser, keine duplizierten Dataclasses.
 """
+
 import logging
 from decimal import Decimal
 from pathlib import Path
 
 from celery import shared_task
 from django.utils import timezone
-
-from nl2cad_core.parsers.ifc_parser import IFCParser
 from nl2cad_core.exceptions import IFCParseError
+from nl2cad_core.parsers.ifc_parser import IFCParser
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +97,7 @@ def process_ifc_upload(self, model_id: str):
                 area=Decimal(str(nl2_win.area_m2)) if nl2_win.area_m2 else None,
                 material=nl2_win.material,
                 u_value=(
-                    Decimal(str(nl2_win.u_value_wm2k))
-                    if nl2_win.u_value_wm2k is not None
-                    else None
+                    Decimal(str(nl2_win.u_value_wm2k)) if nl2_win.u_value_wm2k is not None else None
                 ),
                 properties=nl2_win.properties,
             )
@@ -136,9 +134,7 @@ def process_ifc_upload(self, model_id: str):
                 gross_area=(
                     Decimal(str(nl2_wall.gross_area_m2)) if nl2_wall.gross_area_m2 else None
                 ),
-                net_area=(
-                    Decimal(str(nl2_wall.net_area_m2)) if nl2_wall.net_area_m2 else None
-                ),
+                net_area=(Decimal(str(nl2_wall.net_area_m2)) if nl2_wall.net_area_m2 else None),
                 volume=Decimal(str(nl2_wall.volume_m3)) if nl2_wall.volume_m3 else None,
                 is_external=nl2_wall.is_external,
                 is_load_bearing=nl2_wall.is_load_bearing,
@@ -156,13 +152,9 @@ def process_ifc_upload(self, model_id: str):
                 name=nl2_slab.name,
                 slab_type=nl2_slab.slab_type,
                 area=Decimal(str(nl2_slab.area_m2)) if nl2_slab.area_m2 else None,
-                thickness=(
-                    Decimal(str(nl2_slab.thickness_m)) if nl2_slab.thickness_m else None
-                ),
+                thickness=(Decimal(str(nl2_slab.thickness_m)) if nl2_slab.thickness_m else None),
                 volume=Decimal(str(nl2_slab.volume_m3)) if nl2_slab.volume_m3 else None,
-                perimeter=(
-                    Decimal(str(nl2_slab.perimeter_m)) if nl2_slab.perimeter_m else None
-                ),
+                perimeter=(Decimal(str(nl2_slab.perimeter_m)) if nl2_slab.perimeter_m else None),
                 material=nl2_slab.material,
             )
 

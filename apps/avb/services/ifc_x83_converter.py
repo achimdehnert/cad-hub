@@ -45,56 +45,56 @@ DEFAULT_GEWERKE = {
         oz_prefix="01",
         einheit=MengenEinheit.M2,
         einheitspreis=Decimal("45.00"),
-        stlb_code="352"
+        stlb_code="352",
     ),
     "wandanstrich": GewerkeConfig(
         name="Wandanstrich",
         oz_prefix="02",
         einheit=MengenEinheit.M2,
         einheitspreis=Decimal("12.50"),
-        stlb_code="458"
+        stlb_code="458",
     ),
     "deckenanstrich": GewerkeConfig(
         name="Deckenanstrich",
         oz_prefix="03",
         einheit=MengenEinheit.M2,
         einheitspreis=Decimal("10.00"),
-        stlb_code="459"
+        stlb_code="459",
     ),
     "sockelleisten": GewerkeConfig(
         name="Sockelleisten",
         oz_prefix="04",
         einheit=MengenEinheit.M,
         einheitspreis=Decimal("8.50"),
-        stlb_code="353"
+        stlb_code="353",
     ),
     "tueren": GewerkeConfig(
         name="Türen",
         oz_prefix="05",
         einheit=MengenEinheit.STK,
         einheitspreis=Decimal("450.00"),
-        stlb_code="341"
+        stlb_code="341",
     ),
     "fenster": GewerkeConfig(
         name="Fenster",
         oz_prefix="06",
         einheit=MengenEinheit.STK,
         einheitspreis=Decimal("850.00"),
-        stlb_code="336"
+        stlb_code="336",
     ),
     "trockenbau": GewerkeConfig(
         name="Trockenbau-Wände",
         oz_prefix="07",
         einheit=MengenEinheit.M2,
         einheitspreis=Decimal("65.00"),
-        stlb_code="344"
+        stlb_code="344",
     ),
     "estrich": GewerkeConfig(
         name="Estricharbeiten",
         oz_prefix="08",
         einheit=MengenEinheit.M2,
         einheitspreis=Decimal("28.00"),
-        stlb_code="351"
+        stlb_code="351",
     ),
 }
 
@@ -543,6 +543,7 @@ class IFCX83Converter:
 
 # Singleton
 _converter = None
+
 
 def get_ifc_x83_converter() -> IFCX83Converter:
     """Get singleton instance."""

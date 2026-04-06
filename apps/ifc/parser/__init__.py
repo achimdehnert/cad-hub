@@ -24,6 +24,8 @@ Supported IFC Schemas:
     - IFC4X3
 """
 
+import logging
+
 from .models import (  # Enums; Properties & Quantities; Spatial Structure; Elements; Project
     IfcSchemaVersion,
     ParsedBuilding,
@@ -40,7 +42,6 @@ from .models import (  # Enums; Properties & Quantities; Spatial Structure; Elem
     PropertyDataType,
 )
 from .parser import IfcCompleteParser
-import logging
 
 logger = logging.getLogger(__name__)
 

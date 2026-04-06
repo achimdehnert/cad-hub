@@ -34,8 +34,10 @@ from .models import (
 # Projekt-Planung
 # =============================================================================
 
+
 class ConstructionProjectListView(LoginRequiredMixin, ListView):
     """Liste aller Bauprojekte"""
+
     model = ConstructionProject
     template_name = "cad_hub/avb/project_list.html"
     context_object_name = "projects"
@@ -49,6 +51,7 @@ class ConstructionProjectListView(LoginRequiredMixin, ListView):
 
 class ConstructionProjectDetailView(LoginRequiredMixin, DetailView):
     """Bauprojekt-Detail mit Übersicht"""
+
     model = ConstructionProject
     template_name = "cad_hub/avb/project_detail.html"
     context_object_name = "project"
@@ -69,28 +72,37 @@ class ConstructionProjectDetailView(LoginRequiredMixin, DetailView):
         }
 
         # Aktuelle Meilensteine
-        ctx["upcoming_milestones"] = project.milestones.filter(
-            completed_at__isnull=True
-        ).order_by("due_date")[:5]
+        ctx["upcoming_milestones"] = project.milestones.filter(completed_at__isnull=True).order_by(
+            "due_date"
+        )[:5]
 
         # Kostenschätzung nach KG
-        ctx["cost_by_group"] = project.cost_estimates.values(
-            "cost_group"
-        ).annotate(
-            total=models.Sum("total")
-        ).order_by("cost_group")
+        ctx["cost_by_group"] = (
+            project.cost_estimates.values("cost_group")
+            .annotate(total=models.Sum("total"))
+            .order_by("cost_group")
+        )
 
         return ctx
 
 
 class ConstructionProjectCreateView(LoginRequiredMixin, CreateView):
     """Neues Bauprojekt erstellen"""
+
     model = ConstructionProject
     template_name = "cad_hub/avb/project_form.html"
     fields = [
-        "ifc_project", "project_number", "client", "client_contact",
-        "street", "zip_code", "city",
-        "current_phase", "planning_start", "construction_start", "construction_end",
+        "ifc_project",
+        "project_number",
+        "client",
+        "client_contact",
+        "street",
+        "zip_code",
+        "city",
+        "current_phase",
+        "planning_start",
+        "construction_start",
+        "construction_end",
         "budget_total",
     ]
 
@@ -105,13 +117,22 @@ class ConstructionProjectCreateView(LoginRequiredMixin, CreateView):
 
 class ConstructionProjectUpdateView(LoginRequiredMixin, UpdateView):
     """Bauprojekt bearbeiten"""
+
     model = ConstructionProject
     template_name = "cad_hub/avb/project_form.html"
     fields = [
-        "project_number", "client", "client_contact",
-        "street", "zip_code", "city",
-        "current_phase", "planning_start", "construction_start", "construction_end",
-        "budget_total", "cost_estimate",
+        "project_number",
+        "client",
+        "client_contact",
+        "street",
+        "zip_code",
+        "city",
+        "current_phase",
+        "planning_start",
+        "construction_start",
+        "construction_end",
+        "budget_total",
+        "cost_estimate",
     ]
 
     def get_success_url(self):
@@ -122,8 +143,10 @@ class ConstructionProjectUpdateView(LoginRequiredMixin, UpdateView):
 # Ausschreibungen
 # =============================================================================
 
+
 class TenderListView(LoginRequiredMixin, ListView):
     """Liste aller Ausschreibungen"""
+
     model = Tender
     template_name = "cad_hub/avb/tender_list.html"
     context_object_name = "tenders"
@@ -151,6 +174,7 @@ class TenderListView(LoginRequiredMixin, ListView):
         ctx["tenders_open"] = qs.exclude(status="awarded").exclude(status="cancelled").count()
         ctx["tenders_awarded"] = qs.filter(status="awarded").count()
         from django.db.models import Sum
+
         total = qs.aggregate(v=Sum("estimated_value"))["v"] or 0
         ctx["total_volume"] = f"{total:,.0f} €".replace(",", ".")
         return ctx
@@ -158,6 +182,7 @@ class TenderListView(LoginRequiredMixin, ListView):
 
 class TenderDetailView(LoginRequiredMixin, DetailView):
     """Ausschreibungs-Detail"""
+
     model = Tender
     template_name = "cad_hub/avb/tender_detail.html"
     context_object_name = "tender"
@@ -177,6 +202,7 @@ class TenderDetailView(LoginRequiredMixin, DetailView):
         # Statistik
         if tender.bids.exists():
             from django.db.models import Avg, Max, Min
+
             ctx["bid_stats"] = tender.bids.aggregate(
                 min_price=Min("total_price"),
                 max_price=Max("total_price"),
@@ -188,12 +214,20 @@ class TenderDetailView(LoginRequiredMixin, DetailView):
 
 class TenderCreateView(LoginRequiredMixin, CreateView):
     """Neue Ausschreibung erstellen"""
+
     model = Tender
     template_name = "cad_hub/avb/tender_form.html"
     fields = [
-        "project", "tender_number", "title", "description",
-        "cost_group", "trade", "estimated_value",
-        "publication_date", "submission_deadline", "opening_date",
+        "project",
+        "tender_number",
+        "title",
+        "description",
+        "cost_group",
+        "trade",
+        "estimated_value",
+        "publication_date",
+        "submission_deadline",
+        "opening_date",
     ]
 
     def get_initial(self):
@@ -224,6 +258,7 @@ class TenderFromIFCView(LoginRequiredMixin, View):
         gewerke = request.POST.getlist("gewerke")
 
         from .services import get_avb_service
+
         service = get_avb_service()
 
         try:
@@ -236,7 +271,7 @@ class TenderFromIFCView(LoginRequiredMixin, View):
             )
             messages.success(
                 request,
-                f"Ausschreibung '{tender.tender_number}' mit {tender.positions.count()} Positionen erstellt."
+                f"Ausschreibung '{tender.tender_number}' mit {tender.positions.count()} Positionen erstellt.",
             )
             return redirect("avb:tender_detail", pk=tender.pk)
         except Exception as e:
@@ -254,6 +289,7 @@ class TenderPublishView(LoginRequiredMixin, View):
             messages.error(request, "Nur Entwürfe können veröffentlicht werden.")
         else:
             from django.utils import timezone
+
             tender.status = "published"
             tender.publication_date = timezone.now().date()
             tender.save()
@@ -266,8 +302,10 @@ class TenderPublishView(LoginRequiredMixin, View):
 # Bieter
 # =============================================================================
 
+
 class BidderListView(LoginRequiredMixin, ListView):
     """Bieter-Verzeichnis"""
+
     model = Bidder
     template_name = "cad_hub/avb/bidder_list.html"
     context_object_name = "bidders"
@@ -285,28 +323,38 @@ class BidderListView(LoginRequiredMixin, ListView):
 
 class BidderDetailView(LoginRequiredMixin, DetailView):
     """Bieter-Detail"""
+
     model = Bidder
     template_name = "cad_hub/avb/bidder_detail.html"
     context_object_name = "bidder"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["recent_bids"] = self.object.bids.select_related(
-            "tender", "tender__project"
-        ).order_by("-created_at")[:10]
+        ctx["recent_bids"] = self.object.bids.select_related("tender", "tender__project").order_by(
+            "-created_at"
+        )[:10]
         return ctx
 
 
 class BidderCreateView(LoginRequiredMixin, CreateView):
     """Neuen Bieter anlegen"""
+
     model = Bidder
     template_name = "cad_hub/avb/bidder_form.html"
     fields = [
-        "company_name", "contact_person",
-        "street", "zip_code", "city", "country",
-        "email", "phone", "website",
-        "trades", "certifications",
-        "is_preferred", "notes",
+        "company_name",
+        "contact_person",
+        "street",
+        "zip_code",
+        "city",
+        "country",
+        "email",
+        "phone",
+        "website",
+        "trades",
+        "certifications",
+        "is_preferred",
+        "notes",
     ]
 
     def get_success_url(self):
@@ -317,8 +365,10 @@ class BidderCreateView(LoginRequiredMixin, CreateView):
 # Angebote
 # =============================================================================
 
+
 class BidListView(LoginRequiredMixin, ListView):
     """Liste aller Angebote einer Ausschreibung"""
+
     model = Bid
     template_name = "cad_hub/avb/bid_list.html"
     context_object_name = "bids"
@@ -335,6 +385,7 @@ class BidListView(LoginRequiredMixin, ListView):
 
 class BidDetailView(LoginRequiredMixin, DetailView):
     """Angebots-Detail"""
+
     model = Bid
     template_name = "cad_hub/avb/bid_detail.html"
     context_object_name = "bid"
@@ -347,6 +398,7 @@ class BidDetailView(LoginRequiredMixin, DetailView):
 
 class BidCreateView(LoginRequiredMixin, CreateView):
     """Bieter zu Ausschreibung einladen"""
+
     model = Bid
     template_name = "cad_hub/avb/bid_form.html"
     fields = ["bidder"]
@@ -358,6 +410,7 @@ class BidCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         from django.utils import timezone
+
         form.instance.tender_id = self.kwargs["tender_id"]
         form.instance.status = "invited"
         form.instance.invited_at = timezone.now()
@@ -370,16 +423,21 @@ class BidCreateView(LoginRequiredMixin, CreateView):
 
 class BidReceiveView(LoginRequiredMixin, UpdateView):
     """Angebot erfassen"""
+
     model = Bid
     template_name = "cad_hub/avb/bid_receive.html"
     fields = [
-        "total_price", "total_price_gross",
-        "discount_percent", "discount_absolute",
-        "valid_until", "notes",
+        "total_price",
+        "total_price_gross",
+        "discount_percent",
+        "discount_absolute",
+        "valid_until",
+        "notes",
     ]
 
     def form_valid(self, form):
         from django.utils import timezone
+
         form.instance.status = "received"
         form.instance.received_at = timezone.now()
         messages.success(self.request, "Angebot erfasst.")
@@ -393,8 +451,10 @@ class BidReceiveView(LoginRequiredMixin, UpdateView):
 # Preisspiegel & Vergabe
 # =============================================================================
 
+
 class PriceComparisonView(LoginRequiredMixin, TemplateView):
     """Preisspiegel / Angebotsvergleich"""
+
     template_name = "cad_hub/avb/price_comparison.html"
 
     def get_context_data(self, **kwargs):
@@ -402,6 +462,7 @@ class PriceComparisonView(LoginRequiredMixin, TemplateView):
         tender = get_object_or_404(Tender, pk=self.kwargs["pk"])
 
         from .services import get_avb_service
+
         service = get_avb_service()
 
         ctx["tender"] = tender
@@ -419,15 +480,18 @@ class ExportPriceComparisonView(LoginRequiredMixin, View):
         tender = get_object_or_404(Tender, pk=pk)
 
         from .services import get_avb_service
+
         service = get_avb_service()
 
         output = service.export_price_comparison_excel(tender)
 
         response = HttpResponse(
             output.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = f'attachment; filename="Preisspiegel_{tender.tender_number}.xlsx"'
+        response["Content-Disposition"] = (
+            f'attachment; filename="Preisspiegel_{tender.tender_number}.xlsx"'
+        )
         return response
 
 
@@ -439,17 +503,21 @@ class ExportTenderGAEBView(LoginRequiredMixin, View):
         phase = request.GET.get("phase", "X81")
 
         from .services import get_avb_service
+
         service = get_avb_service()
 
         output = service.export_tender_gaeb(tender, phase=phase)
 
         response = HttpResponse(output.read(), content_type="application/xml")
-        response["Content-Disposition"] = f'attachment; filename="{tender.tender_number}.{phase.lower()}"'
+        response["Content-Disposition"] = (
+            f'attachment; filename="{tender.tender_number}.{phase.lower()}"'
+        )
         return response
 
 
 class AwardCreateView(LoginRequiredMixin, CreateView):
     """Zuschlag erteilen"""
+
     model = Award
     template_name = "cad_hub/avb/award_form.html"
     fields = ["award_date", "contract_value", "contract_number", "notes"]
@@ -478,10 +546,7 @@ class AwardCreateView(LoginRequiredMixin, CreateView):
         # Andere Angebote ablehnen
         tender.bids.exclude(pk=bid.pk).update(status="rejected")
 
-        messages.success(
-            self.request,
-            f"Zuschlag an {bid.bidder.company_name} erteilt."
-        )
+        messages.success(self.request, f"Zuschlag an {bid.bidder.company_name} erteilt.")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -492,6 +557,7 @@ class AwardCreateView(LoginRequiredMixin, CreateView):
 # API Endpoints (JSON)
 # =============================================================================
 
+
 class TenderStatsAPIView(LoginRequiredMixin, View):
     """API: Ausschreibungs-Statistiken"""
 
@@ -499,6 +565,7 @@ class TenderStatsAPIView(LoginRequiredMixin, View):
         tender = get_object_or_404(Tender, pk=pk)
 
         from django.db.models import Avg, Max, Min
+
         stats = tender.bids.filter(status__in=["received", "evaluated"]).aggregate(
             count=models.Count("id"),
             min_price=Min("total_price"),
@@ -506,14 +573,16 @@ class TenderStatsAPIView(LoginRequiredMixin, View):
             avg_price=Avg("total_price"),
         )
 
-        return JsonResponse({
-            "tender_number": tender.tender_number,
-            "title": tender.title,
-            "status": tender.status,
-            "estimated_value": float(tender.estimated_value),
-            "positions_count": tender.positions.count(),
-            "bids": stats,
-        })
+        return JsonResponse(
+            {
+                "tender_number": tender.tender_number,
+                "title": tender.title,
+                "status": tender.status,
+                "estimated_value": float(tender.estimated_value),
+                "positions_count": tender.positions.count(),
+                "bids": stats,
+            }
+        )
 
 
 # Import models für Aggregation

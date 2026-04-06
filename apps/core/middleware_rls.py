@@ -4,6 +4,7 @@ TenantRLSMiddleware — setzt PostgreSQL session variable für RLS-Policies.
 Muss NACH SubdomainTenantMiddleware in MIDDLEWARE stehen.
 Setzt SET LOCAL app.current_tenant_id pro Request.
 """
+
 from django.db import connection
 
 

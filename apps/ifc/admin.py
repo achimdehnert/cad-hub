@@ -1,4 +1,5 @@
 """IFC admin — source: bfagent/apps/cad_hub/admin.py."""
+
 from django.contrib import admin
 
 from .models import (
@@ -16,8 +17,11 @@ from .models import (
 @admin.register(IFCProject)
 class IFCProjectAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "created_by", "model_count",
-        "created_at", "updated_at",
+        "name",
+        "created_by",
+        "model_count",
+        "created_at",
+        "updated_at",
     ]
     search_fields = ["name"]
     list_filter = ["created_at", "created_by"]
@@ -29,7 +33,9 @@ class IFCProjectAdmin(admin.ModelAdmin):
             "Metadaten",
             {
                 "fields": (
-                    "id", "created_at", "updated_at",
+                    "id",
+                    "created_at",
+                    "updated_at",
                 ),
                 "classes": ("collapse",),
             },
@@ -45,13 +51,18 @@ class IFCProjectAdmin(admin.ModelAdmin):
 @admin.register(IFCModel)
 class IFCModelAdmin(admin.ModelAdmin):
     list_display = [
-        "__str__", "ifc_schema", "status",
-        "room_count", "uploaded_at",
+        "__str__",
+        "ifc_schema",
+        "status",
+        "room_count",
+        "uploaded_at",
     ]
     list_filter = ["status", "ifc_schema", "project"]
     search_fields = ["project__name"]
     readonly_fields = [
-        "id", "uploaded_at", "processed_at",
+        "id",
+        "uploaded_at",
+        "processed_at",
     ]
 
     fieldsets = (
@@ -86,8 +97,11 @@ class IFCModelAdmin(admin.ModelAdmin):
 @admin.register(Floor)
 class FloorAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "code", "elevation",
-        "room_count", "ifc_model",
+        "name",
+        "code",
+        "elevation",
+        "room_count",
+        "ifc_model",
     ]
     list_filter = ["ifc_model__project", "ifc_model"]
     search_fields = ["name", "code"]
@@ -102,11 +116,16 @@ class FloorAdmin(admin.ModelAdmin):
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
     list_display = [
-        "number", "name", "floor", "area",
-        "height", "usage_category",
+        "number",
+        "name",
+        "floor",
+        "area",
+        "height",
+        "usage_category",
     ]
     list_filter = [
-        "usage_category", "floor",
+        "usage_category",
+        "floor",
         "ifc_model__project",
     ]
     search_fields = ["number", "name", "long_name"]
@@ -125,7 +144,10 @@ class RoomAdmin(admin.ModelAdmin):
             "Geometrie",
             {
                 "fields": (
-                    "area", "height", "volume", "perimeter",
+                    "area",
+                    "height",
+                    "volume",
+                    "perimeter",
                 ),
             },
         ),
@@ -136,8 +158,13 @@ class RoomAdmin(admin.ModelAdmin):
 @admin.register(Window)
 class WindowAdmin(admin.ModelAdmin):
     list_display = [
-        "number", "name", "floor",
-        "width", "height", "area", "u_value",
+        "number",
+        "name",
+        "floor",
+        "width",
+        "height",
+        "area",
+        "u_value",
     ]
     list_filter = ["floor", "ifc_model__project"]
     search_fields = ["number", "name", "ifc_guid"]
@@ -147,7 +174,10 @@ class WindowAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "ifc_model", "floor", "room", "ifc_guid",
+                    "ifc_model",
+                    "floor",
+                    "room",
+                    "ifc_guid",
                 ),
             },
         ),
@@ -156,8 +186,11 @@ class WindowAdmin(admin.ModelAdmin):
             "Geometrie",
             {
                 "fields": (
-                    "width", "height", "area",
-                    "wall_position", "elevation",
+                    "width",
+                    "height",
+                    "area",
+                    "wall_position",
+                    "elevation",
                 ),
             },
         ),
@@ -175,11 +208,18 @@ class WindowAdmin(admin.ModelAdmin):
 @admin.register(Door)
 class DoorAdmin(admin.ModelAdmin):
     list_display = [
-        "number", "name", "floor", "door_type",
-        "width", "height", "fire_rating",
+        "number",
+        "name",
+        "floor",
+        "door_type",
+        "width",
+        "height",
+        "fire_rating",
     ]
     list_filter = [
-        "door_type", "fire_rating", "floor",
+        "door_type",
+        "fire_rating",
+        "floor",
         "ifc_model__project",
     ]
     search_fields = ["number", "name", "ifc_guid"]
@@ -189,8 +229,11 @@ class DoorAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "ifc_model", "floor",
-                    "from_room", "to_room", "ifc_guid",
+                    "ifc_model",
+                    "floor",
+                    "from_room",
+                    "to_room",
+                    "ifc_guid",
                 ),
             },
         ),
@@ -209,12 +252,19 @@ class DoorAdmin(admin.ModelAdmin):
 @admin.register(Wall)
 class WallAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "floor", "is_external",
-        "length", "height", "gross_area", "net_area",
+        "name",
+        "floor",
+        "is_external",
+        "length",
+        "height",
+        "gross_area",
+        "net_area",
     ]
     list_filter = [
-        "is_external", "is_load_bearing",
-        "floor", "ifc_model__project",
+        "is_external",
+        "is_load_bearing",
+        "floor",
+        "ifc_model__project",
     ]
     search_fields = ["name", "ifc_guid"]
 
@@ -223,7 +273,10 @@ class WallAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "ifc_model", "floor", "ifc_guid", "name",
+                    "ifc_model",
+                    "floor",
+                    "ifc_guid",
+                    "name",
                 ),
             },
         ),
@@ -231,8 +284,12 @@ class WallAdmin(admin.ModelAdmin):
             "Geometrie",
             {
                 "fields": (
-                    "length", "height", "width",
-                    "gross_area", "net_area", "volume",
+                    "length",
+                    "height",
+                    "width",
+                    "gross_area",
+                    "net_area",
+                    "volume",
                 ),
             },
         ),
@@ -240,7 +297,8 @@ class WallAdmin(admin.ModelAdmin):
             "Eigenschaften",
             {
                 "fields": (
-                    "is_external", "is_load_bearing",
+                    "is_external",
+                    "is_load_bearing",
                     "material",
                 ),
             },
@@ -251,11 +309,17 @@ class WallAdmin(admin.ModelAdmin):
 @admin.register(Slab)
 class SlabAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "slab_type", "floor",
-        "area", "thickness", "volume",
+        "name",
+        "slab_type",
+        "floor",
+        "area",
+        "thickness",
+        "volume",
     ]
     list_filter = [
-        "slab_type", "floor", "ifc_model__project",
+        "slab_type",
+        "floor",
+        "ifc_model__project",
     ]
     search_fields = ["name", "ifc_guid"]
 
@@ -269,7 +333,10 @@ class SlabAdmin(admin.ModelAdmin):
             "Geometrie",
             {
                 "fields": (
-                    "area", "thickness", "volume", "perimeter",
+                    "area",
+                    "thickness",
+                    "volume",
+                    "perimeter",
                 ),
             },
         ),

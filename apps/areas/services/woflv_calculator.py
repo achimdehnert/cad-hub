@@ -5,6 +5,7 @@ WoFlV Wohnflächenberechnung
 Basiert auf BauCAD Hub MCP standards/woflv.py
 Wohnflächenverordnung für Mietwohnungen
 """
+
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 

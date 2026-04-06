@@ -10,13 +10,14 @@ from enum import Enum, auto
 
 class EntityCategory(Enum):
     """Kategorisierung von DXF-Entities."""
-    PRIMITIVE = auto()      # LINE, POINT
-    CURVE = auto()          # ARC, CIRCLE, ELLIPSE, SPLINE
-    POLYLINE = auto()       # LWPOLYLINE, POLYLINE
-    SURFACE = auto()        # HATCH, SOLID, 3DFACE
-    TEXT = auto()           # TEXT, MTEXT
-    DIMENSION = auto()      # DIMENSION, LEADER
-    REFERENCE = auto()      # INSERT (Block-Referenz)
+
+    PRIMITIVE = auto()  # LINE, POINT
+    CURVE = auto()  # ARC, CIRCLE, ELLIPSE, SPLINE
+    POLYLINE = auto()  # LWPOLYLINE, POLYLINE
+    SURFACE = auto()  # HATCH, SOLID, 3DFACE
+    TEXT = auto()  # TEXT, MTEXT
+    DIMENSION = auto()  # DIMENSION, LEADER
+    REFERENCE = auto()  # INSERT (Block-Referenz)
     OTHER = auto()
 
 
@@ -49,6 +50,7 @@ ENTITY_CATEGORIES = {
 @dataclass
 class LayerInfo:
     """Layer-Informationen."""
+
     name: str
     color: int
     linetype: str
@@ -62,6 +64,7 @@ class LayerInfo:
 @dataclass
 class BlockInfo:
     """Block-Informationen."""
+
     name: str
     base_point: tuple
     entity_count: int
@@ -74,6 +77,7 @@ class BlockInfo:
 @dataclass
 class TextInfo:
     """Extrahierte Text-Information."""
+
     content: str
     position: tuple
     height: float
@@ -86,6 +90,7 @@ class TextInfo:
 @dataclass
 class DimensionInfo:
     """Extrahierte Bemaßungs-Information."""
+
     measurement: float
     text_override: str
     dim_type: str
@@ -96,6 +101,7 @@ class DimensionInfo:
 @dataclass
 class GeometryInfo:
     """Geometrische Entity-Information."""
+
     entity_type: str
     layer: str
     color: int
@@ -106,6 +112,7 @@ class GeometryInfo:
 @dataclass
 class AnalysisReport:
     """Vollständiger Analyse-Report."""
+
     filename: str
     dxf_version: str
     encoding: str

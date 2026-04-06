@@ -1,8 +1,8 @@
 """AVB Stat Card Component (ADR-041)."""
+
 from __future__ import annotations
 
 from typing import Any
-
 
 VARIANTS = ("primary", "success", "warning", "danger")
 

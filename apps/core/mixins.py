@@ -7,6 +7,7 @@ Verwendung in Views:
     # get_queryset() filtert automatisch nach tenant_id
     # create() setzt tenant_id automatisch
 """
+
 import uuid
 
 

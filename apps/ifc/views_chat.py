@@ -4,6 +4,7 @@ Chat-UI Views für CAD-Hub.
 Stellt einen HTMX-basierten Chat-Endpoint bereit, der den ChatAgent
 mit dem CADToolkit verbindet.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -45,6 +46,7 @@ def _get_session_backend():
             pass
 
     from chat_agent.session import InMemorySessionBackend
+
     return InMemorySessionBackend()
 
 
@@ -56,6 +58,7 @@ def _get_agent(model_id: str):
 
     toolkit = CADToolkit()
     from apps.core.services.llm_client import AifwChatCompletion
+
     llm = AifwChatCompletion()
     return ChatAgent(
         toolkit=toolkit,
@@ -75,9 +78,7 @@ class ChatView(TenantMixin, LoginRequiredMixin, TemplateView):
         tid = self._tenant_id()
         model_id = self.kwargs.get("model_id")
         if model_id:
-            ctx["ifc_model"] = get_object_or_404(
-                IFCModel, pk=model_id, tenant_id=tid
-            )
+            ctx["ifc_model"] = get_object_or_404(IFCModel, pk=model_id, tenant_id=tid)
         ctx["session_id"] = str(uuid.uuid4())
         return ctx
 
@@ -103,9 +104,7 @@ class ChatAPIView(TenantMixin, LoginRequiredMixin, View):
         # Verify model belongs to tenant
         if model_id:
             if not IFCModel.objects.filter(pk=model_id, tenant_id=tid).exists():
-                return JsonResponse(
-                    {"error": "Modell nicht gefunden."}, status=404
-                )
+                return JsonResponse({"error": "Modell nicht gefunden."}, status=404)
 
         agent = _get_agent(model_id)
 
@@ -122,6 +121,7 @@ class ChatAPIView(TenantMixin, LoginRequiredMixin, View):
 
         if request.headers.get("HX-Request"):
             from django.template.loader import render_to_string
+
             html = render_to_string(
                 "cad_hub/partials/_chat_message.html",
                 {
@@ -133,6 +133,7 @@ class ChatAPIView(TenantMixin, LoginRequiredMixin, View):
                 request=request,
             )
             from django.http import HttpResponse
+
             return HttpResponse(html)
 
         return JsonResponse(

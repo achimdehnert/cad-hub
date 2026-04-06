@@ -2,6 +2,7 @@
 Build-time settings for Docker image build steps (collectstatic).
 No database connection, no Redis, no Celery — just enough to run management commands.
 """
+
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

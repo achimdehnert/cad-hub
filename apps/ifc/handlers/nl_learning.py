@@ -6,6 +6,7 @@ Ermöglicht:
 - Gelernte Patterns für bessere Erkennung nutzen
 - Synonyme und Variationen lernen
 """
+
 import json
 import logging
 import re
@@ -22,6 +23,7 @@ LEARNING_DATA_PATH = Path(__file__).parent.parent / "data" / "nl_learning.json"
 @dataclass
 class LearnedPattern:
     """Ein gelerntes Query-Intent Paar."""
+
     query: str
     query_normalized: str
     intent: str
@@ -56,9 +58,7 @@ class NLLearningStore:
             if self.data_path.exists():
                 with open(self.data_path, encoding="utf-8") as f:
                     data = json.load(f)
-                    self.patterns = [
-                        LearnedPattern(**p) for p in data.get("patterns", [])
-                    ]
+                    self.patterns = [LearnedPattern(**p) for p in data.get("patterns", [])]
                 logger.info(f"[NLLearning] Loaded {len(self.patterns)} patterns")
         except Exception as e:
             logger.warning(f"[NLLearning] Could not load: {e}")
@@ -69,12 +69,17 @@ class NLLearningStore:
         try:
             self.data_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.data_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "version": "1.0",
-                    "updated_at": datetime.now().isoformat(),
-                    "pattern_count": len(self.patterns),
-                    "patterns": [p.to_dict() for p in self.patterns],
-                }, f, indent=2, ensure_ascii=False)
+                json.dump(
+                    {
+                        "version": "1.0",
+                        "updated_at": datetime.now().isoformat(),
+                        "pattern_count": len(self.patterns),
+                        "patterns": [p.to_dict() for p in self.patterns],
+                    },
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
             logger.info(f"[NLLearning] Saved {len(self.patterns)} patterns")
         except Exception as e:
             logger.error(f"[NLLearning] Could not save: {e}")
@@ -85,9 +90,9 @@ class NLLearningStore:
         # Lowercase
         normalized = query.lower().strip()
         # Remove punctuation
-        normalized = re.sub(r'[^\w\s]', '', normalized)
+        normalized = re.sub(r"[^\w\s]", "", normalized)
         # Collapse whitespace
-        normalized = re.sub(r'\s+', ' ', normalized)
+        normalized = re.sub(r"\s+", " ", normalized)
         return normalized
 
     def learn(self, query: str, intent: str, source: str = "user_feedback") -> LearnedPattern:
@@ -166,7 +171,9 @@ class NLLearningStore:
         if best_match:
             best_match.use_count += 1
             self._save()
-            logger.info(f"[NLLearning] Found similar: '{query}' ≈ '{best_match.query}' ({best_score:.2f})")
+            logger.info(
+                f"[NLLearning] Found similar: '{query}' ≈ '{best_match.query}' ({best_score:.2f})"
+            )
 
         return best_match
 
@@ -241,6 +248,7 @@ class NLLearningStore:
 
 # Singleton instance
 _learning_store: NLLearningStore | None = None
+
 
 def get_learning_store() -> NLLearningStore:
     """Gibt Singleton LearningStore zurück."""

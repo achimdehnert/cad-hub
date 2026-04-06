@@ -2,6 +2,7 @@
 DXF Renderer Service
 Renders DXF files to SVG, PNG, or provides data for web viewers.
 """
+
 import io
 import logging
 import tempfile
@@ -41,7 +42,7 @@ class DXFRendererService:
 
         try:
             # Write to temp file - ezdxf handles binary/ASCII detection
-            with tempfile.NamedTemporaryFile(suffix='.dxf', delete=False) as f:
+            with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as f:
                 f.write(content)
                 temp_path = f.name
 
@@ -51,15 +52,20 @@ class DXFRendererService:
             finally:
                 # Cleanup temp file
                 import os
+
                 os.unlink(temp_path)
 
         except Exception as e:
             logger.error(f"Failed to load DXF from bytes: {e}")
             return False
 
-    def render_to_svg(self, output_path: Path | None = None,
-                      width: int = 800, height: int = 600,
-                      background: str = "#ffffff") -> str | None:
+    def render_to_svg(
+        self,
+        output_path: Path | None = None,
+        width: int = 800,
+        height: int = 600,
+        background: str = "#ffffff",
+    ) -> str | None:
         """
         Render DXF to SVG.
 
@@ -78,10 +84,11 @@ class DXFRendererService:
 
         try:
             import matplotlib
-            matplotlib.use('Agg')  # Non-interactive backend
+
+            matplotlib.use("Agg")  # Non-interactive backend
             import matplotlib.pyplot as plt
 
-            fig = plt.figure(figsize=(width/100, height/100), dpi=100)
+            fig = plt.figure(figsize=(width / 100, height / 100), dpi=100)
             ax = fig.add_axes([0, 0, 1, 1])
             ax.set_facecolor(background)
 
@@ -90,43 +97,52 @@ class DXFRendererService:
             Frontend(ctx, out).draw_layout(self.doc.modelspace())
 
             ax.autoscale()
-            ax.set_aspect('equal')
-            ax.axis('off')
+            ax.set_aspect("equal")
+            ax.axis("off")
 
             if output_path:
-                fig.savefig(str(output_path), format='svg',
-                           bbox_inches='tight', pad_inches=0,
-                           facecolor=background)
+                fig.savefig(
+                    str(output_path),
+                    format="svg",
+                    bbox_inches="tight",
+                    pad_inches=0,
+                    facecolor=background,
+                )
                 plt.close(fig)
                 return str(output_path)
             else:
                 # Return SVG as string
                 buffer = io.BytesIO()
-                fig.savefig(buffer, format='svg',
-                           bbox_inches='tight', pad_inches=0,
-                           facecolor=background)
+                fig.savefig(
+                    buffer, format="svg", bbox_inches="tight", pad_inches=0, facecolor=background
+                )
                 plt.close(fig)
                 buffer.seek(0)
-                return buffer.read().decode('utf-8')
+                return buffer.read().decode("utf-8")
 
         except Exception as e:
             logger.error(f"SVG rendering failed: {e}")
             return None
 
-    def render_to_png(self, output_path: Path,
-                      width: int = 800, height: int = 600,
-                      dpi: int = 150,
-                      background: str = "#ffffff") -> str | None:
+    def render_to_png(
+        self,
+        output_path: Path,
+        width: int = 800,
+        height: int = 600,
+        dpi: int = 150,
+        background: str = "#ffffff",
+    ) -> str | None:
         """Render DXF to PNG."""
         if not self.doc:
             return None
 
         try:
             import matplotlib
-            matplotlib.use('Agg')
+
+            matplotlib.use("Agg")
             import matplotlib.pyplot as plt
 
-            fig = plt.figure(figsize=(width/dpi, height/dpi), dpi=dpi)
+            fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
             ax = fig.add_axes([0, 0, 1, 1])
             ax.set_facecolor(background)
 
@@ -135,12 +151,17 @@ class DXFRendererService:
             Frontend(ctx, out).draw_layout(self.doc.modelspace())
 
             ax.autoscale()
-            ax.set_aspect('equal')
-            ax.axis('off')
+            ax.set_aspect("equal")
+            ax.axis("off")
 
-            fig.savefig(str(output_path), format='png',
-                       bbox_inches='tight', pad_inches=0,
-                       facecolor=background, dpi=dpi)
+            fig.savefig(
+                str(output_path),
+                format="png",
+                bbox_inches="tight",
+                pad_inches=0,
+                facecolor=background,
+                dpi=dpi,
+            )
             plt.close(fig)
             return str(output_path)
 
@@ -179,23 +200,21 @@ class DXFRendererService:
             if extents.has_data:
                 bounds = {
                     "min": [extents.extmin[0], extents.extmin[1], extents.extmin[2]],
-                    "max": [extents.extmax[0], extents.extmax[1], extents.extmax[2]]
+                    "max": [extents.extmax[0], extents.extmax[1], extents.extmax[2]],
                 }
 
             # Layers
             layers = []
             for layer in self.doc.layers:
-                layers.append({
-                    "name": layer.dxf.name,
-                    "color": layer.dxf.color,
-                    "visible": layer.is_on()
-                })
+                layers.append(
+                    {"name": layer.dxf.name, "color": layer.dxf.color, "visible": layer.is_on()}
+                )
 
             return {
                 "entities": entities,
                 "layers": layers,
                 "bounds": bounds,
-                "units": self.doc.header.get("$INSUNITS", 0)
+                "units": self.doc.header.get("$INSUNITS", 0),
             }
 
         except Exception as e:
@@ -205,8 +224,8 @@ class DXFRendererService:
     def _entity_to_dict(self, entity) -> dict | None:
         """Convert a DXF entity to a dict for JSON export."""
         etype = entity.dxftype()
-        layer = entity.dxf.layer if hasattr(entity.dxf, 'layer') else "0"
-        color = entity.dxf.color if hasattr(entity.dxf, 'color') else 256
+        layer = entity.dxf.layer if hasattr(entity.dxf, "layer") else "0"
+        color = entity.dxf.color if hasattr(entity.dxf, "color") else 256
 
         try:
             if etype == "LINE":
@@ -215,7 +234,7 @@ class DXFRendererService:
                     "layer": layer,
                     "color": color,
                     "start": list(entity.dxf.start),
-                    "end": list(entity.dxf.end)
+                    "end": list(entity.dxf.end),
                 }
 
             elif etype == "CIRCLE":
@@ -224,7 +243,7 @@ class DXFRendererService:
                     "layer": layer,
                     "color": color,
                     "center": list(entity.dxf.center),
-                    "radius": entity.dxf.radius
+                    "radius": entity.dxf.radius,
                 }
 
             elif etype == "ARC":
@@ -235,7 +254,7 @@ class DXFRendererService:
                     "center": list(entity.dxf.center),
                     "radius": entity.dxf.radius,
                     "startAngle": entity.dxf.start_angle,
-                    "endAngle": entity.dxf.end_angle
+                    "endAngle": entity.dxf.end_angle,
                 }
 
             elif etype == "LWPOLYLINE":
@@ -245,7 +264,7 @@ class DXFRendererService:
                     "layer": layer,
                     "color": color,
                     "points": points,
-                    "closed": entity.closed
+                    "closed": entity.closed,
                 }
 
             elif etype == "POLYLINE":
@@ -255,7 +274,7 @@ class DXFRendererService:
                     "layer": layer,
                     "color": color,
                     "points": points,
-                    "closed": entity.is_closed
+                    "closed": entity.is_closed,
                 }
 
             elif etype == "TEXT":
@@ -266,7 +285,7 @@ class DXFRendererService:
                     "text": entity.dxf.text,
                     "position": list(entity.dxf.insert),
                     "height": entity.dxf.height,
-                    "rotation": getattr(entity.dxf, 'rotation', 0)
+                    "rotation": getattr(entity.dxf, "rotation", 0),
                 }
 
             elif etype == "MTEXT":
@@ -277,7 +296,7 @@ class DXFRendererService:
                     "text": entity.plain_text(),
                     "position": list(entity.dxf.insert),
                     "height": entity.dxf.char_height,
-                    "rotation": getattr(entity.dxf, 'rotation', 0)
+                    "rotation": getattr(entity.dxf, "rotation", 0),
                 }
 
             elif etype == "3DFACE":
@@ -289,8 +308,8 @@ class DXFRendererService:
                         list(entity.dxf.vtx0),
                         list(entity.dxf.vtx1),
                         list(entity.dxf.vtx2),
-                        list(entity.dxf.vtx3)
-                    ]
+                        list(entity.dxf.vtx3),
+                    ],
                 }
 
             elif etype == "SOLID":
@@ -302,8 +321,10 @@ class DXFRendererService:
                         list(entity.dxf.vtx0),
                         list(entity.dxf.vtx1),
                         list(entity.dxf.vtx2),
-                        list(entity.dxf.vtx3) if hasattr(entity.dxf, 'vtx3') else list(entity.dxf.vtx2)
-                    ]
+                        list(entity.dxf.vtx3)
+                        if hasattr(entity.dxf, "vtx3")
+                        else list(entity.dxf.vtx2),
+                    ],
                 }
 
             elif etype == "POINT":
@@ -311,19 +332,14 @@ class DXFRendererService:
                     "type": "point",
                     "layer": layer,
                     "color": color,
-                    "position": list(entity.dxf.location)
+                    "position": list(entity.dxf.location),
                 }
 
             elif etype == "SPLINE":
                 # Approximate spline with points
                 try:
                     points = [list(p) for p in entity.flattening(0.1)]
-                    return {
-                        "type": "spline",
-                        "layer": layer,
-                        "color": color,
-                        "points": points
-                    }
+                    return {"type": "spline", "layer": layer, "color": color, "points": points}
                 except Exception:
                     return None
 
@@ -336,7 +352,7 @@ class DXFRendererService:
                     "majorAxis": list(entity.dxf.major_axis),
                     "ratio": entity.dxf.ratio,
                     "startParam": entity.dxf.start_param,
-                    "endParam": entity.dxf.end_param
+                    "endParam": entity.dxf.end_param,
                 }
 
             elif etype == "INSERT":
@@ -347,7 +363,7 @@ class DXFRendererService:
                     "blockName": entity.dxf.name,
                     "position": list(entity.dxf.insert),
                     "scale": [entity.dxf.xscale, entity.dxf.yscale, entity.dxf.zscale],
-                    "rotation": getattr(entity.dxf, 'rotation', 0)
+                    "rotation": getattr(entity.dxf, "rotation", 0),
                 }
 
         except Exception as e:
@@ -377,7 +393,7 @@ class DXFRendererService:
             "polylines": [],
             "texts": [],
             "faces": [],
-            "points": []
+            "points": [],
         }
 
         for ent in json_data["entities"]:
@@ -409,8 +425,8 @@ class DXFRendererService:
                 "polylines": len(grouped["polylines"]),
                 "texts": len(grouped["texts"]),
                 "faces": len(grouped["faces"]),
-                "points": len(grouped["points"])
-            }
+                "points": len(grouped["points"]),
+            },
         }
 
 

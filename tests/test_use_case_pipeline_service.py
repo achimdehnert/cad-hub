@@ -19,8 +19,8 @@ from apps.core.services.use_case_pipeline_service import (
     get_pipeline_service,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _pipeline_payload() -> dict:
     return {
@@ -46,7 +46,13 @@ def _pipeline_payload() -> dict:
                 "sub_tasks": 3,
                 "parallel_groups": [],
                 "sub_task_details": [
-                    {"id": "ST-1", "title": "Create model", "role": "developer", "gate": "1", "depends_on": []},
+                    {
+                        "id": "ST-1",
+                        "title": "Create model",
+                        "role": "developer",
+                        "gate": "1",
+                        "depends_on": [],
+                    },
                 ],
             }
         ],
@@ -77,6 +83,7 @@ def _decompose_payload() -> dict:
 
 # ── Stub Fallback ─────────────────────────────────────────────────────────────
 
+
 class TestStubFallback:
     def _make_service(self) -> UseCasePipelineService:
         with patch.object(UseCasePipelineService, "_check_direct", return_value=False):
@@ -106,6 +113,7 @@ class TestStubFallback:
 
 
 # ── HTTP Mode ─────────────────────────────────────────────────────────────────
+
 
 class TestHttpMode:
     def _make_service(self) -> UseCasePipelineService:
@@ -168,6 +176,7 @@ class TestHttpMode:
 
 # ── Direct Mode ───────────────────────────────────────────────────────────────
 
+
 class TestDirectMode:
     def test_should_use_direct_when_available(self):
         service = UseCasePipelineService.__new__(UseCasePipelineService)
@@ -178,7 +187,9 @@ class TestDirectMode:
         expected = {"success": True, **_pipeline_payload()}
 
         with patch.object(service, "_direct_run_pipeline", return_value=expected) as mock_d:
-            result = service.run_pipeline("Add IFC upload", context="cad-hub stack", tier="standard")
+            result = service.run_pipeline(
+                "Add IFC upload", context="cad-hub stack", tier="standard"
+            )
 
         mock_d.assert_called_once_with("Add IFC upload", "cad-hub stack", "standard")
         assert result["task_count"] == 2
@@ -199,6 +210,7 @@ class TestDirectMode:
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────
+
 
 class TestHealthCheck:
     def test_direct_mode_always_healthy(self):
@@ -229,9 +241,11 @@ class TestHealthCheck:
 
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
+
 class TestSingleton:
     def test_get_pipeline_service_singleton(self):
         import apps.core.services.use_case_pipeline_service as mod
+
         mod._default_service = None
         s1 = get_pipeline_service()
         s2 = get_pipeline_service()

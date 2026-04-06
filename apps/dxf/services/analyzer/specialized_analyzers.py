@@ -18,12 +18,25 @@ class FloorPlanAnalyzer(DXFAnalyzer):
     DOOR_PATTERNS = ["DOOR", "TÜR", "TUER", "D-", "DR-"]
     WINDOW_PATTERNS = ["WINDOW", "FENSTER", "W-", "WI-", "FE-"]
     FURNITURE_PATTERNS = [
-        "DESK", "TABLE", "CHAIR", "SOFA", "BED",
-        "TISCH", "STUHL", "BETT", "SCHRANK",
+        "DESK",
+        "TABLE",
+        "CHAIR",
+        "SOFA",
+        "BED",
+        "TISCH",
+        "STUHL",
+        "BETT",
+        "SCHRANK",
     ]
     SANITARY_PATTERNS = [
-        "WC", "TOILET", "SINK", "BATH", "SHOWER",
-        "WASCHBECKEN", "DUSCHE", "BADEWANNE",
+        "WC",
+        "TOILET",
+        "SINK",
+        "BATH",
+        "SHOWER",
+        "WASCHBECKEN",
+        "DUSCHE",
+        "BADEWANNE",
     ]
 
     def find_doors(self) -> list[dict]:
@@ -50,13 +63,15 @@ class FloorPlanAnalyzer(DXFAnalyzer):
             name = insert.dxf.name.upper()
             for pattern in patterns:
                 if pattern.upper() in name:
-                    results.append({
-                        "block_name": insert.dxf.name,
-                        "position": tuple(insert.dxf.insert),
-                        "rotation": insert.dxf.rotation,
-                        "layer": insert.dxf.layer,
-                        "matched_pattern": pattern,
-                    })
+                    results.append(
+                        {
+                            "block_name": insert.dxf.name,
+                            "position": tuple(insert.dxf.insert),
+                            "rotation": insert.dxf.rotation,
+                            "layer": insert.dxf.layer,
+                            "matched_pattern": pattern,
+                        }
+                    )
                     break
 
         return results
@@ -71,21 +86,40 @@ class FloorPlanAnalyzer(DXFAnalyzer):
 
         # Typische Raumnamen
         room_keywords = [
-            "ZIMMER", "RAUM", "KÜCHE", "BAD", "WC", "FLUR", "DIELE",
-            "WOHNZIMMER", "SCHLAFZIMMER", "KINDERZIMMER", "ARBEITSZIMMER",
-            "KELLER", "GARAGE", "BALKON", "TERRASSE", "LIVING", "BEDROOM",
-            "KITCHEN", "BATHROOM", "OFFICE", "ROOM",
+            "ZIMMER",
+            "RAUM",
+            "KÜCHE",
+            "BAD",
+            "WC",
+            "FLUR",
+            "DIELE",
+            "WOHNZIMMER",
+            "SCHLAFZIMMER",
+            "KINDERZIMMER",
+            "ARBEITSZIMMER",
+            "KELLER",
+            "GARAGE",
+            "BALKON",
+            "TERRASSE",
+            "LIVING",
+            "BEDROOM",
+            "KITCHEN",
+            "BATHROOM",
+            "OFFICE",
+            "ROOM",
         ]
 
         for text in texts:
             content_upper = text.content.upper()
             for keyword in room_keywords:
                 if keyword in content_upper:
-                    rooms.append({
-                        "name": text.content,
-                        "position": text.position,
-                        "layer": text.layer,
-                    })
+                    rooms.append(
+                        {
+                            "name": text.content,
+                            "position": text.position,
+                            "layer": text.layer,
+                        }
+                    )
                     break
 
         return rooms
@@ -102,15 +136,15 @@ class FloorPlanAnalyzer(DXFAnalyzer):
                 area = self._calculate_polygon_area(points)
 
                 if area > 1.0:
-                    areas.append({
-                        "handle": pline.dxf.handle,
-                        "layer": pline.dxf.layer,
-                        "area": area,
-                        "perimeter": self._calculate_polyline_length(
-                            points, True
-                        ),
-                        "vertex_count": len(points),
-                    })
+                    areas.append(
+                        {
+                            "handle": pline.dxf.handle,
+                            "layer": pline.dxf.layer,
+                            "area": area,
+                            "perimeter": self._calculate_polyline_length(points, True),
+                            "vertex_count": len(points),
+                        }
+                    )
 
         return sorted(areas, key=lambda x: x["area"], reverse=True)
 
@@ -121,7 +155,11 @@ class TechnicalDrawingAnalyzer(DXFAnalyzer):
     def analyze_centerlines(self) -> list[dict]:
         """Findet Mittellinien (typischerweise auf eigenen Layern)."""
         centerline_keywords = [
-            "CENTER", "MITTEL", "CL", "AXIS", "ACHSE",
+            "CENTER",
+            "MITTEL",
+            "CL",
+            "AXIS",
+            "ACHSE",
         ]
         results = []
 
@@ -129,13 +167,13 @@ class TechnicalDrawingAnalyzer(DXFAnalyzer):
             layer_upper = layer.upper()
             if any(kw in layer_upper for kw in centerline_keywords):
                 entities = list(self.get_entities_by_layer(layer))
-                results.append({
-                    "layer": layer,
-                    "entity_count": len(entities),
-                    "types": dict(
-                        Counter(e.dxftype() for e in entities)
-                    ),
-                })
+                results.append(
+                    {
+                        "layer": layer,
+                        "entity_count": len(entities),
+                        "types": dict(Counter(e.dxftype() for e in entities)),
+                    }
+                )
 
         return results
 
@@ -146,21 +184,32 @@ class TechnicalDrawingAnalyzer(DXFAnalyzer):
         for circle in self.msp.query("CIRCLE"):
             radius = circle.dxf.radius
             standard_diameters = [
-                3, 4, 5, 6, 8, 10, 12, 14, 16, 20, 25, 30,
+                3,
+                4,
+                5,
+                6,
+                8,
+                10,
+                12,
+                14,
+                16,
+                20,
+                25,
+                30,
             ]
             diameter = radius * 2
 
-            is_standard = any(
-                abs(diameter - d) < 0.1 for d in standard_diameters
-            )
+            is_standard = any(abs(diameter - d) < 0.1 for d in standard_diameters)
 
-            holes.append({
-                "center": tuple(circle.dxf.center),
-                "radius": radius,
-                "diameter": diameter,
-                "is_standard_size": is_standard,
-                "layer": circle.dxf.layer,
-            })
+            holes.append(
+                {
+                    "center": tuple(circle.dxf.center),
+                    "radius": radius,
+                    "diameter": diameter,
+                    "is_standard_size": is_standard,
+                    "layer": circle.dxf.layer,
+                }
+            )
 
         return holes
 
@@ -171,29 +220,29 @@ class TechnicalDrawingAnalyzer(DXFAnalyzer):
         # Aus Bemaßungen
         for dim in self.extract_dimensions():
             if dim.text_override and (
-                "±" in dim.text_override
-                or "+/-" in dim.text_override
-                or "+" in dim.text_override
+                "±" in dim.text_override or "+/-" in dim.text_override or "+" in dim.text_override
             ):
-                tolerances.append({
-                    "type": "dimension",
-                    "value": dim.measurement,
-                    "text": dim.text_override,
-                    "layer": dim.layer,
-                })
+                tolerances.append(
+                    {
+                        "type": "dimension",
+                        "value": dim.measurement,
+                        "text": dim.text_override,
+                        "layer": dim.layer,
+                    }
+                )
 
         # Aus Texten
-        tolerance_pattern = (
-            r'[±]\s*[\d.,]+|[\d.,]+\s*[±]\s*[\d.,]+'
-        )
+        tolerance_pattern = r"[±]\s*[\d.,]+|[\d.,]+\s*[±]\s*[\d.,]+"
 
         for text in self.extract_texts():
             if re.search(tolerance_pattern, text.content):
-                tolerances.append({
-                    "type": "text",
-                    "content": text.content,
-                    "position": text.position,
-                    "layer": text.layer,
-                })
+                tolerances.append(
+                    {
+                        "type": "text",
+                        "content": text.content,
+                        "position": text.position,
+                        "layer": text.layer,
+                    }
+                )
 
         return tolerances

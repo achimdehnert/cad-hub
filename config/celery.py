@@ -1,4 +1,5 @@
 """Celery application configuration for CAD Hub."""
+
 import os
 
 from celery import Celery

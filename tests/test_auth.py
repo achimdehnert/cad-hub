@@ -3,7 +3,6 @@
 import pytest
 from platform_context.testing.assertions import assert_login_required, assert_no_data_leak
 
-
 PROTECTED_URLS = [
     "/dashboard/",
     "/projects/",

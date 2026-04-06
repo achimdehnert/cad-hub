@@ -5,6 +5,7 @@ GAEB X84 Generator - Leistungsverzeichnis Export
 Basiert auf BauCAD Hub MCP generators/gaeb.py
 Für deutsche Bauausschreibungen nach GAEB Standard
 """
+
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import date, datetime

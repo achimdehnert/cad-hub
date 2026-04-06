@@ -6,6 +6,7 @@ and CADHandlerPipeline — shared across all handler apps.
 
 Source: bfagent/apps/cad_hub/handlers/base.py
 """
+
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -26,9 +27,7 @@ class CADFormat(Enum):
     UNKNOWN = "unknown"
 
     @classmethod
-    def from_extension(
-        cls, filepath: str | Path
-    ) -> "CADFormat":
+    def from_extension(cls, filepath: str | Path) -> "CADFormat":
         ext = Path(filepath).suffix.lower()
         mapping = {
             ".ifc": cls.IFC,
@@ -59,16 +58,10 @@ class CADHandlerResult:
     errors: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
     execution_time_ms: float = 0.0
-    timestamp: str = field(
-        default_factory=lambda: datetime.now().isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
     def to_dict(self) -> dict:
-        serializable_data = {
-            k: v
-            for k, v in self.data.items()
-            if not k.startswith("_")
-        }
+        serializable_data = {k: v for k, v in self.data.items() if not k.startswith("_")}
         return {
             "success": self.success,
             "handler": self.handler_name,
@@ -123,23 +116,14 @@ class BaseCADHandler(ABC):
         self._result: CADHandlerResult | None = None
 
     @abstractmethod
-    def execute(
-        self, input_data: dict
-    ) -> CADHandlerResult:
+    def execute(self, input_data: dict) -> CADHandlerResult:
         pass
 
-    def validate_input(
-        self, input_data: dict
-    ) -> tuple[bool, list[str]]:
+    def validate_input(self, input_data: dict) -> tuple[bool, list[str]]:
         errors = []
         for required in self.required_inputs:
-            if (
-                required not in input_data
-                and required not in self.context
-            ):
-                errors.append(
-                    f"Pflichtfeld fehlt: {required}"
-                )
+            if required not in input_data and required not in self.context:
+                errors.append(f"Pflichtfeld fehlt: {required}")
         return len(errors) == 0, errors
 
     def run(self, input_data: dict) -> CADHandlerResult:
@@ -156,13 +140,9 @@ class BaseCADHandler(ABC):
             )
 
         try:
-            logger.info(
-                "[%s] Starting execution...", self.name
-            )
+            logger.info("[%s] Starting execution...", self.name)
             result = self.execute(merged_input)
-            elapsed = (
-                datetime.now() - self._start_time
-            ).total_seconds() * 1000
+            elapsed = (datetime.now() - self._start_time).total_seconds() * 1000
             result.execution_time_ms = elapsed
             logger.info(
                 "[%s] Completed in %.1fms",
@@ -198,9 +178,7 @@ class BaseCADHandler(ABC):
     def update_context(self, key: str, value: Any):
         self.context[key] = value
 
-    def get_from_context(
-        self, key: str, default: Any = None
-    ) -> Any:
+    def get_from_context(self, key: str, default: Any = None) -> Any:
         return self.context.get(key, default)
 
     def __repr__(self):
@@ -216,16 +194,12 @@ class CADHandlerPipeline:
         self.context = context or {}
         self.results: list[CADHandlerResult] = []
 
-    def add(
-        self, handler: BaseCADHandler
-    ) -> "CADHandlerPipeline":
+    def add(self, handler: BaseCADHandler) -> "CADHandlerPipeline":
         handler.context = self.context
         self.handlers.append(handler)
         return self
 
-    def run(
-        self, input_data: dict
-    ) -> list[CADHandlerResult]:
+    def run(self, input_data: dict) -> list[CADHandlerResult]:
         self.results = []
         current_data = {**self.context, **input_data}
 
@@ -248,23 +222,15 @@ class CADHandlerPipeline:
 
     def get_final_result(self) -> dict:
         combined = {
-            "success": all(
-                r.success for r in self.results
-            ),
-            "handlers": [
-                r.to_dict() for r in self.results
-            ],
+            "success": all(r.success for r in self.results),
+            "handlers": [r.to_dict() for r in self.results],
             "data": {},
             "errors": [],
             "warnings": [],
         }
 
         for result in self.results:
-            serializable_data = {
-                k: v
-                for k, v in result.data.items()
-                if not k.startswith("_")
-            }
+            serializable_data = {k: v for k, v in result.data.items() if not k.startswith("_")}
             combined["data"].update(serializable_data)
             combined["errors"].extend(result.errors)
             combined["warnings"].extend(result.warnings)

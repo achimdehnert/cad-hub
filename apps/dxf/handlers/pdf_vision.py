@@ -13,14 +13,16 @@ Extrahiert:
 - Beschriftungen und Maße
 - Raumzuordnungen
 """
+
 import base64
 import json
 import logging
 import re
 from dataclasses import asdict, dataclass, field
 
-from apps.core.handlers.base import (
 from decouple import config
+
+from apps.core.handlers.base import (
     BaseCADHandler,
     CADHandlerResult,
     HandlerStatus,
@@ -32,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ErkannteSymbol:
     """Ein erkanntes Symbol aus der Vision-Analyse."""
+
     typ: str = ""
     beschreibung: str = ""
     position_beschreibung: str = ""  # z.B. "oben links", "Flur Mitte"
@@ -46,6 +49,7 @@ class ErkannteSymbol:
 @dataclass
 class ErkannterFluchtweg:
     """Ein erkannter Fluchtweg aus der Vision-Analyse."""
+
     start: str = ""
     ende: str = ""
     laenge_geschaetzt: str = ""
@@ -59,6 +63,7 @@ class ErkannterFluchtweg:
 @dataclass
 class VisionAnalyseErgebnis:
     """Ergebnis der Vision-Analyse."""
+
     erkannte_symbole: list[ErkannteSymbol] = field(default_factory=list)
     erkannte_fluchtwege: list[ErkannterFluchtweg] = field(default_factory=list)
     erkannte_raeume: list[dict] = field(default_factory=list)
@@ -143,7 +148,6 @@ Antworte als JSON:
   "empfehlungen": ["..."],
   "zusammenfassung": "..."
 }""",
-
         "fluchtweg": """Analysiere diesen Plan auf Fluchtwege und Notausgänge:
 
 1. **Fluchtwege**
@@ -167,7 +171,6 @@ Antworte als JSON:
    - Kennzeichnung ausreichend?
 
 Antworte als JSON mit Struktur wie oben.""",
-
         "allgemein": """Analysiere diesen Bauplan und extrahiere:
 
 1. **Räume**
@@ -193,7 +196,6 @@ Antworte als JSON mit Struktur wie oben.""",
    - Beschriftungen
 
 Antworte als JSON.""",
-
         "ex_zonen": """Analysiere diesen Plan auf explosionsgefährdete Bereiche:
 
 1. **Ex-Zonen**
@@ -272,13 +274,17 @@ Antworte als JSON.""",
         result.data["anzahl_fluchtwege"] = len(analyse.erkannte_fluchtwege)
 
         result.status = HandlerStatus.SUCCESS
-        logger.info(f"[{self.name}] Vision-Analyse abgeschlossen: "
-                   f"{len(analyse.erkannte_symbole)} Symbole, "
-                   f"{len(analyse.erkannte_fluchtwege)} Fluchtwege")
+        logger.info(
+            f"[{self.name}] Vision-Analyse abgeschlossen: "
+            f"{len(analyse.erkannte_symbole)} Symbole, "
+            f"{len(analyse.erkannte_fluchtwege)} Fluchtwege"
+        )
 
         return result
 
-    def _extract_image_from_pdf(self, pdf_content: bytes = None, pdf_path: str = None) -> str | None:
+    def _extract_image_from_pdf(
+        self, pdf_content: bytes = None, pdf_path: str = None
+    ) -> str | None:
         """Extrahiert erste Seite als Bild aus PDF."""
         try:
             import fitz  # PyMuPDF
@@ -393,26 +399,30 @@ Antworte als JSON.""",
 
         # JSON aus Antwort extrahieren
         try:
-            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+            json_match = re.search(r"\{.*\}", raw_response, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
 
                 # Symbole
                 for s in data.get("symbole", []):
-                    analyse.erkannte_symbole.append(ErkannteSymbol(
-                        typ=s.get("typ", ""),
-                        position_beschreibung=s.get("position", ""),
-                        position_x_prozent=float(s.get("x_prozent", 0)),
-                        position_y_prozent=float(s.get("y_prozent", 0)),
-                    ))
+                    analyse.erkannte_symbole.append(
+                        ErkannteSymbol(
+                            typ=s.get("typ", ""),
+                            position_beschreibung=s.get("position", ""),
+                            position_x_prozent=float(s.get("x_prozent", 0)),
+                            position_y_prozent=float(s.get("y_prozent", 0)),
+                        )
+                    )
 
                 # Fluchtwege
                 for f in data.get("fluchtwege", []):
-                    analyse.erkannte_fluchtwege.append(ErkannterFluchtweg(
-                        start=f.get("start", ""),
-                        ende=f.get("ende", ""),
-                        laenge_geschaetzt=f.get("laenge", ""),
-                    ))
+                    analyse.erkannte_fluchtwege.append(
+                        ErkannterFluchtweg(
+                            start=f.get("start", ""),
+                            ende=f.get("ende", ""),
+                            laenge_geschaetzt=f.get("laenge", ""),
+                        )
+                    )
 
                 # Räume
                 analyse.erkannte_raeume = data.get("raeume", [])
@@ -437,6 +447,7 @@ Antworte als JSON.""",
 
 # Singleton
 _vision_handler: PDFVisionHandler | None = None
+
 
 def get_pdf_vision_handler() -> PDFVisionHandler:
     """Gibt PDFVisionHandler-Instanz zurück."""

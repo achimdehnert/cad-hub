@@ -4,6 +4,7 @@ compat shim: IFCParserService -> nl2cad.core.parsers.IFCParser
 Diese Datei existiert nur für Backward-Kompatibilität mit altem Code.
 Neu-Code soll direkt nl2cad.core.parsers.IFCParser verwenden.
 """
+
 from __future__ import annotations
 
 import logging

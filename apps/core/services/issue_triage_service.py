@@ -25,6 +25,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any
+
 from decouple import config
 
 logger = logging.getLogger(__name__)
@@ -37,44 +38,44 @@ GITHUB_REPO = config("GITHUB_REPOSITORY", default="achimdehnert/cad-hub")
 
 # TaskType → GitHub Label
 TYPE_LABELS: dict[str, str] = {
-    "feature":   "type:feature",
-    "bugfix":    "type:bug",
-    "refactor":  "type:refactor",
-    "test":      "type:test",
-    "docs":      "type:docs",
-    "adr":       "type:adr",
-    "chore":     "type:chore",
+    "feature": "type:feature",
+    "bugfix": "type:bug",
+    "refactor": "type:refactor",
+    "test": "type:test",
+    "docs": "type:docs",
+    "adr": "type:adr",
+    "chore": "type:chore",
 }
 
 # Complexity → GitHub Label
 COMPLEXITY_LABELS: dict[str, str] = {
-    "trivial":       "complexity:trivial",
-    "simple":        "complexity:simple",
-    "moderate":      "complexity:moderate",
-    "complex":       "complexity:complex",
+    "trivial": "complexity:trivial",
+    "simple": "complexity:simple",
+    "moderate": "complexity:moderate",
+    "complex": "complexity:complex",
     "architectural": "complexity:architectural",
 }
 
 # Risk → GitHub Label
 RISK_LABELS: dict[str, str] = {
-    "low":      "risk:low",
-    "medium":   "risk:medium",
-    "high":     "risk:high",
+    "low": "risk:low",
+    "medium": "risk:medium",
+    "high": "risk:high",
     "critical": "risk:critical",
 }
 
 # affected_paths → App-Label (Präfix-Matching)
 PATH_APP_LABELS: list[tuple[str, str]] = [
-    ("apps/ifc",         "app:ifc"),
-    ("apps/dxf",         "app:dxf"),
-    ("apps/avb",         "app:avb"),
-    ("apps/areas",       "app:areas"),
+    ("apps/ifc", "app:ifc"),
+    ("apps/dxf", "app:dxf"),
+    ("apps/avb", "app:avb"),
+    ("apps/areas", "app:areas"),
     ("apps/brandschutz", "app:brandschutz"),
-    ("apps/export",      "app:export"),
-    ("apps/core",        "app:core"),
-    ("tests/",           "scope:tests"),
-    (".github/",         "scope:ci"),
-    ("config/",          "scope:config"),
+    ("apps/export", "app:export"),
+    ("apps/core", "app:core"),
+    ("tests/", "scope:tests"),
+    (".github/", "scope:ci"),
+    ("config/", "scope:config"),
 ]
 
 # Maximale Anzahl Tasks für Budget-Tier (kostenoptimiert)
@@ -82,6 +83,7 @@ MAX_TASKS_FOR_LABELS = 5
 
 
 # ── Ergebnis ──────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class TriageResult:
@@ -120,6 +122,7 @@ class TriageResult:
 
 # ── Service ───────────────────────────────────────────────────────────────────
 
+
 class IssueTriageService:
     """Automatisches Issue-Labeling via UseCasePipeline (ADR-085).
 
@@ -143,6 +146,7 @@ class IssueTriageService:
         self.dry_run = dry_run
 
         from apps.core.services.use_case_pipeline_service import UseCasePipelineService
+
         self._pipeline = UseCasePipelineService()
 
     def triage(
@@ -168,8 +172,8 @@ class IssueTriageService:
         # 1. Decomposition
         use_case = f"{title}\n\n{body}".strip()
         context = (
-            f"Repo: cad-hub, Stack: Django/Python, "
-            f"Apps: ifc, dxf, avb, areas, brandschutz, export, core"
+            "Repo: cad-hub, Stack: Django/Python, "
+            "Apps: ifc, dxf, avb, areas, brandschutz, export, core"
         )
         decomp = self._pipeline.decompose(
             use_case=use_case,
@@ -195,13 +199,12 @@ class IssueTriageService:
 
         # 3. GitHub Labels setzen
         if new_labels and not self.dry_run and self.github_token:
-            result.github_updated = self._apply_github_labels(
-                issue_number, new_labels
-            )
+            result.github_updated = self._apply_github_labels(issue_number, new_labels)
         elif self.dry_run:
             logger.info(
                 "dry_run: Issue #%d würde Labels erhalten: %s",
-                issue_number, new_labels,
+                issue_number,
+                new_labels,
             )
 
         return result
@@ -227,11 +230,13 @@ class IssueTriageService:
                 results.append(result)
             except Exception as exc:
                 logger.error("Triage failed for issue #%s: %s", issue.get("number"), exc)
-                results.append(TriageResult(
-                    issue_number=issue.get("number", 0),
-                    title=issue.get("title", ""),
-                    warnings=[f"Triage error: {exc}"],
-                ))
+                results.append(
+                    TriageResult(
+                        issue_number=issue.get("number", 0),
+                        title=issue.get("title", ""),
+                        warnings=[f"Triage error: {exc}"],
+                    )
+                )
         return results
 
     # ── Label-Berechnung ──────────────────────────────────────────────────────
@@ -263,15 +268,15 @@ class IssueTriageService:
 
         # Complexity: höchste Komplexität gewinnt
         complexity_order = ["trivial", "simple", "moderate", "complex", "architectural"]
-        highest = max(complexities, key=lambda c: complexity_order.index(c)
-                      if c in complexity_order else 0)
+        highest = max(
+            complexities, key=lambda c: complexity_order.index(c) if c in complexity_order else 0
+        )
         if label := COMPLEXITY_LABELS.get(highest):
             labels.add(label)
 
         # Risk: höchstes Risk gewinnt
         risk_order = ["low", "medium", "high", "critical"]
-        highest_risk = max(risks, key=lambda r: risk_order.index(r)
-                           if r in risk_order else 0)
+        highest_risk = max(risks, key=lambda r: risk_order.index(r) if r in risk_order else 0)
         if highest_risk in ("high", "critical"):
             if label := RISK_LABELS.get(highest_risk):
                 labels.add(label)
@@ -289,7 +294,9 @@ class IssueTriageService:
 
         logger.debug(
             "Computed %d new labels for issue (from %d tasks): %s",
-            len(new_labels), len(tasks), new_labels,
+            len(new_labels),
+            len(tasks),
+            new_labels,
         )
         return new_labels
 
@@ -303,6 +310,7 @@ class IssueTriageService:
         """Setzt Labels via GitHub REST API."""
         try:
             import httpx
+
             url = f"https://api.github.com/repos/{self.github_repo}/issues/{issue_number}/labels"
             headers = {
                 "Authorization": f"Bearer {self.github_token}",
@@ -315,12 +323,15 @@ class IssueTriageService:
                 if response.status_code in (200, 201):
                     logger.info(
                         "GitHub Labels gesetzt für Issue #%d: %s",
-                        issue_number, labels,
+                        issue_number,
+                        labels,
                     )
                     return True
                 logger.error(
                     "GitHub Labels fehlgeschlagen für Issue #%d: %s %s",
-                    issue_number, response.status_code, response.text[:200],
+                    issue_number,
+                    response.status_code,
+                    response.text[:200],
                 )
                 return False
         except ImportError:
@@ -343,15 +354,16 @@ class IssueTriageService:
             + [l for _, l in PATH_APP_LABELS]
         )
         label_colors = {
-            "type:":       "0075ca",
+            "type:": "0075ca",
             "complexity:": "e4e669",
-            "risk:":       "d93f0b",
-            "app:":        "0e8a16",
-            "scope:":      "c5def5",
+            "risk:": "d93f0b",
+            "app:": "0e8a16",
+            "scope:": "c5def5",
         }
         created = []
         try:
             import httpx
+
             url = f"https://api.github.com/repos/{self.github_repo}/labels"
             headers = {
                 "Authorization": f"Bearer {self.github_token}",
@@ -361,8 +373,7 @@ class IssueTriageService:
             with httpx.Client(timeout=15.0) as client:
                 for label_name in all_labels:
                     color = next(
-                        (c for prefix, c in label_colors.items()
-                         if label_name.startswith(prefix)),
+                        (c for prefix, c in label_colors.items() if label_name.startswith(prefix)),
                         "ededed",
                     )
                     response = client.post(

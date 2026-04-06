@@ -1,6 +1,7 @@
 """
 DXF Viewer Views for CAD Hub
 """
+
 import json
 import logging
 from pathlib import Path
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DXFViewerView(TemplateView):
     """Main DXF Viewer page with upload and viewer."""
+
     template_name = "cad_hub/dxf/viewer.html"
 
     def get_context_data(self, **kwargs):
@@ -55,23 +57,27 @@ class DXFUploadView(View):
                 available = converter.get_available_methods()
 
                 # Check if any local converter is available
-                if not any(m in available for m in ['oda', 'libredwg']):
-                    return JsonResponse({
-                        "error": (
-                            "DWG-Konvertierung nicht verfügbar.\n\n"
-                            "Bitte installieren Sie ODA File Converter:\n"
-                            "https://www.opendesign.com/guestfiles/oda_file_converter\n\n"
-                            "Oder konvertieren Sie die Datei vorher zu DXF."
-                        ),
-                        "hint": "DXF-Dateien werden direkt unterstützt"
-                    }, status=400)
+                if not any(m in available for m in ["oda", "libredwg"]):
+                    return JsonResponse(
+                        {
+                            "error": (
+                                "DWG-Konvertierung nicht verfügbar.\n\n"
+                                "Bitte installieren Sie ODA File Converter:\n"
+                                "https://www.opendesign.com/guestfiles/oda_file_converter\n\n"
+                                "Oder konvertieren Sie die Datei vorher zu DXF."
+                            ),
+                            "hint": "DXF-Dateien werden direkt unterstützt",
+                        },
+                        status=400,
+                    )
 
                 conversion_result = converter.convert_bytes_to_dxf(content, uploaded_file.name)
 
                 if not conversion_result.success:
-                    return JsonResponse({
-                        "error": f"DWG-Konvertierung fehlgeschlagen: {conversion_result.error}"
-                    }, status=400)
+                    return JsonResponse(
+                        {"error": f"DWG-Konvertierung fehlgeschlagen: {conversion_result.error}"},
+                        status=400,
+                    )
 
                 content = conversion_result.dxf_content
                 logger.info(f"DWG converted using method: {conversion_result.method}")
@@ -90,12 +96,14 @@ class DXFUploadView(View):
             # Also get SVG thumbnail
             svg_thumbnail = renderer.get_thumbnail_svg(max_size=300)
 
-            return JsonResponse({
-                "success": True,
-                "filename": uploaded_file.name,
-                "data": viewer_data,
-                "thumbnail_svg": svg_thumbnail
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "filename": uploaded_file.name,
+                    "data": viewer_data,
+                    "thumbnail_svg": svg_thumbnail,
+                }
+            )
 
         except Exception as e:
             logger.error(f"DXF/DWG upload failed: {e}")
@@ -141,22 +149,24 @@ class DXFParseView(View):
             # Extract room candidates
             rooms = parser.extract_room_candidates(result)
 
-            return JsonResponse({
-                "success": True,
-                "filename": uploaded_file.name,
-                "statistics": {
-                    "lines": len(result.lines),
-                    "circles": len(result.circles),
-                    "arcs": len(result.arcs),
-                    "polylines": len(result.polylines),
-                    "texts": len(result.texts),
-                    "layers": len(result.layers),
-                    "total": result.total_entities
-                },
-                "layers": [l.to_dict() for l in result.layers],
-                "extents": result.extents,
-                "rooms": rooms[:20]  # Top 20 room candidates
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "filename": uploaded_file.name,
+                    "statistics": {
+                        "lines": len(result.lines),
+                        "circles": len(result.circles),
+                        "arcs": len(result.arcs),
+                        "polylines": len(result.polylines),
+                        "texts": len(result.texts),
+                        "layers": len(result.layers),
+                        "total": result.total_entities,
+                    },
+                    "layers": [l.to_dict() for l in result.layers],
+                    "extents": result.extents,
+                    "rooms": rooms[:20],  # Top 20 room candidates
+                }
+            )
 
         except Exception as e:
             logger.error(f"DXF parse failed: {e}")
@@ -165,6 +175,7 @@ class DXFParseView(View):
 
 class NL2DXFView(TemplateView):
     """Natural Language to DXF generator page."""
+
     template_name = "cad_hub/dxf/nl2dxf.html"
 
 
@@ -196,13 +207,15 @@ class NL2DXFGenerateView(View):
                 with open(result.filepath) as f:
                     dxf_content = f.read()
 
-                return JsonResponse({
-                    "success": True,
-                    "commands": [cmd.command for cmd in result.commands],
-                    "data": viewer_data,
-                    "thumbnail_svg": svg_thumbnail,
-                    "dxf_content": dxf_content
-                })
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "commands": [cmd.command for cmd in result.commands],
+                        "data": viewer_data,
+                        "thumbnail_svg": svg_thumbnail,
+                        "dxf_content": dxf_content,
+                    }
+                )
             else:
                 return JsonResponse({"error": "Could not read generated DXF"}, status=500)
 
@@ -237,8 +250,10 @@ class DXFDownloadView(View):
 # ANALYSE VIEWS (using CADLoaderService)
 # =============================================================================
 
+
 class DXFAnalysisView(TemplateView):
     """DXF Analysis Dashboard."""
+
     template_name = "cad_hub/dxf/analysis.html"
 
     def get_context_data(self, **kwargs):
@@ -283,20 +298,22 @@ class DXFAnalyzeUploadView(View):
             # Thumbnail
             thumbnail = loader.get_thumbnail(max_size=400)
 
-            return JsonResponse({
-                "success": True,
-                "filename": uploaded_file.name,
-                "analysis": analysis,
-                "viewer_data": viewer_data,
-                "floor_plan": {
-                    "rooms": rooms,
-                    "room_areas": room_areas[:20],
-                    "doors": doors,
-                    "windows": windows,
-                },
-                "quality": quality_issues,
-                "thumbnail_svg": thumbnail,
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "filename": uploaded_file.name,
+                    "analysis": analysis,
+                    "viewer_data": viewer_data,
+                    "floor_plan": {
+                        "rooms": rooms,
+                        "room_areas": room_areas[:20],
+                        "doors": doors,
+                        "windows": windows,
+                    },
+                    "quality": quality_issues,
+                    "thumbnail_svg": thumbnail,
+                }
+            )
 
         except Exception as e:
             logger.error(f"DXF analysis failed: {e}", exc_info=True)
@@ -314,10 +331,7 @@ class DXFLayersAPIView(View):
             content = request.FILES["file"].read()
             loader = CADLoaderService.from_bytes(content, request.FILES["file"].name)
 
-            return JsonResponse({
-                "success": True,
-                "layers": loader.get_layers()
-            })
+            return JsonResponse({"success": True, "layers": loader.get_layers()})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -333,10 +347,7 @@ class DXFBlocksAPIView(View):
             content = request.FILES["file"].read()
             loader = CADLoaderService.from_bytes(content, request.FILES["file"].name)
 
-            return JsonResponse({
-                "success": True,
-                "blocks": loader.get_blocks()
-            })
+            return JsonResponse({"success": True, "blocks": loader.get_blocks()})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -352,10 +363,7 @@ class DXFTextsAPIView(View):
             content = request.FILES["file"].read()
             loader = CADLoaderService.from_bytes(content, request.FILES["file"].name)
 
-            return JsonResponse({
-                "success": True,
-                "texts": loader.get_texts()
-            })
+            return JsonResponse({"success": True, "texts": loader.get_texts()})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -371,10 +379,7 @@ class DXFDimensionsAPIView(View):
             content = request.FILES["file"].read()
             loader = CADLoaderService.from_bytes(content, request.FILES["file"].name)
 
-            return JsonResponse({
-                "success": True,
-                "dimensions": loader.get_dimensions()
-            })
+            return JsonResponse({"success": True, "dimensions": loader.get_dimensions()})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -390,15 +395,17 @@ class DXFRoomsAPIView(View):
             content = request.FILES["file"].read()
             loader = CADLoaderService.from_bytes(content, request.FILES["file"].name)
 
-            return JsonResponse({
-                "success": True,
-                "rooms": loader.get_rooms(),
-                "room_areas": loader.get_room_areas(),
-                "doors": loader.get_doors(),
-                "windows": loader.get_windows(),
-                "furniture": loader.get_furniture(),
-                "sanitary": loader.get_sanitary(),
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "rooms": loader.get_rooms(),
+                    "room_areas": loader.get_room_areas(),
+                    "doors": loader.get_doors(),
+                    "windows": loader.get_windows(),
+                    "furniture": loader.get_furniture(),
+                    "sanitary": loader.get_sanitary(),
+                }
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -418,7 +425,7 @@ class DXFExportJSONView(View):
 
             response = HttpResponse(
                 json.dumps(analysis, indent=2, default=str, ensure_ascii=False),
-                content_type="application/json"
+                content_type="application/json",
             )
             filename = Path(request.FILES["file"].name).stem + "_analysis.json"
             response["Content-Disposition"] = f'attachment; filename="{filename}"'

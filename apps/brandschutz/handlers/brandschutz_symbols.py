@@ -14,6 +14,7 @@ Regelwerke:
 - DIN 14675 (Brandmeldeanlagen)
 - DIN EN ISO 7010 (Sicherheitskennzeichen)
 """
+
 import logging
 import math
 
@@ -74,7 +75,7 @@ class BrandschutzSymbolHandler(BaseCADHandler):
         SymbolTyp.RAUCHMELDER: PlatzierungsRegel(
             symbol_typ=SymbolTyp.RAUCHMELDER,
             max_flaeche_m2=60.0,  # ca. 60m² pro Melder
-            max_abstand_m=7.5,    # max 7.5m Abstand untereinander
+            max_abstand_m=7.5,  # max 7.5m Abstand untereinander
             regelwerk="DIN 14675",
         ),
         SymbolTyp.NOTAUSGANG: PlatzierungsRegel(
@@ -141,13 +142,14 @@ class BrandschutzSymbolHandler(BaseCADHandler):
             if grundflaeche_m2 == 0:
                 grundflaeche_m2 = sum(r.get("flaeche", 0) for r in raeume)
 
-            logger.info(f"[{self.name}] Analyse: {len(raeume)} Räume, {grundflaeche_m2:.0f}m², "
-                       f"{len(bestehende_symbole)} bestehende Symbole")
+            logger.info(
+                f"[{self.name}] Analyse: {len(raeume)} Räume, {grundflaeche_m2:.0f}m², "
+                f"{len(bestehende_symbole)} bestehende Symbole"
+            )
 
             # 2. Fehlende Symbole berechnen
             symbol_result = self._calculate_missing_symbols(
-                symbol_result, bestehende_symbole, raeume,
-                fluchtwege, tueren, grundflaeche_m2
+                symbol_result, bestehende_symbole, raeume, fluchtwege, tueren, grundflaeche_m2
             )
 
             # 3. Symbole einfügen (nur im Modus "einfuegen")
@@ -168,8 +170,10 @@ class BrandschutzSymbolHandler(BaseCADHandler):
         result.data["grundflaeche_m2"] = grundflaeche_m2
 
         result.status = HandlerStatus.SUCCESS
-        logger.info(f"[{self.name}] {len(symbol_result.vorgeschlagene_symbole)} Symbole vorgeschlagen, "
-                   f"{len(symbol_result.eingefuegte_symbole)} eingefügt")
+        logger.info(
+            f"[{self.name}] {len(symbol_result.vorgeschlagene_symbole)} Symbole vorgeschlagen, "
+            f"{len(symbol_result.eingefuegte_symbole)} eingefügt"
+        )
 
         return result
 
@@ -183,16 +187,29 @@ class BrandschutzSymbolHandler(BaseCADHandler):
             block_name = entity.dxf.name.lower()
 
             # Bekannte Brandschutz-Blöcke
-            if any(kw in block_name for kw in [
-                "feuer", "lösch", "rauch", "melder", "notaus",
-                "flucht", "brand", "hydrant", "sprinkler", "rwa"
-            ]):
-                symbols.append({
-                    "name": entity.dxf.name,
-                    "x": entity.dxf.insert[0],
-                    "y": entity.dxf.insert[1],
-                    "layer": entity.dxf.layer,
-                })
+            if any(
+                kw in block_name
+                for kw in [
+                    "feuer",
+                    "lösch",
+                    "rauch",
+                    "melder",
+                    "notaus",
+                    "flucht",
+                    "brand",
+                    "hydrant",
+                    "sprinkler",
+                    "rwa",
+                ]
+            ):
+                symbols.append(
+                    {
+                        "name": entity.dxf.name,
+                        "x": entity.dxf.insert[0],
+                        "y": entity.dxf.insert[1],
+                        "layer": entity.dxf.layer,
+                    }
+                )
 
         return symbols
 
@@ -210,11 +227,16 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                 continue
 
             # Fläche berechnen
-            area = abs(sum(
-                (points[i][0] * points[(i+1) % len(points)][1] -
-                 points[(i+1) % len(points)][0] * points[i][1])
-                for i in range(len(points))
-            ) / 2.0)
+            area = abs(
+                sum(
+                    (
+                        points[i][0] * points[(i + 1) % len(points)][1]
+                        - points[(i + 1) % len(points)][0] * points[i][1]
+                    )
+                    for i in range(len(points))
+                )
+                / 2.0
+            )
 
             # Schwerpunkt berechnen
             cx = sum(p[0] for p in points) / len(points)
@@ -231,16 +253,18 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                 area = area / 1000000
 
             if area > 5:  # Mindestens 5m² für Raum
-                rooms.append({
-                    "flaeche": area,
-                    "zentrum_x": cx,
-                    "zentrum_y": cy,
-                    "min_x": min_x,
-                    "max_x": max_x,
-                    "min_y": min_y,
-                    "max_y": max_y,
-                    "layer": entity.dxf.layer,
-                })
+                rooms.append(
+                    {
+                        "flaeche": area,
+                        "zentrum_x": cx,
+                        "zentrum_y": cy,
+                        "min_x": min_x,
+                        "max_x": max_x,
+                        "min_y": min_y,
+                        "max_y": max_y,
+                        "layer": entity.dxf.layer,
+                    }
+                )
 
         return rooms
 
@@ -250,21 +274,27 @@ class BrandschutzSymbolHandler(BaseCADHandler):
         msp = doc.modelspace()
 
         for entity in msp:
-            layer = entity.dxf.layer.lower() if hasattr(entity.dxf, 'layer') else ""
+            layer = entity.dxf.layer.lower() if hasattr(entity.dxf, "layer") else ""
 
             if any(kw in layer for kw in ["flucht", "rettung", "escape"]):
                 if entity.dxftype() == "LWPOLYLINE":
                     points = list(entity.get_points())
-                    fluchtwege.append({
-                        "points": points,
-                        "layer": entity.dxf.layer,
-                    })
+                    fluchtwege.append(
+                        {
+                            "points": points,
+                            "layer": entity.dxf.layer,
+                        }
+                    )
                 elif entity.dxftype() == "LINE":
-                    fluchtwege.append({
-                        "points": [(entity.dxf.start[0], entity.dxf.start[1]),
-                                   (entity.dxf.end[0], entity.dxf.end[1])],
-                        "layer": entity.dxf.layer,
-                    })
+                    fluchtwege.append(
+                        {
+                            "points": [
+                                (entity.dxf.start[0], entity.dxf.start[1]),
+                                (entity.dxf.end[0], entity.dxf.end[1]),
+                            ],
+                            "layer": entity.dxf.layer,
+                        }
+                    )
 
         return fluchtwege
 
@@ -277,12 +307,14 @@ class BrandschutzSymbolHandler(BaseCADHandler):
             block_name = entity.dxf.name.lower()
 
             if any(kw in block_name for kw in ["tür", "door", "tuer", "eingang", "ausgang"]):
-                doors.append({
-                    "name": entity.dxf.name,
-                    "x": entity.dxf.insert[0],
-                    "y": entity.dxf.insert[1],
-                    "rotation": entity.dxf.rotation if hasattr(entity.dxf, 'rotation') else 0,
-                })
+                doors.append(
+                    {
+                        "name": entity.dxf.name,
+                        "x": entity.dxf.insert[0],
+                        "y": entity.dxf.insert[1],
+                        "rotation": entity.dxf.rotation if hasattr(entity.dxf, "rotation") else 0,
+                    }
+                )
 
         return doors
 
@@ -293,13 +325,15 @@ class BrandschutzSymbolHandler(BaseCADHandler):
         raeume: list[dict],
         fluchtwege: list[dict],
         tueren: list[dict],
-        grundflaeche_m2: float
+        grundflaeche_m2: float,
     ) -> SymbolInsertionResult:
         """Berechnet fehlende Symbole basierend auf Regeln."""
 
         # 1. FEUERLÖSCHER (ASR A2.2: max 20m Laufweg)
         # Vereinfacht: 1 pro 200m² oder pro Raum
-        bestehende_fl = [s for s in bestehende if "feuer" in s["name"].lower() or "lösch" in s["name"].lower()]
+        bestehende_fl = [
+            s for s in bestehende if "feuer" in s["name"].lower() or "lösch" in s["name"].lower()
+        ]
 
         if grundflaeche_m2 > 0:
             benoetigte_fl = max(1, int(grundflaeche_m2 / 200))
@@ -312,17 +346,21 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                 raeume_sorted = sorted(raeume, key=lambda r: r["flaeche"], reverse=True)
 
                 for i, raum in enumerate(raeume_sorted[:fehlende_fl]):
-                    symbol_result.vorgeschlagene_symbole.append(SymbolPlatzierung(
-                        symbol_typ=SymbolTyp.FEUERLOESCHER.value,
-                        position_x=raum["zentrum_x"],
-                        position_y=raum["zentrum_y"],
-                        layer="Brandschutz_Feuerloescher",
-                        begruendung=f"ASR A2.2: Feuerlöscher für {raum['flaeche']:.0f}m² Raum",
-                        prioritaet=1,
-                    ))
+                    symbol_result.vorgeschlagene_symbole.append(
+                        SymbolPlatzierung(
+                            symbol_typ=SymbolTyp.FEUERLOESCHER.value,
+                            position_x=raum["zentrum_x"],
+                            position_y=raum["zentrum_y"],
+                            layer="Brandschutz_Feuerloescher",
+                            begruendung=f"ASR A2.2: Feuerlöscher für {raum['flaeche']:.0f}m² Raum",
+                            prioritaet=1,
+                        )
+                    )
 
         # 2. RAUCHMELDER (DIN 14675: ca. 60m² pro Melder)
-        bestehende_rm = [s for s in bestehende if "rauch" in s["name"].lower() or "melder" in s["name"].lower()]
+        bestehende_rm = [
+            s for s in bestehende if "rauch" in s["name"].lower() or "melder" in s["name"].lower()
+        ]
 
         if grundflaeche_m2 > 0:
             benoetigte_rm = max(1, int(grundflaeche_m2 / 60))
@@ -336,30 +374,34 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                     if raum["flaeche"] > 10:
                         # Prüfen ob schon Melder im Raum
                         hat_melder = any(
-                            raum["min_x"] <= rm["x"] <= raum["max_x"] and
-                            raum["min_y"] <= rm["y"] <= raum["max_y"]
+                            raum["min_x"] <= rm["x"] <= raum["max_x"]
+                            and raum["min_y"] <= rm["y"] <= raum["max_y"]
                             for rm in bestehende_rm
                         )
 
                         if not hat_melder:
-                            symbol_result.vorgeschlagene_symbole.append(SymbolPlatzierung(
-                                symbol_typ=SymbolTyp.RAUCHMELDER.value,
-                                position_x=raum["zentrum_x"],
-                                position_y=raum["zentrum_y"],
-                                layer="Brandschutz_Rauchmelder",
-                                begruendung=f"DIN 14675: Rauchmelder für {raum['flaeche']:.0f}m² Raum",
-                                prioritaet=2,
-                            ))
+                            symbol_result.vorgeschlagene_symbole.append(
+                                SymbolPlatzierung(
+                                    symbol_typ=SymbolTyp.RAUCHMELDER.value,
+                                    position_x=raum["zentrum_x"],
+                                    position_y=raum["zentrum_y"],
+                                    layer="Brandschutz_Rauchmelder",
+                                    begruendung=f"DIN 14675: Rauchmelder für {raum['flaeche']:.0f}m² Raum",
+                                    prioritaet=2,
+                                )
+                            )
 
         # 3. FLUCHTWEG-SCHILDER (ASR A2.3: an Richtungswechseln)
-        bestehende_fw = [s for s in bestehende if "flucht" in s["name"].lower() or "notaus" in s["name"].lower()]
+        bestehende_fw = [
+            s for s in bestehende if "flucht" in s["name"].lower() or "notaus" in s["name"].lower()
+        ]
 
         for fluchtweg in fluchtwege:
             points = fluchtweg.get("points", [])
 
             # An Richtungswechseln (Ecken) Schilder vorschlagen
             for i in range(1, len(points) - 1):
-                p0, p1, p2 = points[i-1], points[i], points[i+1]
+                p0, p1, p2 = points[i - 1], points[i], points[i + 1]
 
                 # Winkel berechnen
                 angle1 = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
@@ -370,21 +412,23 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                 if angle_diff > 0.5:  # ca. 30°
                     # Prüfen ob schon Schild in der Nähe
                     hat_schild = any(
-                        math.sqrt((fw["x"] - p1[0])**2 + (fw["y"] - p1[1])**2) < 2000  # 2m
+                        math.sqrt((fw["x"] - p1[0]) ** 2 + (fw["y"] - p1[1]) ** 2) < 2000  # 2m
                         for fw in bestehende_fw
                     )
 
                     if not hat_schild:
                         symbol_result.fluchtweg_schilder_fehlen += 1
-                        symbol_result.vorgeschlagene_symbole.append(SymbolPlatzierung(
-                            symbol_typ=SymbolTyp.FLUCHTWEG_PFEIL.value,
-                            position_x=p1[0],
-                            position_y=p1[1],
-                            rotation=math.degrees(angle2),
-                            layer="Brandschutz_Fluchtweg",
-                            begruendung="ASR A2.3: Richtungsschild an Fluchtweg-Richtungswechsel",
-                            prioritaet=1,
-                        ))
+                        symbol_result.vorgeschlagene_symbole.append(
+                            SymbolPlatzierung(
+                                symbol_typ=SymbolTyp.FLUCHTWEG_PFEIL.value,
+                                position_x=p1[0],
+                                position_y=p1[1],
+                                rotation=math.degrees(angle2),
+                                layer="Brandschutz_Fluchtweg",
+                                begruendung="ASR A2.3: Richtungsschild an Fluchtweg-Richtungswechsel",
+                                prioritaet=1,
+                            )
+                        )
 
         # 4. NOTAUSGANG-SCHILDER (an Ausgangstüren)
         for tuer in tueren:
@@ -393,19 +437,21 @@ class BrandschutzSymbolHandler(BaseCADHandler):
             if any(kw in name for kw in ["notaus", "ausgang", "exit", "flucht"]):
                 # Prüfen ob schon Schild
                 hat_schild = any(
-                    math.sqrt((fw["x"] - tuer["x"])**2 + (fw["y"] - tuer["y"])**2) < 1000
+                    math.sqrt((fw["x"] - tuer["x"]) ** 2 + (fw["y"] - tuer["y"]) ** 2) < 1000
                     for fw in bestehende_fw
                 )
 
                 if not hat_schild:
-                    symbol_result.vorgeschlagene_symbole.append(SymbolPlatzierung(
-                        symbol_typ=SymbolTyp.NOTAUSGANG.value,
-                        position_x=tuer["x"],
-                        position_y=tuer["y"] + 500,  # Über der Tür
-                        layer="Brandschutz_Fluchtweg",
-                        begruendung="ASR A2.3: Notausgang-Kennzeichnung über Ausgangstür",
-                        prioritaet=1,
-                    ))
+                    symbol_result.vorgeschlagene_symbole.append(
+                        SymbolPlatzierung(
+                            symbol_typ=SymbolTyp.NOTAUSGANG.value,
+                            position_x=tuer["x"],
+                            position_y=tuer["y"] + 500,  # Über der Tür
+                            layer="Brandschutz_Fluchtweg",
+                            begruendung="ASR A2.3: Notausgang-Kennzeichnung über Ausgangstür",
+                            prioritaet=1,
+                        )
+                    )
 
         return symbol_result
 
@@ -414,8 +460,12 @@ class BrandschutzSymbolHandler(BaseCADHandler):
         msp = doc.modelspace()
 
         # Brandschutz-Layer erstellen falls nicht vorhanden
-        layer_namen = ["Brandschutz_Symbole", "Brandschutz_Feuerloescher",
-                       "Brandschutz_Rauchmelder", "Brandschutz_Fluchtweg"]
+        layer_namen = [
+            "Brandschutz_Symbole",
+            "Brandschutz_Feuerloescher",
+            "Brandschutz_Rauchmelder",
+            "Brandschutz_Fluchtweg",
+        ]
 
         for layer_name in layer_namen:
             if layer_name not in doc.layers:
@@ -437,11 +487,13 @@ class BrandschutzSymbolHandler(BaseCADHandler):
                     dxfattribs={
                         "layer": symbol.layer,
                         "rotation": symbol.rotation,
-                    }
+                    },
                 )
 
                 symbol_result.eingefuegte_symbole.append(symbol)
-                logger.debug(f"[{self.name}] Symbol eingefügt: {block_name} at ({symbol.position_x}, {symbol.position_y})")
+                logger.debug(
+                    f"[{self.name}] Symbol eingefügt: {block_name} at ({symbol.position_x}, {symbol.position_y})"
+                )
 
             except Exception as e:
                 symbol_result.warnungen.append(f"Konnte {symbol.symbol_typ} nicht einfügen: {e}")
@@ -475,7 +527,7 @@ class BrandschutzSymbolHandler(BaseCADHandler):
             block.add_lwpolyline(
                 [(-200, -100), (200, -100), (200, 100), (-200, 100)],
                 close=True,
-                dxfattribs={"color": 3}
+                dxfattribs={"color": 3},
             )
             block.add_line((-100, 0), (100, 0), dxfattribs={"color": 3})
             block.add_line((50, 50), (100, 0), dxfattribs={"color": 3})
@@ -495,6 +547,7 @@ class BrandschutzSymbolHandler(BaseCADHandler):
 
 # Singleton
 _symbol_handler: BrandschutzSymbolHandler | None = None
+
 
 def get_brandschutz_symbol_handler() -> BrandschutzSymbolHandler:
     """Gibt BrandschutzSymbolHandler-Instanz zurück."""

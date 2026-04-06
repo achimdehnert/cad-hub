@@ -4,6 +4,7 @@ AVB models — Ausschreibung, Vergabe, Bauausführung.
 Source: bfagent/apps/cad_hub/models_avb.py
 Changes: app_label → avb, tenant_id added, FK → ifc.IFCProject.
 """
+
 import uuid
 from decimal import Decimal
 
@@ -79,66 +80,50 @@ class ConstructionProject(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_project = models.OneToOneField(
         "ifc.IFCProject",
         on_delete=models.CASCADE,
         related_name="construction_project",
         verbose_name="IFC Projekt",
     )
-    project_number = models.CharField(
-        max_length=50, blank=True, verbose_name="Projektnummer"
-    )
-    client = models.CharField(
-        max_length=255, verbose_name="Auftraggeber"
-    )
+    project_number = models.CharField(max_length=50, blank=True, verbose_name="Projektnummer")
+    client = models.CharField(max_length=255, verbose_name="Auftraggeber")
     client_contact = models.CharField(
-        max_length=255, blank=True,
+        max_length=255,
+        blank=True,
         verbose_name="Ansprechpartner AG",
     )
-    street = models.CharField(
-        max_length=255, blank=True, verbose_name="Straße"
-    )
-    zip_code = models.CharField(
-        max_length=10, blank=True, verbose_name="PLZ"
-    )
-    city = models.CharField(
-        max_length=100, blank=True, verbose_name="Ort"
-    )
+    street = models.CharField(max_length=255, blank=True, verbose_name="Straße")
+    zip_code = models.CharField(max_length=10, blank=True, verbose_name="PLZ")
+    city = models.CharField(max_length=100, blank=True, verbose_name="Ort")
     current_phase = models.CharField(
         max_length=10,
         choices=ProjectPhase.choices,
         default=ProjectPhase.LP1,
         verbose_name="Aktuelle Phase",
     )
-    planning_start = models.DateField(
-        null=True, blank=True, verbose_name="Planungsbeginn"
-    )
-    construction_start = models.DateField(
-        null=True, blank=True, verbose_name="Baubeginn"
-    )
-    construction_end = models.DateField(
-        null=True, blank=True, verbose_name="Fertigstellung"
-    )
+    planning_start = models.DateField(null=True, blank=True, verbose_name="Planungsbeginn")
+    construction_start = models.DateField(null=True, blank=True, verbose_name="Baubeginn")
+    construction_end = models.DateField(null=True, blank=True, verbose_name="Fertigstellung")
     budget_total = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         default=Decimal("0"),
         verbose_name="Gesamtbudget (€)",
     )
     cost_estimate = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         default=Decimal("0"),
         verbose_name="Kostenschätzung (€)",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         verbose_name="Erstellt von",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -156,9 +141,7 @@ class ConstructionProject(models.Model):
 
     @property
     def total_tender_value(self) -> Decimal:
-        return self.tenders.aggregate(
-            total=models.Sum("estimated_value")
-        )["total"] or Decimal("0")
+        return self.tenders.aggregate(total=models.Sum("estimated_value"))["total"] or Decimal("0")
 
 
 class ProjectMilestone(models.Model):
@@ -166,24 +149,16 @@ class ProjectMilestone(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         ConstructionProject,
         on_delete=models.CASCADE,
         related_name="milestones",
         verbose_name="Projekt",
     )
-    name = models.CharField(
-        max_length=255, verbose_name="Bezeichnung"
-    )
-    description = models.TextField(
-        blank=True, verbose_name="Beschreibung"
-    )
+    name = models.CharField(max_length=255, verbose_name="Bezeichnung")
+    description = models.TextField(blank=True, verbose_name="Beschreibung")
     phase = models.CharField(
         max_length=10,
         choices=ProjectPhase.choices,
@@ -192,12 +167,11 @@ class ProjectMilestone(models.Model):
     )
     due_date = models.DateField(verbose_name="Fällig am")
     completed_at = models.DateTimeField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         verbose_name="Abgeschlossen am",
     )
-    order = models.PositiveIntegerField(
-        default=0, verbose_name="Reihenfolge"
-    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Reihenfolge")
 
     class Meta:
         app_label = "avb"
@@ -224,12 +198,8 @@ class CostEstimateEntry(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         ConstructionProject,
         on_delete=models.CASCADE,
@@ -242,28 +212,30 @@ class CostEstimateEntry(models.Model):
         verbose_name="Kostengruppe",
     )
     description = models.CharField(
-        max_length=255, blank=True,
+        max_length=255,
+        blank=True,
         verbose_name="Beschreibung",
     )
     quantity = models.DecimalField(
-        max_digits=12, decimal_places=2,
-        default=Decimal("0"), verbose_name="Menge",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        verbose_name="Menge",
     )
-    unit = models.CharField(
-        max_length=20, default="m²", verbose_name="Einheit"
-    )
+    unit = models.CharField(max_length=20, default="m²", verbose_name="Einheit")
     unit_price = models.DecimalField(
-        max_digits=10, decimal_places=2,
+        max_digits=10,
+        decimal_places=2,
         default=Decimal("0"),
         verbose_name="Einheitspreis (€)",
     )
     total = models.DecimalField(
-        max_digits=14, decimal_places=2,
-        default=Decimal("0"), verbose_name="Gesamt (€)",
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0"),
+        verbose_name="Gesamt (€)",
     )
-    notes = models.TextField(
-        blank=True, verbose_name="Anmerkungen"
-    )
+    notes = models.TextField(blank=True, verbose_name="Anmerkungen")
 
     class Meta:
         app_label = "avb"
@@ -277,7 +249,6 @@ class CostEstimateEntry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_cost_group_display()} - {self.total:.2f} €"
-
 
 
 # Re-export tender/bid models for backward compatibility

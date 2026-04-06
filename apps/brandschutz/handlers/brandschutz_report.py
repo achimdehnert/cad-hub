@@ -15,6 +15,7 @@ Inhalte:
 - Regelwerk-Referenzen
 - Empfehlungen
 """
+
 import json
 import logging
 from datetime import datetime
@@ -30,7 +31,6 @@ from apps.core.handlers.base import (
 from .brandschutz_models import BerichtKonfiguration
 
 logger = logging.getLogger(__name__)
-
 
 
 class BrandschutzReportHandler(BaseCADHandler):
@@ -112,7 +112,9 @@ class BrandschutzReportHandler(BaseCADHandler):
 
         return result
 
-    def _generate_html(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
+    def _generate_html(
+        self, analyse: dict, symbole: dict, config: BerichtKonfiguration
+    ) -> tuple[bytes, str]:
         """Generiert HTML-Bericht."""
 
         # Daten extrahieren
@@ -171,8 +173,8 @@ class BrandschutzReportHandler(BaseCADHandler):
         <h1>🔥 {config.titel}</h1>
         <div class="meta">
             <div class="meta-item"><strong>Projekt:</strong> {config.projekt_name}</div>
-            <div class="meta-item"><strong>Etage:</strong> {config.etage or 'Alle'}</div>
-            <div class="meta-item"><strong>Prüfer:</strong> {config.pruefer or 'N/A'}</div>
+            <div class="meta-item"><strong>Etage:</strong> {config.etage or "Alle"}</div>
+            <div class="meta-item"><strong>Prüfer:</strong> {config.pruefer or "N/A"}</div>
             <div class="meta-item"><strong>Datum:</strong> {config.datum}</div>
         </div>
     </div>
@@ -180,15 +182,15 @@ class BrandschutzReportHandler(BaseCADHandler):
     <h2>📊 Zusammenfassung</h2>
     <div class="stats">
         <div class="stat-card">
-            <div class="stat-value">{zusammenfassung.get('notausgaenge', 0)}</div>
+            <div class="stat-value">{zusammenfassung.get("notausgaenge", 0)}</div>
             <div class="stat-label">Notausgänge</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{zusammenfassung.get('feuerloescher', 0)}</div>
+            <div class="stat-value">{zusammenfassung.get("feuerloescher", 0)}</div>
             <div class="stat-label">Feuerlöscher</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{zusammenfassung.get('rauchmelder', 0)}</div>
+            <div class="stat-value">{zusammenfassung.get("rauchmelder", 0)}</div>
             <div class="stat-label">Rauchmelder</div>
         </div>
         <div class="stat-card">
@@ -243,9 +245,9 @@ class BrandschutzReportHandler(BaseCADHandler):
             for sym in vorgeschlagen[:10]:  # Max 10
                 prio_class = "kritisch" if sym.get("prioritaet") == 1 else "mittel"
                 html += f"""            <tr>
-                <td>{sym.get('symbol_typ', '')}</td>
-                <td>{sym.get('begruendung', '')}</td>
-                <td><span class="badge badge-{prio_class}">P{sym.get('prioritaet', 2)}</span></td>
+                <td>{sym.get("symbol_typ", "")}</td>
+                <td>{sym.get("begruendung", "")}</td>
+                <td><span class="badge badge-{prio_class}">P{sym.get("prioritaet", 2)}</span></td>
             </tr>
 """
             html += "        </table>\n    </div>\n"
@@ -257,13 +259,13 @@ class BrandschutzReportHandler(BaseCADHandler):
 """
                 if symbol_stats.get("feuerloescher_fehlen", 0) > 0:
                     html += f"""        <div class="stat-card">
-            <div class="stat-value" style="color: #e74c3c;">{symbol_stats['feuerloescher_fehlen']}</div>
+            <div class="stat-value" style="color: #e74c3c;">{symbol_stats["feuerloescher_fehlen"]}</div>
             <div class="stat-label">Feuerlöscher fehlen</div>
         </div>
 """
                 if symbol_stats.get("rauchmelder_fehlen", 0) > 0:
                     html += f"""        <div class="stat-card">
-            <div class="stat-value" style="color: #e74c3c;">{symbol_stats['rauchmelder_fehlen']}</div>
+            <div class="stat-value" style="color: #e74c3c;">{symbol_stats["rauchmelder_fehlen"]}</div>
             <div class="stat-label">Rauchmelder fehlen</div>
         </div>
 """
@@ -272,7 +274,7 @@ class BrandschutzReportHandler(BaseCADHandler):
         # Footer
         html += f"""
     <div class="footer">
-        <p>Erstellt am {datetime.now().strftime('%d.%m.%Y %H:%M')} | Brandschutz-Prüfsystem</p>
+        <p>Erstellt am {datetime.now().strftime("%d.%m.%Y %H:%M")} | Brandschutz-Prüfsystem</p>
         <p><em>Dieser Bericht ersetzt keine behördliche Prüfung. Alle Angaben ohne Gewähr.</em></p>
     </div>
 </body>
@@ -280,7 +282,9 @@ class BrandschutzReportHandler(BaseCADHandler):
 
         return html.encode("utf-8"), "text/html"
 
-    def _generate_json(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
+    def _generate_json(
+        self, analyse: dict, symbole: dict, config: BerichtKonfiguration
+    ) -> tuple[bytes, str]:
         """Generiert JSON-Bericht."""
         bericht = {
             "meta": {
@@ -297,7 +301,9 @@ class BrandschutzReportHandler(BaseCADHandler):
 
         return json.dumps(bericht, indent=2, ensure_ascii=False).encode("utf-8"), "application/json"
 
-    def _generate_excel(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
+    def _generate_excel(
+        self, analyse: dict, symbole: dict, config: BerichtKonfiguration
+    ) -> tuple[bytes, str]:
         """Generiert Excel-Bericht."""
         try:
             import openpyxl
@@ -363,13 +369,15 @@ class BrandschutzReportHandler(BaseCADHandler):
             cell.font = header_font
 
         for sym in symbole.get("symbole", {}).get("vorgeschlagene_symbole", []):
-            ws3.append([
-                sym.get("symbol_typ", ""),
-                sym.get("position_x", 0),
-                sym.get("position_y", 0),
-                sym.get("begruendung", ""),
-                sym.get("prioritaet", 2),
-            ])
+            ws3.append(
+                [
+                    sym.get("symbol_typ", ""),
+                    sym.get("position_x", 0),
+                    sym.get("position_y", 0),
+                    sym.get("begruendung", ""),
+                    sym.get("prioritaet", 2),
+                ]
+            )
 
         # Spaltenbreiten
         for ws in [wb.active, ws2, ws3]:
@@ -382,9 +390,14 @@ class BrandschutzReportHandler(BaseCADHandler):
         wb.save(output)
         output.seek(0)
 
-        return output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return (
+            output.getvalue(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
 
-    def _generate_csv_fallback(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
+    def _generate_csv_fallback(
+        self, analyse: dict, symbole: dict, config: BerichtKonfiguration
+    ) -> tuple[bytes, str]:
         """Fallback zu CSV wenn openpyxl nicht verfügbar."""
         import csv
         from io import StringIO
@@ -403,7 +416,9 @@ class BrandschutzReportHandler(BaseCADHandler):
 
         return output.getvalue().encode("utf-8"), "text/csv"
 
-    def _generate_pdf(self, analyse: dict, symbole: dict, config: BerichtKonfiguration) -> tuple[bytes, str]:
+    def _generate_pdf(
+        self, analyse: dict, symbole: dict, config: BerichtKonfiguration
+    ) -> tuple[bytes, str]:
         """Generiert PDF-Bericht."""
         try:
             from reportlab.lib import colors
@@ -418,33 +433,39 @@ class BrandschutzReportHandler(BaseCADHandler):
             return html_bytes, "text/html"
 
         output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
+        doc = SimpleDocTemplate(output, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm)
 
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('Title', parent=styles['Title'], textColor=colors.darkred)
-        heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], textColor=colors.darkblue)
+        title_style = ParagraphStyle("Title", parent=styles["Title"], textColor=colors.darkred)
+        heading_style = ParagraphStyle(
+            "Heading", parent=styles["Heading2"], textColor=colors.darkblue
+        )
 
         story = []
 
         # Titel
         story.append(Paragraph(f"🔥 {config.titel}", title_style))
-        story.append(Spacer(1, 0.5*cm))
+        story.append(Spacer(1, 0.5 * cm))
 
         # Meta
         meta_data = [
             ["Projekt:", config.projekt_name, "Etage:", config.etage or "Alle"],
             ["Prüfer:", config.pruefer or "N/A", "Datum:", config.datum],
         ]
-        meta_table = Table(meta_data, colWidths=[3*cm, 5*cm, 3*cm, 5*cm])
-        meta_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-            ('BACKGROUND', (2, 0), (2, -1), colors.lightgrey),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ]))
+        meta_table = Table(meta_data, colWidths=[3 * cm, 5 * cm, 3 * cm, 5 * cm])
+        meta_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+                    ("BACKGROUND", (2, 0), (2, -1), colors.lightgrey),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 10),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ]
+            )
+        )
         story.append(meta_table)
-        story.append(Spacer(1, 1*cm))
+        story.append(Spacer(1, 1 * cm))
 
         # Zusammenfassung
         story.append(Paragraph("Zusammenfassung", heading_style))
@@ -460,17 +481,21 @@ class BrandschutzReportHandler(BaseCADHandler):
                 str(len(brandschutz.get("fluchtwege", []))),
             ],
         ]
-        stats_table = Table(stats_data, colWidths=[4*cm]*4)
-        stats_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.darkred),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 1), (-1, 1), 18),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
+        stats_table = Table(stats_data, colWidths=[4 * cm] * 4)
+        stats_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.darkred),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 1), (-1, 1), 18),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ]
+            )
+        )
         story.append(stats_table)
-        story.append(Spacer(1, 1*cm))
+        story.append(Spacer(1, 1 * cm))
 
         # Mängel
         maengel = brandschutz.get("maengel", [])
@@ -479,14 +504,18 @@ class BrandschutzReportHandler(BaseCADHandler):
             maengel_data = [["#", "Beschreibung"]]
             for i, m in enumerate(maengel, 1):
                 maengel_data.append([str(i), m])
-            maengel_table = Table(maengel_data, colWidths=[1*cm, 15*cm])
-            maengel_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.orange),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ]))
+            maengel_table = Table(maengel_data, colWidths=[1 * cm, 15 * cm])
+            maengel_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.orange),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ]
+                )
+            )
             story.append(maengel_table)
         else:
-            story.append(Paragraph("✅ Keine Mängel festgestellt.", styles['Normal']))
+            story.append(Paragraph("✅ Keine Mängel festgestellt.", styles["Normal"]))
 
         doc.build(story)
         output.seek(0)
@@ -496,6 +525,7 @@ class BrandschutzReportHandler(BaseCADHandler):
 
 # Singleton
 _report_handler: BrandschutzReportHandler | None = None
+
 
 def get_brandschutz_report_handler() -> BrandschutzReportHandler:
     """Gibt BrandschutzReportHandler-Instanz zurück."""

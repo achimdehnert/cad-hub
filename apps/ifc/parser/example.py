@@ -5,10 +5,10 @@ Beispiel: IFC Complete Parser
 Zeigt wie man alle Informationen aus einer IFC-Datei extrahiert.
 """
 
+import logging
 from pathlib import Path
 
 from ifc_complete_parser import IfcCompleteParser, ParsedProject
-import logging
 
 logger = logging.getLogger(__name__)
 

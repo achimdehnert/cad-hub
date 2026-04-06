@@ -4,6 +4,7 @@ Use Case Tracker - Erfasst unlösbare Probleme als neue Feature-Anfragen.
 Wenn das System eine Anfrage nicht beantworten kann oder ein leeres
 Ergebnis liefert, wird dies als potenzieller neuer Use Case erfasst.
 """
+
 import json
 import logging
 from dataclasses import asdict, dataclass, field
@@ -18,25 +19,28 @@ USE_CASE_DATA_PATH = Path(__file__).parent.parent / "data" / "use_cases.json"
 
 class UseCaseStatus(Enum):
     """Status eines Use Cases."""
-    NEW = "new"                    # Neu erfasst
-    CONFIRMED = "confirmed"        # Von Admin bestätigt
-    IN_PROGRESS = "in_progress"    # In Entwicklung
-    IMPLEMENTED = "implemented"    # Umgesetzt
-    REJECTED = "rejected"          # Abgelehnt
-    DUPLICATE = "duplicate"        # Duplikat
+
+    NEW = "new"  # Neu erfasst
+    CONFIRMED = "confirmed"  # Von Admin bestätigt
+    IN_PROGRESS = "in_progress"  # In Entwicklung
+    IMPLEMENTED = "implemented"  # Umgesetzt
+    REJECTED = "rejected"  # Abgelehnt
+    DUPLICATE = "duplicate"  # Duplikat
 
 
 class UseCasePriority(Enum):
     """Priorität basierend auf Anfragehäufigkeit."""
-    LOW = "low"        # < 3 Anfragen
+
+    LOW = "low"  # < 3 Anfragen
     MEDIUM = "medium"  # 3-10 Anfragen
-    HIGH = "high"      # > 10 Anfragen
+    HIGH = "high"  # > 10 Anfragen
     CRITICAL = "critical"  # Manuell gesetzt
 
 
 @dataclass
 class UseCase:
     """Ein erfasster Use Case / Feature Request."""
+
     id: str
     title: str
     description: str
@@ -102,28 +106,30 @@ class UseCaseTracker:
         try:
             self.data_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.data_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "version": "1.0",
-                    "updated_at": datetime.now().isoformat(),
-                    "use_case_count": len(self.use_cases),
-                    "use_cases": [uc.to_dict() for uc in self.use_cases.values()],
-                }, f, indent=2, ensure_ascii=False)
+                json.dump(
+                    {
+                        "version": "1.0",
+                        "updated_at": datetime.now().isoformat(),
+                        "use_case_count": len(self.use_cases),
+                        "use_cases": [uc.to_dict() for uc in self.use_cases.values()],
+                    },
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
         except Exception as e:
             logger.error(f"[UseCaseTracker] Could not save: {e}")
 
     def _generate_id(self, title: str) -> str:
         """Generiert ID aus Titel."""
         import re
-        slug = re.sub(r'[^\w\s-]', '', title.lower())
-        slug = re.sub(r'[-\s]+', '_', slug).strip('_')
+
+        slug = re.sub(r"[^\w\s-]", "", title.lower())
+        slug = re.sub(r"[-\s]+", "_", slug).strip("_")
         return slug[:50]
 
     def report_empty_result(
-        self,
-        query: str,
-        intent: str,
-        result_type: str,
-        context: dict = None
+        self, query: str, intent: str, result_type: str, context: dict = None
     ) -> UseCase:
         """
         Erfasst leeres Ergebnis als potenziellen Use Case.
@@ -190,11 +196,7 @@ class UseCaseTracker:
         return uc
 
     def report_feature_request(
-        self,
-        title: str,
-        description: str,
-        query: str = "",
-        tags: list = None
+        self, title: str, description: str, query: str = "", tags: list = None
     ) -> UseCase:
         """
         Erfasst manuellen Feature Request.
@@ -236,10 +238,7 @@ class UseCaseTracker:
         return self.use_cases.get(uc_id)
 
     def list_use_cases(
-        self,
-        status: str = None,
-        priority: str = None,
-        limit: int = 50
+        self, status: str = None, priority: str = None, limit: int = 50
     ) -> list[UseCase]:
         """Listet Use Cases mit Filtern."""
         results = list(self.use_cases.values())
@@ -290,6 +289,7 @@ class UseCaseTracker:
 
 # Singleton
 _tracker: UseCaseTracker | None = None
+
 
 def get_use_case_tracker() -> UseCaseTracker:
     """Gibt Singleton UseCaseTracker zurück."""

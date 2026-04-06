@@ -5,6 +5,7 @@ IFC MCP Client - Kommuniziert mit IFC MCP Backend
 Alle Business Logic läuft im IFC MCP Backend.
 cad_hub ist PURE Frontend.
 """
+
 from typing import Any
 
 import httpx
@@ -15,7 +16,7 @@ class IfcMcpClient:
     """Client für IFC MCP Backend API"""
 
     def __init__(self, base_url: str = None):
-        self.base_url = base_url or getattr(settings, "IFC_MCP_URL", "http://localhost:8001") # noqa: hardcode
+        self.base_url = base_url or getattr(settings, "IFC_MCP_URL", "http://localhost:8001")  # noqa: S104
         self.timeout = 30.0
 
     async def _request(self, method: str, endpoint: str, **kwargs) -> dict[str, Any]:

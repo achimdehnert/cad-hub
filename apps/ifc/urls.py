@@ -1,4 +1,5 @@
 """IFC URL configuration."""
+
 from django.urls import path
 
 from . import views, views_analysis, views_chat, views_components, views_export, views_nl2cad

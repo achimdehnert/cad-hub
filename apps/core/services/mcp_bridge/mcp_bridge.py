@@ -29,7 +29,6 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-
 from .mcp_bridge_models import (
     AnalysisResult,
     BatchResult,
@@ -41,6 +40,7 @@ from .mcp_bridge_models import (
 # =============================================================================
 # MCP Bridge Service
 # =============================================================================
+
 
 class CADMCPBridge:
     """
@@ -62,7 +62,7 @@ class CADMCPBridge:
         self._initialized = False
 
         # Remote mode settings
-        self.mcp_base_url = getattr(settings, "CAD_MCP_URL", "http://localhost:8001") # noqa: hardcode
+        self.mcp_base_url = getattr(settings, "CAD_MCP_URL", "http://localhost:8001")  # noqa: S104
         self.timeout = 60.0
 
     def _ensure_initialized(self):
@@ -148,10 +148,7 @@ class CADMCPBridge:
     # =========================================================================
 
     async def analyze_file(
-        self,
-        file_path: str,
-        format: str = "auto",
-        output_format: str = "dict"
+        self, file_path: str, format: str = "auto", output_format: str = "dict"
     ) -> AnalysisResult:
         """
         Analysiert eine CAD-Datei.
@@ -174,7 +171,7 @@ class CADMCPBridge:
                 success=False,
                 file_path=file_path,
                 format=CADFormat.UNKNOWN,
-                errors=[f"Datei nicht gefunden: {file_path}"]
+                errors=[f"Datei nicht gefunden: {file_path}"],
             )
 
         # Format erkennen
@@ -191,10 +188,7 @@ class CADMCPBridge:
         except Exception as e:
             logger.exception(f"Analyse fehlgeschlagen für {file_path}")
             return AnalysisResult(
-                success=False,
-                file_path=file_path,
-                format=detected_format,
-                errors=[str(e)]
+                success=False, file_path=file_path, format=detected_format, errors=[str(e)]
             )
 
     async def _analyze_local(self, path: Path, format: CADFormat) -> AnalysisResult:
@@ -206,7 +200,7 @@ class CADMCPBridge:
                 success=False,
                 file_path=str(path),
                 format=format,
-                errors=[f"Kein Parser für Format {format.value} verfügbar"]
+                errors=[f"Kein Parser für Format {format.value} verfügbar"],
             )
 
         # Parser aufrufen (sync oder async)
@@ -220,11 +214,7 @@ class CADMCPBridge:
         markdown = result.to_markdown() if hasattr(result, "to_markdown") else ""
 
         return AnalysisResult(
-            success=True,
-            file_path=str(path),
-            format=format,
-            data=data,
-            markdown_report=markdown
+            success=True, file_path=str(path), format=format, data=data, markdown_report=markdown
         )
 
     async def _analyze_remote(self, path: Path, format: CADFormat) -> AnalysisResult:
@@ -236,9 +226,7 @@ class CADMCPBridge:
             with open(path, "rb") as f:
                 files = {"file": (path.name, f)}
                 response = await client.post(
-                    f"{self.mcp_base_url}/api/analyze",
-                    files=files,
-                    data={"format": format.value}
+                    f"{self.mcp_base_url}/api/analyze", files=files, data={"format": format.value}
                 )
 
             if response.status_code != 200:
@@ -246,7 +234,7 @@ class CADMCPBridge:
                     success=False,
                     file_path=str(path),
                     format=format,
-                    errors=[f"MCP Server Error: {response.status_code}"]
+                    errors=[f"MCP Server Error: {response.status_code}"],
                 )
 
             data = response.json()
@@ -255,7 +243,7 @@ class CADMCPBridge:
                 file_path=str(path),
                 format=format,
                 data=data.get("data", {}),
-                markdown_report=data.get("markdown", "")
+                markdown_report=data.get("markdown", ""),
             )
 
     # =========================================================================
@@ -287,7 +275,7 @@ class CADMCPBridge:
             return DXFQualityResult(
                 success=False,
                 file_path=file_path,
-                issues=[{"type": "error", "message": f"Datei nicht gefunden: {file_path}"}]
+                issues=[{"type": "error", "message": f"Datei nicht gefunden: {file_path}"}],
             )
 
         issues = []
@@ -295,7 +283,9 @@ class CADMCPBridge:
         section_result = {}
 
         # Prüfen ob MCP-Analyzer verfügbar sind
-        has_mcp_analyzers = "dimension_chains" in self._analyzers or "section_views" in self._analyzers
+        has_mcp_analyzers = (
+            "dimension_chains" in self._analyzers or "section_views" in self._analyzers
+        )
 
         if has_mcp_analyzers:
             # MCP-Analyzer verwenden
@@ -309,9 +299,13 @@ class CADMCPBridge:
                     # Issues aus Validierung extrahieren
                     if hasattr(result, "validation"):
                         for warning in result.validation.warnings:
-                            issues.append({"type": "warning", "category": "dimension", "message": warning})
+                            issues.append(
+                                {"type": "warning", "category": "dimension", "message": warning}
+                            )
                         for error in result.validation.errors:
-                            issues.append({"type": "error", "category": "dimension", "message": error})
+                            issues.append(
+                                {"type": "error", "category": "dimension", "message": error}
+                            )
 
             except Exception as e:
                 logger.warning(f"Maßketten-Analyse fehlgeschlagen: {e}")
@@ -329,7 +323,9 @@ class CADMCPBridge:
                 issues.append({"type": "error", "category": "section", "message": str(e)})
         else:
             # Fallback: Lokalen DXFAnalyzer verwenden
-            dimension_result, section_result, issues = await self._analyze_dxf_quality_fallback(path)
+            dimension_result, section_result, issues = await self._analyze_dxf_quality_fallback(
+                path
+            )
 
         # Qualitäts-Score berechnen
         quality_score = self._calculate_quality_score(dimension_result, section_result, issues)
@@ -340,7 +336,7 @@ class CADMCPBridge:
             dimension_chains=dimension_result,
             section_views=section_result,
             quality_score=quality_score,
-            issues=issues
+            issues=issues,
         )
 
     async def _analyze_dxf_quality_fallback(self, path: Path) -> tuple:
@@ -363,7 +359,7 @@ class CADMCPBridge:
             report = analyzer.full_analysis()
 
             # Dimensionen extrahieren
-            dimensions = report.dimensions if hasattr(report, 'dimensions') else []
+            dimensions = report.dimensions if hasattr(report, "dimensions") else []
             dimension_count = len(dimensions)
 
             dimension_result = {
@@ -374,8 +370,8 @@ class CADMCPBridge:
             }
 
             # Schraffuren/Schnitte analysieren (aus Layern und Entities)
-            entity_counts = report.entity_counts if hasattr(report, 'entity_counts') else {}
-            hatch_count = entity_counts.get('HATCH', 0)
+            entity_counts = report.entity_counts if hasattr(report, "entity_counts") else {}
+            hatch_count = entity_counts.get("HATCH", 0)
 
             section_result = {
                 "section_view_count": hatch_count,
@@ -384,7 +380,7 @@ class CADMCPBridge:
             }
 
             # Issues aus Qualitätsprüfung
-            quality_issues = report.issues if hasattr(report, 'issues') else []
+            quality_issues = report.issues if hasattr(report, "issues") else []
             for issue in quality_issues:
                 if isinstance(issue, dict):
                     issues.append(issue)
@@ -397,22 +393,32 @@ class CADMCPBridge:
 
             # Zusätzliche Infos in dimension_result
             dimension_result["layer_count"] = layer_count
-            dimension_result["entity_count"] = report.entity_count if hasattr(report, 'entity_count') else 0
-            dimension_result["source_format"] = report.source_format if hasattr(report, 'source_format') else "DXF"
-            dimension_result["was_converted"] = report.was_converted if hasattr(report, 'was_converted') else False
+            dimension_result["entity_count"] = (
+                report.entity_count if hasattr(report, "entity_count") else 0
+            )
+            dimension_result["source_format"] = (
+                report.source_format if hasattr(report, "source_format") else "DXF"
+            )
+            dimension_result["was_converted"] = (
+                report.was_converted if hasattr(report, "was_converted") else False
+            )
 
-            logger.info(f"DXF-Qualitätsanalyse erfolgreich: {dimension_count} Bemaßungen, {hatch_count} Schraffuren")
+            logger.info(
+                f"DXF-Qualitätsanalyse erfolgreich: {dimension_count} Bemaßungen, {hatch_count} Schraffuren"
+            )
 
         except RuntimeError as e:
             # DWG-Konvertierung fehlgeschlagen (ODA nicht installiert)
             error_msg = str(e)
             if "ODA" in error_msg or "DWG" in error_msg:
                 logger.warning(f"DWG-Konvertierung nicht möglich: {e}")
-                issues.append({
-                    "type": "error",
-                    "category": "conversion",
-                    "message": "DWG-Datei kann nicht gelesen werden. ODA File Converter ist nicht installiert. Bitte als DXF speichern oder ODA installieren."
-                })
+                issues.append(
+                    {
+                        "type": "error",
+                        "category": "conversion",
+                        "message": "DWG-Datei kann nicht gelesen werden. ODA File Converter ist nicht installiert. Bitte als DXF speichern oder ODA installieren.",
+                    }
+                )
             else:
                 logger.exception(f"DXF-Qualitätsanalyse Fallback fehlgeschlagen: {e}")
                 issues.append({"type": "error", "category": "analysis", "message": error_msg})
@@ -424,10 +430,7 @@ class CADMCPBridge:
         return dimension_result, section_result, issues
 
     def _calculate_quality_score(
-        self,
-        dimensions: dict,
-        sections: dict,
-        issues: list[dict]
+        self, dimensions: dict, sections: dict, issues: list[dict]
     ) -> float:
         """Berechnet einen Qualitäts-Score (0-100)"""
         score = 100.0
@@ -460,7 +463,7 @@ class CADMCPBridge:
         question: str,
         model_id: UUID | None = None,
         file_path: str | None = None,
-        context: dict | None = None
+        context: dict | None = None,
     ) -> NLQueryResult:
         """
         Beantwortet eine Frage in natürlicher Sprache.
@@ -497,7 +500,7 @@ class CADMCPBridge:
                 success=False,
                 query=question,
                 answer="Bitte geben Sie eine CAD-Datei oder ein Modell an, um Fragen zu stellen.",
-                confidence=0.0
+                confidence=0.0,
             )
 
     async def _query_from_model(self, question: str, model_id: UUID) -> NLQueryResult:
@@ -520,10 +523,14 @@ class CADMCPBridge:
                         success=True,
                         query=question,
                         answer=f"Der größte Raum ist **{largest.name}** mit **{largest.area:.1f} m²** "
-                               f"auf dem Geschoss **{largest.floor.name if largest.floor else 'unbekannt'}**.",
-                        data={"room": largest.name, "area": largest.area, "floor": str(largest.floor)},
+                        f"auf dem Geschoss **{largest.floor.name if largest.floor else 'unbekannt'}**.",
+                        data={
+                            "room": largest.name,
+                            "area": largest.area,
+                            "floor": str(largest.floor),
+                        },
                         source_file=str(model_id),
-                        confidence=1.0
+                        confidence=1.0,
                     )
 
             # Kleinster Raum
@@ -536,7 +543,7 @@ class CADMCPBridge:
                         answer=f"Der kleinste Raum ist **{smallest.name}** mit **{smallest.area:.1f} m²**.",
                         data={"room": smallest.name, "area": smallest.area},
                         source_file=str(model_id),
-                        confidence=1.0
+                        confidence=1.0,
                     )
 
             # Anzahl Räume
@@ -548,11 +555,13 @@ class CADMCPBridge:
                     answer=f"Das Modell enthält **{count} Räume**.",
                     data={"count": count},
                     source_file=str(model_id),
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
             # Anzahl Türen
-            if "tür" in question_lower and ("wie viel" in question_lower or "anzahl" in question_lower):
+            if "tür" in question_lower and (
+                "wie viel" in question_lower or "anzahl" in question_lower
+            ):
                 count = doors.count()
                 return NLQueryResult(
                     success=True,
@@ -560,11 +569,13 @@ class CADMCPBridge:
                     answer=f"Das Modell enthält **{count} Türen**.",
                     data={"count": count},
                     source_file=str(model_id),
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
             # Anzahl Fenster
-            if "fenster" in question_lower and ("wie viel" in question_lower or "anzahl" in question_lower):
+            if "fenster" in question_lower and (
+                "wie viel" in question_lower or "anzahl" in question_lower
+            ):
                 count = windows.count()
                 return NLQueryResult(
                     success=True,
@@ -572,12 +583,13 @@ class CADMCPBridge:
                     answer=f"Das Modell enthält **{count} Fenster**.",
                     data={"count": count},
                     source_file=str(model_id),
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
             # Gesamtfläche
             if "gesamt" in question_lower and "fläche" in question_lower:
                 from django.db.models import Sum
+
                 total = rooms.aggregate(Sum("area"))["area__sum"] or 0
                 return NLQueryResult(
                     success=True,
@@ -585,7 +597,7 @@ class CADMCPBridge:
                     answer=f"Die Gesamtfläche aller Räume beträgt **{total:.1f} m²**.",
                     data={"total_area": total, "room_count": rooms.count()},
                     source_file=str(model_id),
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
             # Liste Räume
@@ -593,7 +605,9 @@ class CADMCPBridge:
                 room_list = list(rooms.values("name", "area", "floor__name")[:20])
                 answer_lines = ["**Raumliste:**\n"]
                 for r in room_list:
-                    answer_lines.append(f"- {r['name']}: {r['area']:.1f} m² ({r['floor__name'] or '-'})")
+                    answer_lines.append(
+                        f"- {r['name']}: {r['area']:.1f} m² ({r['floor__name'] or '-'})"
+                    )
 
                 return NLQueryResult(
                     success=True,
@@ -601,7 +615,7 @@ class CADMCPBridge:
                     answer="\n".join(answer_lines),
                     data={"rooms": room_list},
                     source_file=str(model_id),
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
             # Fallback
@@ -609,12 +623,12 @@ class CADMCPBridge:
                 success=False,
                 query=question,
                 answer="Ich konnte die Frage nicht verstehen. Versuchen Sie:\n"
-                       "- 'Welcher Raum ist am größten?'\n"
-                       "- 'Wie viele Türen gibt es?'\n"
-                       "- 'Gesamtfläche aller Räume?'\n"
-                       "- 'Liste alle Räume'",
+                "- 'Welcher Raum ist am größten?'\n"
+                "- 'Wie viele Türen gibt es?'\n"
+                "- 'Gesamtfläche aller Räume?'\n"
+                "- 'Liste alle Räume'",
                 source_file=str(model_id),
-                confidence=0.3
+                confidence=0.3,
             )
 
         except IFCModel.DoesNotExist:
@@ -622,7 +636,7 @@ class CADMCPBridge:
                 success=False,
                 query=question,
                 answer=f"Modell mit ID {model_id} nicht gefunden.",
-                confidence=0.0
+                confidence=0.0,
             )
         except Exception as e:
             logger.exception(f"NL Query fehlgeschlagen: {e}")
@@ -630,7 +644,7 @@ class CADMCPBridge:
                 success=False,
                 query=question,
                 answer=f"Fehler bei der Verarbeitung: {str(e)}",
-                confidence=0.0
+                confidence=0.0,
             )
 
     async def _query_from_file(self, question: str, file_path: str) -> NLQueryResult:
@@ -644,7 +658,7 @@ class CADMCPBridge:
                 query=question,
                 answer=f"Datei-Analyse fehlgeschlagen: {', '.join(analysis.errors)}",
                 source_file=file_path,
-                confidence=0.0
+                confidence=0.0,
             )
 
         # Dann Frage beantworten basierend auf Analyse-Daten
@@ -661,7 +675,7 @@ class CADMCPBridge:
                     answer=f"Die Datei enthält **{count} Entities**.",
                     data={"count": count},
                     source_file=file_path,
-                    confidence=1.0
+                    confidence=1.0,
                 )
 
         # Fallback: Markdown Report zurückgeben
@@ -671,7 +685,7 @@ class CADMCPBridge:
             answer=analysis.markdown_report or "Keine detaillierte Antwort verfügbar.",
             data=data,
             source_file=file_path,
-            confidence=0.5
+            confidence=0.5,
         )
 
     # =========================================================================
@@ -679,10 +693,7 @@ class CADMCPBridge:
     # =========================================================================
 
     async def batch_analyze(
-        self,
-        directory: str,
-        extensions: list[str] | None = None,
-        recursive: bool = False
+        self, directory: str, extensions: list[str] | None = None, recursive: bool = False
     ) -> BatchResult:
         """
         Analysiert mehrere CAD-Dateien in einem Verzeichnis.
@@ -700,7 +711,18 @@ class CADMCPBridge:
         self._ensure_initialized()
 
         if extensions is None:
-            extensions = [".ifc", ".dxf", ".dwg", ".igs", ".iges", ".fbx", ".gltf", ".glb", ".3mf", ".ply"]
+            extensions = [
+                ".ifc",
+                ".dxf",
+                ".dwg",
+                ".igs",
+                ".iges",
+                ".fbx",
+                ".gltf",
+                ".glb",
+                ".3mf",
+                ".ply",
+            ]
 
         path = Path(directory)
         if not path.exists() or not path.is_dir():
@@ -709,7 +731,7 @@ class CADMCPBridge:
                 total_files=0,
                 analyzed=0,
                 failed=0,
-                summary={"error": f"Verzeichnis nicht gefunden: {directory}"}
+                summary={"error": f"Verzeichnis nicht gefunden: {directory}"},
             )
 
         # Dateien sammeln
@@ -745,7 +767,7 @@ class CADMCPBridge:
                 "directory": directory,
                 "format_distribution": format_counts,
                 "extensions_searched": extensions,
-            }
+            },
         )
 
     # =========================================================================
@@ -756,22 +778,50 @@ class CADMCPBridge:
         """Gibt alle unterstützten Formate zurück"""
         return {
             "formats": [
-                {"name": "IFC", "extensions": [".ifc"], "description": "Industry Foundation Classes (BIM)"},
-                {"name": "DXF", "extensions": [".dxf"], "description": "Drawing Exchange Format (2D/3D)"},
-                {"name": "DWG", "extensions": [".dwg"], "description": "AutoCAD Drawing (via Konvertierung)"},
-                {"name": "IGES", "extensions": [".igs", ".iges"], "description": "Initial Graphics Exchange Specification"},
+                {
+                    "name": "IFC",
+                    "extensions": [".ifc"],
+                    "description": "Industry Foundation Classes (BIM)",
+                },
+                {
+                    "name": "DXF",
+                    "extensions": [".dxf"],
+                    "description": "Drawing Exchange Format (2D/3D)",
+                },
+                {
+                    "name": "DWG",
+                    "extensions": [".dwg"],
+                    "description": "AutoCAD Drawing (via Konvertierung)",
+                },
+                {
+                    "name": "IGES",
+                    "extensions": [".igs", ".iges"],
+                    "description": "Initial Graphics Exchange Specification",
+                },
                 {"name": "FBX", "extensions": [".fbx"], "description": "Filmbox (3D/Animation)"},
-                {"name": "GLTF", "extensions": [".gltf", ".glb"], "description": "GL Transmission Format (Web3D)"},
+                {
+                    "name": "GLTF",
+                    "extensions": [".gltf", ".glb"],
+                    "description": "GL Transmission Format (Web3D)",
+                },
                 {"name": "3MF", "extensions": [".3mf"], "description": "3D Manufacturing Format"},
-                {"name": "PLY", "extensions": [".ply"], "description": "Polygon File Format (Point Clouds)"},
-                {"name": "STEP", "extensions": [".stp", ".step"], "description": "Standard for Exchange (CAD)"},
+                {
+                    "name": "PLY",
+                    "extensions": [".ply"],
+                    "description": "Polygon File Format (Point Clouds)",
+                },
+                {
+                    "name": "STEP",
+                    "extensions": [".stp", ".step"],
+                    "description": "Standard for Exchange (CAD)",
+                },
             ],
             "features": {
                 "analysis": ["IFC", "DXF", "IGES", "FBX", "GLTF", "3MF", "PLY"],
                 "dimension_chains": ["DXF"],
                 "section_views": ["DXF"],
                 "nl_query": ["IFC"],
-            }
+            },
         }
 
 
@@ -802,6 +852,7 @@ def get_mcp_bridge(mode: str = "local") -> CADMCPBridge:
 # Convenience Functions
 # =============================================================================
 
+
 async def analyze_cad_file(file_path: str, format: str = "auto") -> AnalysisResult:
     """Shortcut für Datei-Analyse"""
     bridge = get_mcp_bridge()
@@ -814,7 +865,9 @@ async def check_dxf_quality(file_path: str) -> DXFQualityResult:
     return await bridge.check_dxf_quality(file_path)
 
 
-async def ask_cad_question(question: str, model_id: UUID = None, file_path: str = None) -> NLQueryResult:
+async def ask_cad_question(
+    question: str, model_id: UUID = None, file_path: str = None
+) -> NLQueryResult:
     """Shortcut für NL Query"""
     bridge = get_mcp_bridge()
     return await bridge.query_natural_language(question, model_id, file_path)

@@ -6,12 +6,13 @@ Kein Django — direkt importierbar im CI-Skript.
 
 from __future__ import annotations
 
+import json as _json
 import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any
-from urllib import request as _req, error as _err
-import json as _json
+from urllib import error as _err
+from urllib import request as _req
 
 logger = logging.getLogger(__name__)
 
@@ -19,41 +20,41 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub")
 
 TYPE_LABELS: dict[str, str] = {
-    "feature":  "type:feature",
-    "bugfix":   "type:bug",
+    "feature": "type:feature",
+    "bugfix": "type:bug",
     "refactor": "type:refactor",
-    "test":     "type:test",
-    "docs":     "type:docs",
-    "adr":      "type:adr",
-    "chore":    "type:chore",
+    "test": "type:test",
+    "docs": "type:docs",
+    "adr": "type:adr",
+    "chore": "type:chore",
 }
 
 COMPLEXITY_LABELS: dict[str, str] = {
-    "trivial":       "complexity:trivial",
-    "simple":        "complexity:simple",
-    "moderate":      "complexity:moderate",
-    "complex":       "complexity:complex",
+    "trivial": "complexity:trivial",
+    "simple": "complexity:simple",
+    "moderate": "complexity:moderate",
+    "complex": "complexity:complex",
     "architectural": "complexity:architectural",
 }
 
 RISK_LABELS: dict[str, str] = {
-    "low":      "risk:low",
-    "medium":   "risk:medium",
-    "high":     "risk:high",
+    "low": "risk:low",
+    "medium": "risk:medium",
+    "high": "risk:high",
     "critical": "risk:critical",
 }
 
 PATH_APP_LABELS: list[tuple[str, str]] = [
-    ("apps/ifc",         "app:ifc"),
-    ("apps/dxf",         "app:dxf"),
-    ("apps/avb",         "app:avb"),
-    ("apps/areas",       "app:areas"),
+    ("apps/ifc", "app:ifc"),
+    ("apps/dxf", "app:dxf"),
+    ("apps/avb", "app:avb"),
+    ("apps/areas", "app:areas"),
     ("apps/brandschutz", "app:brandschutz"),
-    ("apps/export",      "app:export"),
-    ("apps/core",        "app:core"),
-    ("tests/",           "scope:tests"),
-    (".github/",         "scope:ci"),
-    ("config/",          "scope:config"),
+    ("apps/export", "app:export"),
+    ("apps/core", "app:core"),
+    ("tests/", "scope:tests"),
+    (".github/", "scope:ci"),
+    ("config/", "scope:config"),
 ]
 
 MAX_TASKS_FOR_LABELS = 5
@@ -79,9 +80,12 @@ class TriageResult:
         cl = [l for l in self.labels if l.startswith("complexity:")]
         al = [l for l in self.labels if l.startswith("app:")]
         parts = []
-        if tl: parts.append("/".join(t.split(":")[-1] for t in tl))
-        if cl: parts.append(cl[0].split(":")[-1])
-        if al: parts.append(", ".join(a.split(":")[-1] for a in al))
+        if tl:
+            parts.append("/".join(t.split(":")[-1] for t in tl))
+        if cl:
+            parts.append(cl[0].split(":")[-1])
+        if al:
+            parts.append(", ".join(a.split(":")[-1] for a in al))
         desc = " · ".join(parts) if parts else "keine Labels"
         return (
             f"Issue #{self.issue_number}: {self.tasks_found} Task(s) → "
@@ -143,33 +147,39 @@ class IssueTriageService:
         results = []
         for issue in issues:
             try:
-                results.append(self.triage(
-                    issue_number=issue["number"],
-                    title=issue["title"],
-                    body=issue.get("body", ""),
-                    existing_labels=[l["name"] for l in issue.get("labels", [])],
-                ))
+                results.append(
+                    self.triage(
+                        issue_number=issue["number"],
+                        title=issue["title"],
+                        body=issue.get("body", ""),
+                        existing_labels=[l["name"] for l in issue.get("labels", [])],
+                    )
+                )
             except Exception as exc:
                 logger.error("Triage failed for issue #%s: %s", issue.get("number"), exc)
-                results.append(TriageResult(
-                    issue_number=issue.get("number", 0),
-                    title=issue.get("title", ""),
-                    warnings=[f"Triage error: {exc}"],
-                ))
+                results.append(
+                    TriageResult(
+                        issue_number=issue.get("number", 0),
+                        title=issue.get("title", ""),
+                        warnings=[f"Triage error: {exc}"],
+                    )
+                )
         return results
 
     def _http_decompose(self, use_case: str, context: str) -> dict:
         mcp_url = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")
         try:
-            payload = _json.dumps({
-                "tool": "decompose_use_case",
-                "arguments": {
-                    "use_case": use_case,
-                    "context": context,
-                    "tier": self.tier,
-                    "output_format": "json",
-                },
-            }).encode()
+            payload = _json.dumps(
+                {
+                    "tool": "decompose_use_case",
+                    "arguments": {
+                        "use_case": use_case,
+                        "context": context,
+                        "tier": self.tier,
+                        "output_format": "json",
+                    },
+                }
+            ).encode()
             req = _req.Request(
                 f"{mcp_url}/mcp/call",
                 data=payload,
@@ -184,8 +194,11 @@ class IssueTriageService:
         except Exception as exc:
             logger.error("HTTP decompose failed: %s", exc)
             return {
-                "success": False, "tasks": [], "warnings": [str(exc)],
-                "model_used": "stub", "tier_used": self.tier,
+                "success": False,
+                "tasks": [],
+                "warnings": [str(exc)],
+                "model_used": "stub",
+                "tier_used": self.tier,
             }
 
     def _compute_labels(self, tasks: list[dict], existing_labels: list[str]) -> list[str]:
@@ -199,16 +212,19 @@ class IssueTriageService:
             paths.extend(task.get("affected_paths", []))
 
         for t in types:
-            if lbl := TYPE_LABELS.get(t): labels.add(lbl)
+            if lbl := TYPE_LABELS.get(t):
+                labels.add(lbl)
 
         co = ["trivial", "simple", "moderate", "complex", "architectural"]
         highest = max(complexities, key=lambda c: co.index(c) if c in co else 0)
-        if lbl := COMPLEXITY_LABELS.get(highest): labels.add(lbl)
+        if lbl := COMPLEXITY_LABELS.get(highest):
+            labels.add(lbl)
 
         ro = ["low", "medium", "high", "critical"]
         hr = max(risks, key=lambda r: ro.index(r) if r in ro else 0)
         if hr in ("high", "critical"):
-            if lbl := RISK_LABELS.get(hr): labels.add(lbl)
+            if lbl := RISK_LABELS.get(hr):
+                labels.add(lbl)
 
         for path in paths:
             for prefix, app_label in PATH_APP_LABELS:

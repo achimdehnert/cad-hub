@@ -1,4 +1,5 @@
 """WSGI config for CAD Hub."""
+
 import os
 
 from django.core.wsgi import get_wsgi_application

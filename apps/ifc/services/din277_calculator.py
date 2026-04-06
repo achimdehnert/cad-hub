@@ -5,6 +5,7 @@ DIN 277 Thin Wrapper — delegiert an nl2cad.areas.din277.
 Behält die bisherige Django-API (calculate_from_rooms, calculate_from_queryset)
 für Backward-Kompatibilität. Mapping: Django-Feld 'area' → nl2cad 'area_m2'.
 """
+
 from __future__ import annotations
 
 import logging

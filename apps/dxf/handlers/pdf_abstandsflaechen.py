@@ -12,6 +12,7 @@ Verwendet:
 - PyMuPDF für Text-Extraktion
 - Optional: Vision LLM für Geometrie-Interpretation
 """
+
 import json
 import logging
 import re
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class Himmelsrichtung(Enum):
     """Himmelsrichtungen für Fassaden."""
+
     NORD = "nord"
     NORDOST = "nordost"
     OST = "ost"
@@ -41,6 +43,7 @@ class Himmelsrichtung(Enum):
 
 class ComplianceStatus(Enum):
     """Status der Abstandsflächenprüfung."""
+
     ERFUELLT = "erfüllt"
     NICHT_ERFUELLT = "nicht_erfüllt"
     TEILWEISE = "teilweise"
@@ -50,6 +53,7 @@ class ComplianceStatus(Enum):
 @dataclass
 class Fassade:
     """Fassadendaten für Abstandsflächen."""
+
     bezeichnung: str = ""
     richtung: str = ""  # Nord, Süd, Ost, West
     wandhoehe_m: float = 0.0
@@ -72,6 +76,7 @@ class Fassade:
 @dataclass
 class Ueberschreitung:
     """Überschreitung auf Nachbargrundstück."""
+
     fassade: str = ""
     flaeche_m2: float = 0.0
     tiefe_m: float = 0.0
@@ -86,6 +91,7 @@ class Ueberschreitung:
 @dataclass
 class AbstandsflaechenInfo:
     """Gesamtinformationen aus Abstandsflächenplan."""
+
     fassaden: list[Fassade] = field(default_factory=list)
     ueberschreitungen: list[Ueberschreitung] = field(default_factory=list)
     ueberdeckungen: list[dict] = field(default_factory=list)  # Eigene AF überdecken sich
@@ -125,9 +131,7 @@ class AbstandsflaechenInfo:
         if not self.ueberschreitungen:
             return ComplianceStatus.ERFUELLT.value
 
-        alle_mit_zustimmung = all(
-            u.zustimmung_vorhanden for u in self.ueberschreitungen
-        )
+        alle_mit_zustimmung = all(u.zustimmung_vorhanden for u in self.ueberschreitungen)
         if alle_mit_zustimmung:
             return ComplianceStatus.ERFUELLT.value
 
@@ -270,11 +274,15 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
         result.data["rechtsgrundlage"] = lbo["name"]
 
         result.status = HandlerStatus.SUCCESS
-        logger.info(f"[{self.name}] Abstandsflächen: {len(af_info.fassaden)} Fassaden, Status: {af_info.status}")
+        logger.info(
+            f"[{self.name}] Abstandsflächen: {len(af_info.fassaden)} Fassaden, Status: {af_info.status}"
+        )
 
         return result
 
-    def _extract_with_patterns(self, text: str, af_info: AbstandsflaechenInfo, lbo: dict) -> AbstandsflaechenInfo:
+    def _extract_with_patterns(
+        self, text: str, af_info: AbstandsflaechenInfo, lbo: dict
+    ) -> AbstandsflaechenInfo:
         """Extrahiert Daten mit Regex-Patterns."""
 
         # Maßstab
@@ -305,7 +313,11 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
         # Fassaden erstellen
         default_richtungen = ["Nord", "Ost", "Süd", "West"]
         for i, hoehe in enumerate(hoehen[:4]):  # Max 4 Fassaden
-            richtung = richtungen_gefunden[i] if i < len(richtungen_gefunden) else default_richtungen[i % 4]
+            richtung = (
+                richtungen_gefunden[i]
+                if i < len(richtungen_gefunden)
+                else default_richtungen[i % 4]
+            )
             faktor = faktoren[i] if i < len(faktoren) else lbo["faktor"]
 
             fassade = Fassade(
@@ -330,7 +342,9 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
 
         return af_info
 
-    def _extract_with_llm(self, text: str, af_info: AbstandsflaechenInfo, lbo: dict) -> AbstandsflaechenInfo:
+    def _extract_with_llm(
+        self, text: str, af_info: AbstandsflaechenInfo, lbo: dict
+    ) -> AbstandsflaechenInfo:
         """Extrahiert komplexe Informationen mit LLM (via aifw)."""
         try:
             from apps.core.services.llm_client import generate_text
@@ -346,13 +360,13 @@ Extrahiere als JSON:
 - status: "erfüllt" oder "nicht_erfüllt"
 - bemerkungen: Wichtige Hinweise
 
-Rechtsgrundlage: {lbo['name']} (Faktor {lbo['faktor']}H, mind. {lbo['mindest']}m)
+Rechtsgrundlage: {lbo["name"]} (Faktor {lbo["faktor"]}H, mind. {lbo["mindest"]}m)
 
 Antworte NUR mit JSON."""
 
             response = generate_text(prompt, max_tokens=500)
             if response:
-                json_match = re.search(r'\{.*\}', response, re.DOTALL)
+                json_match = re.search(r"\{.*\}", response, re.DOTALL)
                 if json_match:
                     try:
                         data = json.loads(json_match.group())
@@ -389,7 +403,9 @@ Antworte NUR mit JSON."""
 
         return af_info
 
-    def _calculate_and_check(self, af_info: AbstandsflaechenInfo, lbo: dict) -> AbstandsflaechenInfo:
+    def _calculate_and_check(
+        self, af_info: AbstandsflaechenInfo, lbo: dict
+    ) -> AbstandsflaechenInfo:
         """Berechnet Abstandsflächen und prüft Compliance."""
 
         # Abstandsflächen-Tiefen berechnen

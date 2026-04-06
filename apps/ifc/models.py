@@ -4,6 +4,7 @@ IFC models — project, model, floor, room, window, door, wall, slab.
 Source: bfagent/apps/cad_hub/models/ifc.py
 Changes: app_label → ifc, tenant_id added to all models.
 """
+
 import uuid
 
 from django.conf import settings
@@ -28,13 +29,9 @@ class IFCProject(models.Model):
         editable=False,
         help_text="Same UUID as IFC MCP Backend",
     )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
 
-    name = models.CharField(
-        max_length=255, verbose_name="Projektname"
-    )
+    name = models.CharField(max_length=255, verbose_name="Projektname")
 
     mcp_project_id = models.UUIDField(
         null=True,
@@ -49,9 +46,7 @@ class IFCProject(models.Model):
         verbose_name="Cached Project Data",
         help_text="Cached data from IFC MCP API",
     )
-    cached_at = models.DateTimeField(
-        null=True, blank=True, verbose_name="Cache Timestamp"
-    )
+    cached_at = models.DateTimeField(null=True, blank=True, verbose_name="Cache Timestamp")
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -100,21 +95,15 @@ class IFCModel(models.Model):
         READY = "ready", "Bereit"
         ERROR = "error", "Fehler"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         IFCProject,
         on_delete=models.CASCADE,
         related_name="models",
         verbose_name="Projekt",
     )
-    version = models.PositiveIntegerField(
-        default=1, verbose_name="Version"
-    )
+    version = models.PositiveIntegerField(default=1, verbose_name="Version")
 
     ifc_file = models.FileField(
         upload_to="ifc_models/%Y/%m/",
@@ -126,9 +115,7 @@ class IFCModel(models.Model):
         verbose_name="XKT Datei (3D Viewer)",
     )
 
-    ifc_schema = models.CharField(
-        max_length=20, blank=True, verbose_name="IFC Schema"
-    )
+    ifc_schema = models.CharField(max_length=20, blank=True, verbose_name="IFC Schema")
     application = models.CharField(
         max_length=100,
         blank=True,
@@ -141,9 +128,7 @@ class IFCModel(models.Model):
         default=Status.UPLOADING,
         verbose_name="Status",
     )
-    error_message = models.TextField(
-        blank=True, verbose_name="Fehlermeldung"
-    )
+    error_message = models.TextField(blank=True, verbose_name="Fehlermeldung")
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
@@ -164,12 +149,8 @@ class Floor(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -177,19 +158,11 @@ class Floor(models.Model):
         verbose_name="IFC Modell",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    name = models.CharField(
-        max_length=100, verbose_name="Name"
-    )
-    code = models.CharField(
-        max_length=20, blank=True, verbose_name="Kurzbezeichnung"
-    )
-    elevation = models.FloatField(
-        default=0, verbose_name="Höhe (m)"
-    )
+    name = models.CharField(max_length=100, verbose_name="Name")
+    code = models.CharField(max_length=20, blank=True, verbose_name="Kurzbezeichnung")
+    elevation = models.FloatField(default=0, verbose_name="Höhe (m)")
 
     sort_order = models.IntegerField(default=0)
 
@@ -222,12 +195,8 @@ class Room(models.Model):
         TF7 = "TF7", "TF 7 - Technikflächen"
         VF8 = "VF8", "VF 8 - Verkehrsflächen"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -243,32 +212,16 @@ class Room(models.Model):
         verbose_name="Geschoss",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    number = models.CharField(
-        max_length=20, verbose_name="Raumnummer"
-    )
-    name = models.CharField(
-        max_length=100, verbose_name="Raumname"
-    )
-    long_name = models.CharField(
-        max_length=255, blank=True, verbose_name="Langname"
-    )
+    number = models.CharField(max_length=20, verbose_name="Raumnummer")
+    name = models.CharField(max_length=100, verbose_name="Raumname")
+    long_name = models.CharField(max_length=255, blank=True, verbose_name="Langname")
 
-    area = models.FloatField(
-        default=0, verbose_name="Fläche (m²)"
-    )
-    height = models.FloatField(
-        default=0, verbose_name="Höhe (m)"
-    )
-    volume = models.FloatField(
-        default=0, verbose_name="Volumen (m³)"
-    )
-    perimeter = models.FloatField(
-        default=0, verbose_name="Umfang (m)"
-    )
+    area = models.FloatField(default=0, verbose_name="Fläche (m²)")
+    height = models.FloatField(default=0, verbose_name="Höhe (m)")
+    volume = models.FloatField(default=0, verbose_name="Volumen (m³)")
+    perimeter = models.FloatField(default=0, verbose_name="Umfang (m)")
 
     usage_category = models.CharField(
         max_length=10,
@@ -285,7 +238,6 @@ class Room(models.Model):
 
     def __str__(self) -> str:
         return f"{self.number} - {self.name}"
-
 
 
 # Re-export component models for backward compatibility

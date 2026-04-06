@@ -7,10 +7,10 @@ for the three AVB UI components.
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # page_header component
 # ---------------------------------------------------------------------------
+
 
 def test_page_header_get_context_defaults():
     from apps.avb.components.page_header import get_context
@@ -44,6 +44,7 @@ def test_page_header_get_context_with_cta():
 # stat_card component
 # ---------------------------------------------------------------------------
 
+
 def test_stat_card_get_context_defaults():
     from apps.avb.components.stat_card import get_context
 
@@ -71,6 +72,7 @@ def test_stat_card_invalid_variant_falls_back_to_primary():
 # ---------------------------------------------------------------------------
 # empty_state component
 # ---------------------------------------------------------------------------
+
 
 def test_empty_state_get_context_defaults():
     from apps.avb.components.empty_state import get_context

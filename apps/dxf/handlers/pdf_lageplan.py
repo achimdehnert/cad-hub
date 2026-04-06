@@ -12,6 +12,7 @@ Verwendet:
 - PyMuPDF für Text-Extraktion
 - Optional: Vision LLM für komplexe Interpretation
 """
+
 import json
 import logging
 import re
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Grundstueck:
     """Grundstücksdaten."""
+
     flurstueck: str = ""
     gemarkung: str = ""
     flaeche_m2: float = 0.0
@@ -43,6 +45,7 @@ class Grundstueck:
 @dataclass
 class Gebaeude:
     """Gebäudedaten aus Lageplan."""
+
     bezeichnung: str = ""
     grundflaeche_m2: float = 0.0
     geschossflaeche_m2: float = 0.0
@@ -57,6 +60,7 @@ class Gebaeude:
 @dataclass
 class Kennzahlen:
     """Bauliche Kennzahlen."""
+
     grz: float = 0.0  # Grundflächenzahl
     grz_zulaessig: float = 0.0
     gfz: float = 0.0  # Geschossflächenzahl
@@ -70,6 +74,7 @@ class Kennzahlen:
 @dataclass
 class LageplanInfo:
     """Gesamtinformationen aus Lageplan."""
+
     grundstueck: Grundstueck = field(default_factory=Grundstueck)
     gebaeude: list[Gebaeude] = field(default_factory=list)
     kennzahlen: Kennzahlen = field(default_factory=Kennzahlen)
@@ -278,9 +283,9 @@ class PDFLageplanHandler(BaseCADHandler):
     def _has_gaps(self, lageplan: LageplanInfo) -> bool:
         """Prüft ob wichtige Felder fehlen."""
         return (
-            not lageplan.grundstueck.flurstueck or
-            lageplan.grundstueck.flaeche_m2 == 0 or
-            lageplan.kennzahlen.grz == 0
+            not lageplan.grundstueck.flurstueck
+            or lageplan.grundstueck.flaeche_m2 == 0
+            or lageplan.kennzahlen.grz == 0
         )
 
     def _extract_with_llm(self, text: str, lageplan: LageplanInfo) -> LageplanInfo:
@@ -309,7 +314,7 @@ Antworte NUR mit JSON, z.B.:
             response = generate_text(prompt, max_tokens=300)
             if response:
                 # JSON aus Antwort extrahieren
-                json_match = re.search(r'\{[^{}]+\}', response)
+                json_match = re.search(r"\{[^{}]+\}", response)
                 if json_match:
                     data = json.loads(json_match.group())
 

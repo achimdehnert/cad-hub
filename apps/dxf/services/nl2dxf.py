@@ -6,6 +6,7 @@ Example:
     generator = NL2DXFGenerator()
     dxf_path = generator.generate("Ein Rechteck 5m x 3m mit einer Tür an der Südseite")
 """
+
 import json
 import logging
 import math
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CADCommand:
     """Parsed CAD command from LLM response."""
+
     command: str  # LINE, RECT, CIRCLE, ARC, TEXT, DOOR, WINDOW, WALL
     params: dict = field(default_factory=dict)
     layer: str = "0"
@@ -32,6 +34,7 @@ class CADCommand:
 @dataclass
 class NL2DXFResult:
     """Result of NL2DXF generation."""
+
     success: bool
     filepath: Path | None = None
     commands: list[CADCommand] = field(default_factory=list)
@@ -43,7 +46,7 @@ class NL2DXFResult:
             "success": self.success,
             "filepath": str(self.filepath) if self.filepath else None,
             "commands_count": len(self.commands),
-            "error": self.error
+            "error": self.error,
         }
 
 
@@ -102,8 +105,9 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         self.doc: Drawing | None = None
         self.current_room: dict | None = None  # Track current room for relative positioning
 
-    def generate(self, description: str, output_path: Path | None = None,
-                 use_llm: bool = True) -> NL2DXFResult:
+    def generate(
+        self, description: str, output_path: Path | None = None, use_llm: bool = True
+    ) -> NL2DXFResult:
         """
         Generate DXF from natural language description.
 
@@ -124,10 +128,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
                 commands = self._simple_parse(description)
 
             if not commands:
-                return NL2DXFResult(
-                    success=False,
-                    error="Keine CAD-Befehle erkannt"
-                )
+                return NL2DXFResult(success=False, error="Keine CAD-Befehle erkannt")
 
             return self.generate_from_commands(commands, output_path)
 
@@ -135,8 +136,9 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             logger.error(f"NL2DXF generation failed: {e}")
             return NL2DXFResult(success=False, error=str(e))
 
-    def generate_from_commands(self, commands: list[CADCommand],
-                                output_path: Path | None = None) -> NL2DXFResult:
+    def generate_from_commands(
+        self, commands: list[CADCommand], output_path: Path | None = None
+    ) -> NL2DXFResult:
         """Generate DXF from list of CAD commands."""
         # Create new document
         self.doc = ezdxf.new(dxfversion="R2010")
@@ -158,22 +160,18 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         self.doc.saveas(str(output_path))
         logger.info(f"NL2DXF: Saved to {output_path}")
 
-        return NL2DXFResult(
-            success=True,
-            filepath=output_path,
-            commands=commands
-        )
+        return NL2DXFResult(success=True, filepath=output_path, commands=commands)
 
     def _setup_layers(self):
         """Create standard layers."""
         layers = [
-            ("Walls", 1),      # Red
-            ("Rooms", 3),      # Green
-            ("Doors", 4),      # Cyan
-            ("Windows", 5),    # Blue
-            ("Text", 7),       # White
-            ("Objects", 6),    # Magenta
-            ("Dimensions", 2), # Yellow
+            ("Walls", 1),  # Red
+            ("Rooms", 3),  # Green
+            ("Doors", 4),  # Cyan
+            ("Windows", 5),  # Blue
+            ("Text", 7),  # White
+            ("Objects", 6),  # Magenta
+            ("Dimensions", 2),  # Yellow
         ]
 
         for name, color in layers:
@@ -185,15 +183,13 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             # Try to use the bfagent LLM client
             if self.llm_client is None:
                 from apps.core.services.llm_client import generate_text
+
                 response = generate_text(
-                    prompt=description,
-                    system_prompt=self.SYSTEM_PROMPT,
-                    max_tokens=2000
+                    prompt=description, system_prompt=self.SYSTEM_PROMPT, max_tokens=2000
                 )
             else:
                 response = self.llm_client.generate(
-                    prompt=description,
-                    system_prompt=self.SYSTEM_PROMPT
+                    prompt=description, system_prompt=self.SYSTEM_PROMPT
                 )
 
             return self._parse_llm_response(response)
@@ -208,7 +204,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
     def _parse_llm_response(self, response: str) -> list[CADCommand]:
         """Parse LLM JSON response into CAD commands."""
         # Extract JSON array from response
-        json_match = re.search(r'\[[\s\S]*\]', response)
+        json_match = re.search(r"\[[\s\S]*\]", response)
         if not json_match:
             logger.warning(f"No JSON array found in LLM response: {response[:200]}")
             return []
@@ -221,7 +217,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
                 cmd = CADCommand(
                     command=item.get("command", "").upper(),
                     params=item.get("params", {}),
-                    layer=item.get("layer", "0")
+                    layer=item.get("layer", "0"),
                 )
                 commands.append(cmd)
 
@@ -240,31 +236,38 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         desc_lower = description.lower()
 
         # Rectangle pattern: "rechteck 5m x 3m" or "raum 5x4"
-        rect_match = re.search(r'(?:rechteck|raum|zimmer|fläche)\s*(\d+(?:[.,]\d+)?)\s*[mx×]\s*(\d+(?:[.,]\d+)?)', desc_lower)
+        rect_match = re.search(
+            r"(?:rechteck|raum|zimmer|fläche)\s*(\d+(?:[.,]\d+)?)\s*[mx×]\s*(\d+(?:[.,]\d+)?)",
+            desc_lower,
+        )
         if rect_match:
-            width = float(rect_match.group(1).replace(',', '.'))
-            height = float(rect_match.group(2).replace(',', '.'))
-            commands.append(CADCommand(
-                command="RECT",
-                params={"x": 0, "y": 0, "width": width, "height": height},
-                layer="Rooms"
-            ))
+            width = float(rect_match.group(1).replace(",", "."))
+            height = float(rect_match.group(2).replace(",", "."))
+            commands.append(
+                CADCommand(
+                    command="RECT",
+                    params={"x": 0, "y": 0, "width": width, "height": height},
+                    layer="Rooms",
+                )
+            )
             self.current_room = {"width": width, "height": height}
 
         # Circle pattern: "kreis r=2m" or "kreis 2m"
-        circle_match = re.search(r'kreis\s*(?:r\s*=\s*)?(\d+(?:[.,]\d+)?)', desc_lower)
+        circle_match = re.search(r"kreis\s*(?:r\s*=\s*)?(\d+(?:[.,]\d+)?)", desc_lower)
         if circle_match:
-            radius = float(circle_match.group(1).replace(',', '.'))
-            commands.append(CADCommand(
-                command="CIRCLE",
-                params={"cx": radius, "cy": radius, "radius": radius},
-                layer="Objects"
-            ))
+            radius = float(circle_match.group(1).replace(",", "."))
+            commands.append(
+                CADCommand(
+                    command="CIRCLE",
+                    params={"cx": radius, "cy": radius, "radius": radius},
+                    layer="Objects",
+                )
+            )
 
         # Door pattern: "tür" or "tür 0.9m"
-        door_match = re.search(r'tür(?:e)?\s*(?:(\d+(?:[.,]\d+)?)\s*m)?', desc_lower)
+        door_match = re.search(r"tür(?:e)?\s*(?:(\d+(?:[.,]\d+)?)\s*m)?", desc_lower)
         if door_match:
-            width = float(door_match.group(1).replace(',', '.')) if door_match.group(1) else 0.9
+            width = float(door_match.group(1).replace(",", ".")) if door_match.group(1) else 0.9
             wall = "south"  # Default
             if "nord" in desc_lower:
                 wall = "north"
@@ -272,16 +275,18 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
                 wall = "east"
             elif "west" in desc_lower:
                 wall = "west"
-            commands.append(CADCommand(
-                command="DOOR",
-                params={"wall": wall, "width": width, "position": 0.5},
-                layer="Doors"
-            ))
+            commands.append(
+                CADCommand(
+                    command="DOOR",
+                    params={"wall": wall, "width": width, "position": 0.5},
+                    layer="Doors",
+                )
+            )
 
         # Window pattern: "fenster" or "fenster 1.2m"
-        window_match = re.search(r'fenster\s*(?:(\d+(?:[.,]\d+)?)\s*m)?', desc_lower)
+        window_match = re.search(r"fenster\s*(?:(\d+(?:[.,]\d+)?)\s*m)?", desc_lower)
         if window_match:
-            width = float(window_match.group(1).replace(',', '.')) if window_match.group(1) else 1.2
+            width = float(window_match.group(1).replace(",", ".")) if window_match.group(1) else 1.2
             wall = "north"  # Default
             if "süd" in desc_lower:
                 wall = "south"
@@ -289,11 +294,13 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
                 wall = "east"
             elif "west" in desc_lower:
                 wall = "west"
-            commands.append(CADCommand(
-                command="WINDOW",
-                params={"wall": wall, "width": width, "position": 0.5},
-                layer="Windows"
-            ))
+            commands.append(
+                CADCommand(
+                    command="WINDOW",
+                    params={"wall": wall, "width": width, "position": 0.5},
+                    layer="Windows",
+                )
+            )
 
         return commands
 
@@ -311,9 +318,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
     def _cmd_line(self, params: dict, layer: str, msp):
         """Draw a line."""
         msp.add_line(
-            (params["x1"], params["y1"]),
-            (params["x2"], params["y2"]),
-            dxfattribs={"layer": layer}
+            (params["x1"], params["y1"]), (params["x2"], params["y2"]), dxfattribs={"layer": layer}
         )
 
     def _cmd_rect(self, params: dict, layer: str, msp):
@@ -326,7 +331,7 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             (x + w, y),
             (x + w, y + h),
             (x, y + h),
-            (x, y)  # Close
+            (x, y),  # Close
         ]
         msp.add_lwpolyline(points, dxfattribs={"layer": layer})
 
@@ -341,18 +346,13 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         if "name" in params:
             x = params.get("x", 0) + params["width"] / 2
             y = params.get("y", 0) + params["height"] / 2
-            msp.add_text(
-                params["name"],
-                dxfattribs={"layer": "Text", "height": 0.2}
-            ).set_placement((x, y), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
+            msp.add_text(params["name"], dxfattribs={"layer": "Text", "height": 0.2}).set_placement(
+                (x, y), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER
+            )
 
     def _cmd_circle(self, params: dict, layer: str, msp):
         """Draw a circle."""
-        msp.add_circle(
-            (params["cx"], params["cy"]),
-            params["radius"],
-            dxfattribs={"layer": layer}
-        )
+        msp.add_circle((params["cx"], params["cy"]), params["radius"], dxfattribs={"layer": layer})
 
     def _cmd_arc(self, params: dict, layer: str, msp):
         """Draw an arc."""
@@ -361,14 +361,13 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             params["radius"],
             params["start"],
             params["end"],
-            dxfattribs={"layer": layer}
+            dxfattribs={"layer": layer},
         )
 
     def _cmd_text(self, params: dict, layer: str, msp):
         """Add text."""
         msp.add_text(
-            params["text"],
-            dxfattribs={"layer": layer, "height": params.get("height", 0.25)}
+            params["text"], dxfattribs={"layer": layer, "height": params.get("height", 0.25)}
         ).set_placement((params["x"], params["y"]))
 
     def _cmd_door(self, params: dict, layer: str, msp):
@@ -425,28 +424,36 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             msp.add_line((x, y - offset), (x + width, y - offset), dxfattribs={"layer": layer})
             msp.add_line((x, y + offset), (x + width, y + offset), dxfattribs={"layer": layer})
             msp.add_line((x, y - offset), (x, y + offset), dxfattribs={"layer": layer})
-            msp.add_line((x + width, y - offset), (x + width, y + offset), dxfattribs={"layer": layer})
+            msp.add_line(
+                (x + width, y - offset), (x + width, y + offset), dxfattribs={"layer": layer}
+            )
         elif wall == "north":
             x = room["x"] + (room["width"] - width) * pos
             y = room["y"] + room["height"]
             msp.add_line((x, y - offset), (x + width, y - offset), dxfattribs={"layer": layer})
             msp.add_line((x, y + offset), (x + width, y + offset), dxfattribs={"layer": layer})
             msp.add_line((x, y - offset), (x, y + offset), dxfattribs={"layer": layer})
-            msp.add_line((x + width, y - offset), (x + width, y + offset), dxfattribs={"layer": layer})
+            msp.add_line(
+                (x + width, y - offset), (x + width, y + offset), dxfattribs={"layer": layer}
+            )
         elif wall == "west":
             x = room["x"]
             y = room["y"] + (room["height"] - width) * pos
             msp.add_line((x - offset, y), (x - offset, y + width), dxfattribs={"layer": layer})
             msp.add_line((x + offset, y), (x + offset, y + width), dxfattribs={"layer": layer})
             msp.add_line((x - offset, y), (x + offset, y), dxfattribs={"layer": layer})
-            msp.add_line((x - offset, y + width), (x + offset, y + width), dxfattribs={"layer": layer})
+            msp.add_line(
+                (x - offset, y + width), (x + offset, y + width), dxfattribs={"layer": layer}
+            )
         elif wall == "east":
             x = room["x"] + room["width"]
             y = room["y"] + (room["height"] - width) * pos
             msp.add_line((x - offset, y), (x - offset, y + width), dxfattribs={"layer": layer})
             msp.add_line((x + offset, y), (x + offset, y + width), dxfattribs={"layer": layer})
             msp.add_line((x - offset, y), (x + offset, y), dxfattribs={"layer": layer})
-            msp.add_line((x - offset, y + width), (x + offset, y + width), dxfattribs={"layer": layer})
+            msp.add_line(
+                (x - offset, y + width), (x + offset, y + width), dxfattribs={"layer": layer}
+            )
 
     def _cmd_wall(self, params: dict, layer: str, msp):
         """Draw a wall with thickness."""
@@ -455,12 +462,12 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
         thickness = params.get("thickness", 0.24)
 
         # Calculate perpendicular offset
-        length = math.sqrt((x2-x1)**2 + (y2-y1)**2)
+        length = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         if length == 0:
             return
 
-        nx = -(y2-y1) / length * thickness / 2
-        ny = (x2-x1) / length * thickness / 2
+        nx = -(y2 - y1) / length * thickness / 2
+        ny = (x2 - x1) / length * thickness / 2
 
         # Draw wall as closed polyline
         points = [
@@ -468,14 +475,13 @@ Beispiel Output: [{"command": "RECT", "params": {"x": 0, "y": 0, "width": 5, "he
             (x2 + nx, y2 + ny),
             (x2 - nx, y2 - ny),
             (x1 - nx, y1 - ny),
-            (x1 + nx, y1 + ny)
+            (x1 + nx, y1 + ny),
         ]
         msp.add_lwpolyline(points, dxfattribs={"layer": layer})
 
 
 # Convenience function
-def nl2dxf(description: str, output_path: Path | None = None,
-           use_llm: bool = True) -> NL2DXFResult:
+def nl2dxf(description: str, output_path: Path | None = None, use_llm: bool = True) -> NL2DXFResult:
     """Quick generate function."""
     generator = NL2DXFGenerator()
     return generator.generate(description, output_path, use_llm)

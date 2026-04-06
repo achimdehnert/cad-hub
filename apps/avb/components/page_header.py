@@ -1,4 +1,5 @@
 """AVB Page Header Component (ADR-041)."""
+
 from __future__ import annotations
 
 from typing import Any

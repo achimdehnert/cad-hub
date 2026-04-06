@@ -32,11 +32,11 @@ from apps.core.services.issue_triage_service import (
 )
 
 LABEL_COLORS = {
-    "type:":       ("0075ca", "Issue Type"),
+    "type:": ("0075ca", "Issue Type"),
     "complexity:": ("e4e669", "Task Complexity"),
-    "risk:":       ("d93f0b", "Risk Level"),
-    "app:":        ("0e8a16", "Affected App"),
-    "scope:":      ("c5def5", "Scope"),
+    "risk:": ("d93f0b", "Risk Level"),
+    "app:": ("0e8a16", "Affected App"),
+    "scope:": ("c5def5", "Scope"),
 }
 
 ALL_LABELS = (
@@ -75,19 +75,17 @@ class Command(BaseCommand):
         repo = options["repo"]
         token = options["token"]
 
-        self.stdout.write(self.style.HTTP_INFO(
-            f"\n=== Bootstrap GitHub Labels — {repo} ==="
-        ))
+        self.stdout.write(self.style.HTTP_INFO(f"\n=== Bootstrap GitHub Labels — {repo} ==="))
         self.stdout.write(f"  Labels gesamt : {len(ALL_LABELS)}")
         self.stdout.write(f"  Dry-run       : {dry_run}")
         self.stdout.write("")
 
         # Label-Übersicht ausgeben
         groups = {
-            "Type Labels":       list(TYPE_LABELS.values()),
+            "Type Labels": list(TYPE_LABELS.values()),
             "Complexity Labels": list(COMPLEXITY_LABELS.values()),
-            "Risk Labels":       list(RISK_LABELS.values()),
-            "App Labels":        [l for _, l in PATH_APP_LABELS],
+            "Risk Labels": list(RISK_LABELS.values()),
+            "App Labels": [l for _, l in PATH_APP_LABELS],
         }
         for group, labels in groups.items():
             self.stdout.write(self.style.MIGRATE_HEADING(f"  {group}:"))
@@ -98,22 +96,21 @@ class Command(BaseCommand):
         self.stdout.write("")
 
         if dry_run:
-            self.stdout.write(self.style.WARNING(
-                f"[dry-run] {len(ALL_LABELS)} Labels würden im Repo '{repo}' erstellt."
-            ))
             self.stdout.write(
-                "  Ausführen ohne --dry-run um Labels tatsächlich zu erstellen."
+                self.style.WARNING(
+                    f"[dry-run] {len(ALL_LABELS)} Labels würden im Repo '{repo}' erstellt."
+                )
             )
+            self.stdout.write("  Ausführen ohne --dry-run um Labels tatsächlich zu erstellen.")
             return
 
         if not token:
             raise CommandError(
-                "GITHUB_TOKEN nicht gesetzt. "
-                "Setze env-Variable oder übergib --token ghp_xxx"
+                "GITHUB_TOKEN nicht gesetzt. Setze env-Variable oder übergib --token ghp_xxx"
             )
 
         # API aufrufen via IssueTriageService
-        service = IssueTriageService(
+        _service = IssueTriageService(
             github_token=token,
             github_repo=repo,
             dry_run=False,
@@ -123,15 +120,13 @@ class Command(BaseCommand):
         created = self._create_labels(token, repo)
 
         if created:
-            self.stdout.write(self.style.SUCCESS(
-                f"\n✓ {len(created)} neue Labels erstellt:"
-            ))
+            self.stdout.write(self.style.SUCCESS(f"\n✓ {len(created)} neue Labels erstellt:"))
             for label in created:
                 self.stdout.write(f"  + {label}")
         else:
-            self.stdout.write(self.style.SUCCESS(
-                "\n✓ Alle Labels bereits vorhanden — nichts zu tun."
-            ))
+            self.stdout.write(
+                self.style.SUCCESS("\n✓ Alle Labels bereits vorhanden — nichts zu tun.")
+            )
 
         skipped = len(ALL_LABELS) - len(created)
         self.stdout.write(f"\n  Erstellt : {len(created)}")
@@ -176,8 +171,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"  = {label_name} (vorhanden)")
                 else:
                     self.stderr.write(
-                        f"  ! {label_name} → HTTP {response.status_code}: "
-                        f"{response.text[:100]}"
+                        f"  ! {label_name} → HTTP {response.status_code}: {response.text[:100]}"
                     )
 
         return created

@@ -6,6 +6,7 @@ Combines:
 - DXFRendererService - SVG/PNG/JSON rendering for viewers
 - DWGConverter - Automatic DWG→DXF conversion
 """
+
 import logging
 import tempfile
 from dataclasses import asdict
@@ -279,13 +280,13 @@ class CADLoaderService:
     @property
     def filename(self) -> str:
         """Get filename."""
-        if hasattr(self, '_original_filename'):
+        if hasattr(self, "_original_filename"):
             return self._original_filename
         return self.filepath.name
 
     def cleanup(self):
         """Clean up temporary files."""
-        if hasattr(self, '_is_temp') and self._is_temp:
+        if hasattr(self, "_is_temp") and self._is_temp:
             try:
                 self.filepath.unlink(missing_ok=True)
             except Exception:

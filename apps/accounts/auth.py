@@ -7,6 +7,7 @@ Platform-wide OIDC backend with:
 
 Requires: mozilla-django-oidc>=4.0
 """
+
 from __future__ import annotations
 
 import logging

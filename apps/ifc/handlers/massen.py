@@ -4,6 +4,7 @@ MassenHandler - Flächen, Volumina, Umfänge berechnen.
 Berechnet Massen aus CAD-Geometrie für LV-Erstellung
 und GAEB-Export.
 """
+
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
@@ -19,16 +20,18 @@ logger = logging.getLogger(__name__)
 
 class MassType(Enum):
     """Massentypen."""
-    AREA = "area"           # Fläche (m²)
-    LENGTH = "length"       # Länge (m)
-    PERIMETER = "perimeter" # Umfang (m)
-    VOLUME = "volume"       # Volumen (m³)
-    COUNT = "count"         # Stückzahl
+
+    AREA = "area"  # Fläche (m²)
+    LENGTH = "length"  # Länge (m)
+    PERIMETER = "perimeter"  # Umfang (m)
+    VOLUME = "volume"  # Volumen (m³)
+    COUNT = "count"  # Stückzahl
 
 
 @dataclass
 class MassItem:
     """Einzelne Massenposition."""
+
     description: str
     mass_type: MassType
     value: float
@@ -53,6 +56,7 @@ class MassItem:
 @dataclass
 class MassCategory:
     """Massenkategorie (z.B. Wände, Böden, etc.)."""
+
     name: str
     items: list = field(default_factory=list)
     total: float = 0.0
@@ -94,17 +98,34 @@ class MassenHandler(BaseCADHandler):
 
     # Layer die KEINE echten Flächen sind (gleich wie RoomAnalysisHandler)
     EXCLUDED_LAYER_KEYWORDS = [
-        "symbol", "symbole",
-        "schraffur", "hatch",
-        "text", "beschriftung", "annotation",
-        "bemaßung", "dimension", "dim",
-        "möbel", "furniture", "einrichtung",
-        "legende", "legend",
-        "rahmen", "frame", "border",
-        "viewport", "defpoints",
-        "ergänzung", "ergaenzung", "supplement",
-        "notiz", "note", "comment",
-        "hilfslin", "construction",
+        "symbol",
+        "symbole",
+        "schraffur",
+        "hatch",
+        "text",
+        "beschriftung",
+        "annotation",
+        "bemaßung",
+        "dimension",
+        "dim",
+        "möbel",
+        "furniture",
+        "einrichtung",
+        "legende",
+        "legend",
+        "rahmen",
+        "frame",
+        "border",
+        "viewport",
+        "defpoints",
+        "ergänzung",
+        "ergaenzung",
+        "supplement",
+        "notiz",
+        "note",
+        "comment",
+        "hilfslin",
+        "construction",
     ]
 
     # Standard GAEB Positionen
@@ -193,12 +214,14 @@ class MassenHandler(BaseCADHandler):
         # Zusammenfassung
         summary = self._create_summary(categories)
 
-        result.data.update({
-            "categories": {k: self._category_to_dict(v) for k, v in categories.items()},
-            "summary": summary,
-            "gaeb_positions": gaeb_positions,
-            "wall_height_used": wall_height,
-        })
+        result.data.update(
+            {
+                "categories": {k: self._category_to_dict(v) for k, v in categories.items()},
+                "summary": summary,
+                "gaeb_positions": gaeb_positions,
+                "wall_height_used": wall_height,
+            }
+        )
 
         result.status = HandlerStatus.SUCCESS
         logger.info(f"[{self.name}] {len(categories)} Kategorien berechnet")
@@ -250,7 +273,7 @@ class MassenHandler(BaseCADHandler):
                     area_m2 = ra.get("area", 0) / 1_000_000
                     if area_m2 > 1.0:
                         item = MassItem(
-                            description=f"Fläche {i+1}",
+                            description=f"Fläche {i + 1}",
                             mass_type=MassType.AREA,
                             value=area_m2,
                             unit="m²",
@@ -263,8 +286,9 @@ class MassenHandler(BaseCADHandler):
 
         return category
 
-    def _calculate_walls(self, loader, rooms: list, wall_height: float,
-                         result: CADHandlerResult) -> MassCategory:
+    def _calculate_walls(
+        self, loader, rooms: list, wall_height: float, result: CADHandlerResult
+    ) -> MassCategory:
         """Berechnet Wandflächen aus Umfang × Höhe."""
         category = MassCategory(name="Wandflächen", unit="m²")
 
@@ -296,8 +320,9 @@ class MassenHandler(BaseCADHandler):
 
         return category
 
-    def _calculate_ceilings(self, floor_cat: MassCategory,
-                            result: CADHandlerResult) -> MassCategory:
+    def _calculate_ceilings(
+        self, floor_cat: MassCategory, result: CADHandlerResult
+    ) -> MassCategory:
         """Deckenflächen = Bodenflächen."""
         category = MassCategory(name="Deckenflächen", unit="m²")
 
@@ -309,14 +334,15 @@ class MassenHandler(BaseCADHandler):
                 unit="m²",
                 layer=floor_item.layer,
                 gaeb_position=self.GAEB_MAPPING["decke"]["position"],
-                gaeb_text=floor_item.gaeb_text.replace("Bodenbelag", "Decke") if floor_item.gaeb_text else "",
+                gaeb_text=floor_item.gaeb_text.replace("Bodenbelag", "Decke")
+                if floor_item.gaeb_text
+                else "",
             )
             category.add_item(item)
 
         return category
 
-    def _calculate_baseboards(self, loader, rooms: list,
-                              result: CADHandlerResult) -> MassCategory:
+    def _calculate_baseboards(self, loader, rooms: list, result: CADHandlerResult) -> MassCategory:
         """Berechnet Sockelleisten (Umfang)."""
         category = MassCategory(name="Sockelleisten", unit="m")
 
@@ -396,13 +422,15 @@ class MassenHandler(BaseCADHandler):
         for cat_name, category in categories.items():
             for item in category.items:
                 if item.gaeb_position:
-                    positions.append({
-                        "position": item.gaeb_position,
-                        "text": item.gaeb_text or item.description,
-                        "quantity": item.value,
-                        "unit": item.unit,
-                        "category": cat_name,
-                    })
+                    positions.append(
+                        {
+                            "position": item.gaeb_position,
+                            "text": item.gaeb_text or item.description,
+                            "quantity": item.value,
+                            "unit": item.unit,
+                            "category": cat_name,
+                        }
+                    )
 
         return positions
 

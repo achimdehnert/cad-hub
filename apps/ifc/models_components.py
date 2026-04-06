@@ -3,6 +3,7 @@ IFC Component Models
 
 Window, Door, Wall, Slab models.
 """
+
 import uuid
 
 from django.db import models
@@ -17,12 +18,8 @@ class Window(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -46,52 +43,55 @@ class Window(models.Model):
         verbose_name="Raum",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    number = models.CharField(
-        max_length=50, blank=True, verbose_name="Nummer"
-    )
-    name = models.CharField(
-        max_length=100, blank=True, verbose_name="Name"
-    )
+    number = models.CharField(max_length=50, blank=True, verbose_name="Nummer")
+    name = models.CharField(max_length=100, blank=True, verbose_name="Name")
 
     width = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Breite (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Breite (m)",
     )
     height = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Höhe (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Höhe (m)",
     )
     area = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Fläche (m²)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Fläche (m²)",
     )
 
-    wall_position = models.CharField(
-        max_length=50, blank=True, verbose_name="Wandposition"
-    )
+    wall_position = models.CharField(max_length=50, blank=True, verbose_name="Wandposition")
     elevation = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Höhe (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Höhe (m)",
     )
 
-    material = models.CharField(
-        max_length=100, blank=True, verbose_name="Material"
-    )
-    glazing_type = models.CharField(
-        max_length=100, blank=True, verbose_name="Verglasungstyp"
-    )
+    material = models.CharField(max_length=100, blank=True, verbose_name="Material")
+    glazing_type = models.CharField(max_length=100, blank=True, verbose_name="Verglasungstyp")
     u_value = models.DecimalField(
-        max_digits=5, decimal_places=2,
-        null=True, blank=True,
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
         verbose_name="U-Wert (W/m²K)",
     )
 
     properties = models.JSONField(
-        default=dict, blank=True,
+        default=dict,
+        blank=True,
         verbose_name="IFC Properties",
     )
 
@@ -110,12 +110,8 @@ class Door(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -147,38 +143,33 @@ class Door(models.Model):
         verbose_name="Nach Raum",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    number = models.CharField(
-        max_length=50, blank=True, verbose_name="Nummer"
-    )
-    name = models.CharField(
-        max_length=100, blank=True, verbose_name="Name"
-    )
+    number = models.CharField(max_length=50, blank=True, verbose_name="Nummer")
+    name = models.CharField(max_length=100, blank=True, verbose_name="Name")
 
     width = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Breite (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Breite (m)",
     )
     height = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Höhe (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Höhe (m)",
     )
 
-    door_type = models.CharField(
-        max_length=50, blank=True, verbose_name="Türtyp"
-    )
-    material = models.CharField(
-        max_length=100, blank=True, verbose_name="Material"
-    )
-    fire_rating = models.CharField(
-        max_length=20, blank=True, verbose_name="Feuerwiderstand"
-    )
+    door_type = models.CharField(max_length=50, blank=True, verbose_name="Türtyp")
+    material = models.CharField(max_length=100, blank=True, verbose_name="Material")
+    fire_rating = models.CharField(max_length=20, blank=True, verbose_name="Feuerwiderstand")
 
     properties = models.JSONField(
-        default=dict, blank=True,
+        default=dict,
+        blank=True,
         verbose_name="IFC Properties",
     )
 
@@ -197,12 +188,8 @@ class Wall(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -218,53 +205,60 @@ class Wall(models.Model):
         verbose_name="Geschoss",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    name = models.CharField(
-        max_length=100, blank=True, verbose_name="Name"
-    )
+    name = models.CharField(max_length=100, blank=True, verbose_name="Name")
 
     length = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Länge (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Länge (m)",
     )
     height = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Höhe (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Höhe (m)",
     )
     width = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Dicke (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Dicke (m)",
     )
     gross_area = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True,
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
         verbose_name="Bruttofläche (m²)",
     )
     net_area = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True,
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
         verbose_name="Nettofläche (m²)",
     )
     volume = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Volumen (m³)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Volumen (m³)",
     )
 
-    is_external = models.BooleanField(
-        default=False, verbose_name="Außenwand"
-    )
-    is_load_bearing = models.BooleanField(
-        default=False, verbose_name="Tragend"
-    )
-    material = models.CharField(
-        max_length=100, blank=True, verbose_name="Material"
-    )
+    is_external = models.BooleanField(default=False, verbose_name="Außenwand")
+    is_load_bearing = models.BooleanField(default=False, verbose_name="Tragend")
+    material = models.CharField(max_length=100, blank=True, verbose_name="Material")
 
     properties = models.JSONField(
-        default=dict, blank=True,
+        default=dict,
+        blank=True,
         verbose_name="IFC Properties",
     )
 
@@ -290,12 +284,8 @@ class Slab(models.Model):
         BASESLAB = "BASESLAB", "Bodenplatte"
         LANDING = "LANDING", "Podest"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    tenant_id = models.UUIDField(
-        db_index=True, help_text="Multi-tenancy isolator"
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
         on_delete=models.CASCADE,
@@ -311,13 +301,9 @@ class Slab(models.Model):
         verbose_name="Geschoss",
     )
 
-    ifc_guid = models.CharField(
-        max_length=36, verbose_name="IFC GUID"
-    )
+    ifc_guid = models.CharField(max_length=36, verbose_name="IFC GUID")
 
-    name = models.CharField(
-        max_length=100, blank=True, verbose_name="Name"
-    )
+    name = models.CharField(max_length=100, blank=True, verbose_name="Name")
     slab_type = models.CharField(
         max_length=20,
         choices=SlabType.choices,
@@ -326,28 +312,39 @@ class Slab(models.Model):
     )
 
     area = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Fläche (m²)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Fläche (m²)",
     )
     thickness = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Dicke (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Dicke (m)",
     )
     volume = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Volumen (m³)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Volumen (m³)",
     )
     perimeter = models.DecimalField(
-        max_digits=10, decimal_places=3,
-        null=True, blank=True, verbose_name="Umfang (m)",
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name="Umfang (m)",
     )
 
-    material = models.CharField(
-        max_length=100, blank=True, verbose_name="Material"
-    )
+    material = models.CharField(max_length=100, blank=True, verbose_name="Material")
 
     properties = models.JSONField(
-        default=dict, blank=True,
+        default=dict,
+        blank=True,
         verbose_name="IFC Properties",
     )
 
@@ -358,7 +355,4 @@ class Slab(models.Model):
         verbose_name_plural = "Decken/Platten"
 
     def __str__(self) -> str:
-        return (
-            f"{self.get_slab_type_display()}"
-            f" - {self.name or self.ifc_guid[:8]}"
-        )
+        return f"{self.get_slab_type_display()} - {self.name or self.ifc_guid[:8]}"

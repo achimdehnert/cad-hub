@@ -3,6 +3,7 @@ MCP Bridge Data Models
 
 Enums and dataclasses for CAD MCP Bridge results.
 """
+
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from typing import Any
@@ -10,6 +11,7 @@ from typing import Any
 
 class CADFormat(StrEnum):
     """Unterstützte CAD-Formate"""
+
     IFC = "ifc"
     DXF = "dxf"
     DWG = "dwg"
@@ -26,6 +28,7 @@ class CADFormat(StrEnum):
 @dataclass
 class AnalysisResult:
     """Ergebnis einer CAD-Analyse"""
+
     success: bool
     file_path: str
     format: CADFormat
@@ -49,6 +52,7 @@ class AnalysisResult:
 @dataclass
 class DXFQualityResult:
     """Ergebnis der DXF-Qualitätsprüfung"""
+
     success: bool
     file_path: str
     dimension_chains: dict[str, Any] = field(default_factory=dict)
@@ -63,6 +67,7 @@ class DXFQualityResult:
 @dataclass
 class NLQueryResult:
     """Ergebnis einer Natural Language Abfrage"""
+
     success: bool
     query: str
     answer: str
@@ -77,6 +82,7 @@ class NLQueryResult:
 @dataclass
 class BatchResult:
     """Ergebnis einer Batch-Analyse"""
+
     success: bool
     total_files: int
     analyzed: int
@@ -93,5 +99,3 @@ class BatchResult:
             "results": [r.to_dict() for r in self.results],
             "summary": self.summary,
         }
-
-

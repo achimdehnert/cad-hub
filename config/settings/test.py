@@ -1,24 +1,35 @@
 """
 CAD Hub - Test Settings (ADR-141: PostgreSQL-Only Testing)
+
+USE_POSTGRES=0 in CI falls back to SQLite for unit tests without DB service.
+Integration/contract tests should always use PostgreSQL.
 """
+
 import os
 
 from .base import *  # noqa: F401,F403
 
 DEBUG = False
 
-# ADR-141: Explicit PostgreSQL — SQLite is BANNED for testing
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("TEST_DB_NAME", "cad_hub_test"),
-        "USER": os.environ.get("TEST_DB_USER", "dehnert"),
-        "PASSWORD": os.environ.get("TEST_DB_PASSWORD", ""),
-        "HOST": os.environ.get("TEST_DB_HOST", "localhost"),
-        "PORT": os.environ.get("TEST_DB_PORT", "5434"),
-        "TEST": {"NAME": "test_cad_hub"},
+if os.environ.get("USE_POSTGRES", "1") == "0":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("TEST_DB_NAME", "cad_hub_test"),
+            "USER": os.environ.get("TEST_DB_USER", "dehnert"),
+            "PASSWORD": os.environ.get("TEST_DB_PASSWORD", ""),
+            "HOST": os.environ.get("TEST_DB_HOST", "localhost"),
+            "PORT": os.environ.get("TEST_DB_PORT", "5434"),
+            "TEST": {"NAME": "test_cad_hub"},
+        }
+    }
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",

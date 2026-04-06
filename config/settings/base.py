@@ -1,15 +1,23 @@
 """
 Base settings shared across all environments.
 """
+
 import os
+import sys
 from pathlib import Path
+
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-dev-only-change-in-production"
-)
+# Vendor packages (django_tenancy, chat_agent, etc.) are plain Python
+# packages without pyproject.toml — add vendor/ to sys.path so they
+# are importable as top-level modules.
+VENDOR_DIR = str(BASE_DIR / "vendor")
+if VENDOR_DIR not in sys.path:
+    sys.path.insert(0, VENDOR_DIR)
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-only-change-in-production")
 
 DEBUG = False
 
@@ -111,15 +119,11 @@ LOGIN_REDIRECT_URL = "/"
 # Registry — GitHub Actions Tenant-Onboarding
 GITHUB_REGISTRY_TOKEN = config("GITHUB_REGISTRY_TOKEN", default="")
 GITHUB_REGISTRY_OWNER = config("GITHUB_REGISTRY_OWNER", default="achimdehnert")
-GITHUB_REGISTRY_REPO  = config("GITHUB_REGISTRY_REPO", default="nl2cad")
+GITHUB_REGISTRY_REPO = config("GITHUB_REGISTRY_REPO", default="nl2cad")
 
 # Celery
-CELERY_BROKER_URL = os.environ.get(
-    "CELERY_BROKER_URL", "redis://localhost:6379/0"
-)
-CELERY_RESULT_BACKEND = os.environ.get(
-    "CELERY_RESULT_BACKEND", CELERY_BROKER_URL
-)
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -131,9 +135,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": (
-                "%(asctime)s %(levelname)s %(name)s %(message)s"
-            ),
+            "format": ("%(asctime)s %(levelname)s %(name)s %(message)s"),
         },
     },
     "handlers": {

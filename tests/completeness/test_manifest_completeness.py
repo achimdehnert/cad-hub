@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-
 BASE_DIR = Path(__file__).resolve().parents[3]
 TEMPLATES_DIR = BASE_DIR / "templates"
 MANIFESTS_DIR = BASE_DIR / "ui-manifests"
@@ -76,7 +75,7 @@ def test_data_testid_present_in_templates(element_id: str, template_file: str, c
         pytest.skip(f"Conditional element '{element_id}' — skipped in static check")
     found = _testid_exists_in_templates(element_id, template_file)
     assert found, (
-        f"Missing: data-testid=\"{element_id}\" not found in templates.\n"
+        f'Missing: data-testid="{element_id}" not found in templates.\n'
         f"Template: {template_file or 'any'}\n"
-        f"Fix: Add data-testid=\"{element_id}\" to the relevant template."
+        f'Fix: Add data-testid="{element_id}" to the relevant template.'
     )

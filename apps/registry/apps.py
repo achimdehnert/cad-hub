@@ -1,4 +1,5 @@
 """Registry app — Modul-Katalog, Berufsprofile, Tenant-Subscriptions."""
+
 from django.apps import AppConfig
 
 

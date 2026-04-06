@@ -3,6 +3,7 @@ IFC Export Views
 
 Export views for Raumbuch, WoFlV, GAEB, X83 formats.
 """
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
@@ -78,8 +79,7 @@ class ExportWoFlVView(View):
         ws["A4"].font = Font(bold=True, size=12)
 
         anrechnungsquote = (
-            result.total_woflv_m2 / result.total_raw_m2 * 100
-            if result.total_raw_m2 > 0 else 0.0
+            result.total_woflv_m2 / result.total_raw_m2 * 100 if result.total_raw_m2 > 0 else 0.0
         )
         summary_data = [
             ("Grundfläche gesamt:", result.total_raw_m2, "m²"),
@@ -106,9 +106,9 @@ class ExportWoFlVView(View):
 
         for row_idx, room in enumerate(result.rooms, 14):
             ws.cell(row=row_idx, column=1, value=room.name)
-            ws.cell(row=row_idx, column=2, value=round(room.raw_area_m2, 2)).number_format = (
-                "#,##0.00"
-            )
+            ws.cell(
+                row=row_idx, column=2, value=round(room.raw_area_m2, 2)
+            ).number_format = "#,##0.00"
             ws.cell(row=row_idx, column=3, value=round(room.height_m, 2)).number_format = "0.00"
             ws.cell(row=row_idx, column=4, value=room.factor).number_format = "0%"
             ws.cell(
@@ -271,9 +271,7 @@ class ExportX83View(View):
             wall["area"] = (wall.get("length", 0) or 0) * (wall.get("height", 0) or 0)
 
         doors = list(
-            Door.objects.filter(ifc_model=ifc_model).values(
-                "name", "ifc_guid", "width", "height"
-            )
+            Door.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
         )
         # Türtyp aus Name extrahieren
         for door in doors:
@@ -282,15 +280,11 @@ class ExportX83View(View):
                 door["type"] = "Brandschutz"
 
         windows = list(
-            Window.objects.filter(ifc_model=ifc_model).values(
-                "name", "ifc_guid", "width", "height"
-            )
+            Window.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
         )
 
         slabs = list(
-            Slab.objects.filter(ifc_model=ifc_model).values(
-                "name", "ifc_guid", "area", "thickness"
-            )
+            Slab.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "area", "thickness")
         )
 
         return {
@@ -300,5 +294,3 @@ class ExportX83View(View):
             "windows": windows,
             "slabs": slabs,
         }
-
-

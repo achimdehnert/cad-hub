@@ -1,4 +1,5 @@
 """Landing page and login views for nl2cad.de."""
+
 from django.contrib.auth import authenticate, login
 from django.shortcuts import redirect, render
 

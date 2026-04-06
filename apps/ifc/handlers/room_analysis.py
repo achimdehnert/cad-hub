@@ -4,6 +4,7 @@ RoomAnalysisHandler — Raum-Extraktion & DIN 277 Klassifikation.
 Nutzt nl2cad.core.models.ifc.IFCRoom als Domänenobjekt
 und nl2cad.areas.din277.DIN277Calculator für die Klassifikation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,21 +23,82 @@ logger = logging.getLogger(__name__)
 
 # Layer-Keywords für DXF-Raumerkennung
 _EXCLUDED_LAYER_KEYWORDS = [
-    "symbol", "schraffur", "hatch", "text", "beschriftung", "annotation",
-    "bemaßung", "dimension", "dim", "achse", "axis", "grid", "hilfslin",
-    "construction", "möbel", "furniture", "einrichtung", "elektro", "sanitär",
-    "heizung", "lüftung", "hvac", "legende", "rahmen", "frame", "border",
-    "logo", "titel", "viewport", "defpoints", "decken", "ceiling",
-    "deckenkonstruktion", "fußbodenaufbau", "wand", "wände", "wall",
-    "konstruktion", "tragwerk", "fundament", "dach", "roof", "fassade",
-    "treppe", "stair", "aufzug", "elevator",
+    "symbol",
+    "schraffur",
+    "hatch",
+    "text",
+    "beschriftung",
+    "annotation",
+    "bemaßung",
+    "dimension",
+    "dim",
+    "achse",
+    "axis",
+    "grid",
+    "hilfslin",
+    "construction",
+    "möbel",
+    "furniture",
+    "einrichtung",
+    "elektro",
+    "sanitär",
+    "heizung",
+    "lüftung",
+    "hvac",
+    "legende",
+    "rahmen",
+    "frame",
+    "border",
+    "logo",
+    "titel",
+    "viewport",
+    "defpoints",
+    "decken",
+    "ceiling",
+    "deckenkonstruktion",
+    "fußbodenaufbau",
+    "wand",
+    "wände",
+    "wall",
+    "konstruktion",
+    "tragwerk",
+    "fundament",
+    "dach",
+    "roof",
+    "fassade",
+    "treppe",
+    "stair",
+    "aufzug",
+    "elevator",
 ]
 
 _VALID_FLOOR_KEYWORDS = [
-    "raum", "räume", "room", "nutzfläche", "nutzflaeche", "nuf",
-    "bodenplatte", "grundriss", "wohnfläche", "büro", "buero", "office",
-    "flur", "corridor", "küche", "kueche", "kitchen", "bad", "wc",
-    "schlaf", "wohn", "lager", "storage", "keller", "basement", "garage",
+    "raum",
+    "räume",
+    "room",
+    "nutzfläche",
+    "nutzflaeche",
+    "nuf",
+    "bodenplatte",
+    "grundriss",
+    "wohnfläche",
+    "büro",
+    "buero",
+    "office",
+    "flur",
+    "corridor",
+    "küche",
+    "kueche",
+    "kitchen",
+    "bad",
+    "wc",
+    "schlaf",
+    "wohn",
+    "lager",
+    "storage",
+    "keller",
+    "basement",
+    "garage",
 ]
 
 
@@ -141,30 +203,33 @@ class RoomAnalysisHandler(BaseCADHandler):
         din277_summary: dict = {}
         if classify_din277 and rooms:
             rooms_data = [
-                {"name": r.name, "area_m2": r.area_m2, "din277_code": r.din277_code}
-                for r in rooms
+                {"name": r.name, "area_m2": r.area_m2, "din277_code": r.din277_code} for r in rooms
             ]
             din277_result = self._din277.calculate(rooms_data)
             din277_summary = self._build_summary(din277_result)
 
-        result.data.update({
-            "rooms": [self._room_to_dict(r) for r in rooms],
-            "room_count": len(rooms),
-            "total_area_m2": total_area_m2,
-            "total_area": total_area_m2,
-            "total_area_formatted": f"{total_area_m2:.2f} m²",
-            "din277_result": din277_result.to_dict() if din277_result else {},
-            "din277_summary": din277_summary,
-            "doors": doors,
-            "door_count": len(doors),
-            "windows": windows,
-            "window_count": len(windows),
-        })
+        result.data.update(
+            {
+                "rooms": [self._room_to_dict(r) for r in rooms],
+                "room_count": len(rooms),
+                "total_area_m2": total_area_m2,
+                "total_area": total_area_m2,
+                "total_area_formatted": f"{total_area_m2:.2f} m²",
+                "din277_result": din277_result.to_dict() if din277_result else {},
+                "din277_summary": din277_summary,
+                "doors": doors,
+                "door_count": len(doors),
+                "windows": windows,
+                "window_count": len(windows),
+            }
+        )
 
         result.status = HandlerStatus.SUCCESS
         logger.info(
             "[%s] %d Räume, %.1f m²",
-            self.name, len(rooms), total_area_m2,
+            self.name,
+            len(rooms),
+            total_area_m2,
         )
         return result
 
@@ -175,10 +240,12 @@ class RoomAnalysisHandler(BaseCADHandler):
         # 1. Text-basierte Raumerkennung
         try:
             for tr in loader.get_rooms():
-                rooms.append(IFCRoom(
-                    name=tr.get("name", "Unbekannt"),
-                    floor_name=tr.get("layer", ""),
-                ))
+                rooms.append(
+                    IFCRoom(
+                        name=tr.get("name", "Unbekannt"),
+                        floor_name=tr.get("layer", ""),
+                    )
+                )
         except Exception as e:
             result.add_warning(f"Text-Raumerkennung fehlgeschlagen: {e}")
 
@@ -201,7 +268,7 @@ class RoomAnalysisHandler(BaseCADHandler):
                         continue
 
                     area_m2 = area_info.get("area", 0) * unit_factor
-                    perimeter_m = area_info.get("perimeter", 0) * (unit_factor ** 0.5)
+                    perimeter_m = area_info.get("perimeter", 0) * (unit_factor**0.5)
 
                     if area_m2 < 1.0 or area_m2 > 10_000:
                         continue
@@ -215,12 +282,14 @@ class RoomAnalysisHandler(BaseCADHandler):
                             break
 
                     if not matched:
-                        rooms.append(IFCRoom(
-                            name=f"Fläche_{layer}" if layer else "Unbenannt",
-                            area_m2=area_m2,
-                            perimeter_m=perimeter_m,
-                            floor_name=layer,
-                        ))
+                        rooms.append(
+                            IFCRoom(
+                                name=f"Fläche_{layer}" if layer else "Unbenannt",
+                                area_m2=area_m2,
+                                perimeter_m=perimeter_m,
+                                floor_name=layer,
+                            )
+                        )
                         valid_count += 1
 
                 if excluded_count > 0:
@@ -246,11 +315,13 @@ class RoomAnalysisHandler(BaseCADHandler):
                         result.add_warning(
                             f"Keine Polylinien — Schätzung aus Bounding Box: ~{estimated:.0f} m²"
                         )
-                        rooms.append(IFCRoom(
-                            name="Geschätzte Gesamtfläche",
-                            area_m2=estimated,
-                            floor_name="ESTIMATE",
-                        ))
+                        rooms.append(
+                            IFCRoom(
+                                name="Geschätzte Gesamtfläche",
+                                area_m2=estimated,
+                                floor_name="ESTIMATE",
+                            )
+                        )
             except Exception as e:
                 logger.warning("[%s] Bounding-Box-Fallback fehlgeschlagen: %s", self.name, e)
 

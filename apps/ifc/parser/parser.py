@@ -983,7 +983,9 @@ class IfcCompleteParser:
                                 code=(
                                     ref.Identification
                                     if hasattr(ref, "Identification")
-                                    else ref.ItemReference if hasattr(ref, "ItemReference") else ""
+                                    else ref.ItemReference
+                                    if hasattr(ref, "ItemReference")
+                                    else ""
                                 ),
                                 name=ref.Name,
                                 location=getattr(ref, "Location", None),

@@ -86,13 +86,13 @@ class HtmxErrorMiddleware:
 
         if response.status_code >= 400:
             response["HX-Reswap"] = "none"
-            response["HX-Trigger"] = json.dumps({
-                "showToast": {
-                    "level": "error" if response.status_code >= 500 else "warning",
-                    "message": ERROR_MESSAGES.get(
-                        response.status_code, "An error occurred."
-                    ),
+            response["HX-Trigger"] = json.dumps(
+                {
+                    "showToast": {
+                        "level": "error" if response.status_code >= 500 else "warning",
+                        "message": ERROR_MESSAGES.get(response.status_code, "An error occurred."),
+                    }
                 }
-            })
+            )
 
         return response

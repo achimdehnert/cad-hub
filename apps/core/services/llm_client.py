@@ -7,6 +7,7 @@ Provides:
 
 DO NOT use openai/anthropic directly — all LLM calls go through aifw.
 """
+
 from __future__ import annotations
 
 import logging

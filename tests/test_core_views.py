@@ -21,6 +21,7 @@ class TestLoginRequired:
 
     def test_should_return_200_for_authenticated_user(self, client):
         from tests.factories import UserFactory
+
         user = UserFactory()
         client.force_login(user)
         response = client.get("/")

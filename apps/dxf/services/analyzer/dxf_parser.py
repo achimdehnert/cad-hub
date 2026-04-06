@@ -2,6 +2,7 @@
 DXF Parser Service for CAD Hub
 Extracts geometry, layers, texts, and dimensions from DXF files.
 """
+
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DXFPoint:
     """2D/3D Point"""
+
     x: float
     y: float
     z: float = 0.0
@@ -27,6 +29,7 @@ class DXFPoint:
 @dataclass
 class DXFLine:
     """Line entity"""
+
     start: DXFPoint
     end: DXFPoint
     layer: str
@@ -34,9 +37,11 @@ class DXFLine:
 
     @property
     def length(self) -> float:
-        return ((self.end.x - self.start.x)**2 +
-                (self.end.y - self.start.y)**2 +
-                (self.end.z - self.start.z)**2) ** 0.5
+        return (
+            (self.end.x - self.start.x) ** 2
+            + (self.end.y - self.start.y) ** 2
+            + (self.end.z - self.start.z) ** 2
+        ) ** 0.5
 
     def to_dict(self) -> dict:
         return {
@@ -44,13 +49,14 @@ class DXFLine:
             "start": self.start.to_dict(),
             "end": self.end.to_dict(),
             "layer": self.layer,
-            "length": round(self.length, 4)
+            "length": round(self.length, 4),
         }
 
 
 @dataclass
 class DXFCircle:
     """Circle entity"""
+
     center: DXFPoint
     radius: float
     layer: str
@@ -58,7 +64,8 @@ class DXFCircle:
     @property
     def area(self) -> float:
         import math
-        return math.pi * self.radius ** 2
+
+        return math.pi * self.radius**2
 
     def to_dict(self) -> dict:
         return {
@@ -66,13 +73,14 @@ class DXFCircle:
             "center": self.center.to_dict(),
             "radius": self.radius,
             "layer": self.layer,
-            "area": round(self.area, 4)
+            "area": round(self.area, 4),
         }
 
 
 @dataclass
 class DXFArc:
     """Arc entity"""
+
     center: DXFPoint
     radius: float
     start_angle: float
@@ -86,13 +94,14 @@ class DXFArc:
             "radius": self.radius,
             "start_angle": self.start_angle,
             "end_angle": self.end_angle,
-            "layer": self.layer
+            "layer": self.layer,
         }
 
 
 @dataclass
 class DXFText:
     """Text entity (TEXT, MTEXT)"""
+
     text: str
     position: DXFPoint
     height: float
@@ -106,13 +115,14 @@ class DXFText:
             "position": self.position.to_dict(),
             "height": self.height,
             "rotation": self.rotation,
-            "layer": self.layer
+            "layer": self.layer,
         }
 
 
 @dataclass
 class DXFPolyline:
     """Polyline entity (LWPOLYLINE, POLYLINE)"""
+
     points: list[DXFPoint]
     closed: bool
     layer: str
@@ -122,10 +132,10 @@ class DXFPolyline:
         total = 0.0
         for i in range(len(self.points) - 1):
             p1, p2 = self.points[i], self.points[i + 1]
-            total += ((p2.x - p1.x)**2 + (p2.y - p1.y)**2) ** 0.5
+            total += ((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) ** 0.5
         if self.closed and len(self.points) > 1:
             p1, p2 = self.points[-1], self.points[0]
-            total += ((p2.x - p1.x)**2 + (p2.y - p1.y)**2) ** 0.5
+            total += ((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) ** 0.5
         return total
 
     @property
@@ -148,13 +158,14 @@ class DXFPolyline:
             "closed": self.closed,
             "layer": self.layer,
             "length": round(self.length, 4),
-            "area": round(self.area, 4) if self.closed else None
+            "area": round(self.area, 4) if self.closed else None,
         }
 
 
 @dataclass
 class DXFDimension:
     """Dimension entity"""
+
     dim_type: str  # LINEAR, ANGULAR, RADIAL, etc.
     measurement: float
     text_override: str
@@ -166,13 +177,14 @@ class DXFDimension:
             "dim_type": self.dim_type,
             "measurement": self.measurement,
             "text_override": self.text_override,
-            "layer": self.layer
+            "layer": self.layer,
         }
 
 
 @dataclass
 class DXFBlock:
     """Block reference (INSERT)"""
+
     name: str
     position: DXFPoint
     scale: tuple[float, float, float]
@@ -186,13 +198,14 @@ class DXFBlock:
             "position": self.position.to_dict(),
             "scale": {"x": self.scale[0], "y": self.scale[1], "z": self.scale[2]},
             "rotation": self.rotation,
-            "layer": self.layer
+            "layer": self.layer,
         }
 
 
 @dataclass
 class DXFLayer:
     """Layer definition"""
+
     name: str
     color: int
     linetype: str
@@ -207,13 +220,14 @@ class DXFLayer:
             "linetype": self.linetype,
             "is_on": self.is_on,
             "is_locked": self.is_locked,
-            "entity_count": self.entity_count
+            "entity_count": self.entity_count,
         }
 
 
 @dataclass
 class DXFParseResult:
     """Complete parse result"""
+
     filename: str
     dxf_version: str
     units: str
@@ -235,9 +249,15 @@ class DXFParseResult:
 
     @property
     def total_entities(self) -> int:
-        return (len(self.lines) + len(self.circles) + len(self.arcs) +
-                len(self.polylines) + len(self.texts) + len(self.dimensions) +
-                len(self.blocks))
+        return (
+            len(self.lines)
+            + len(self.circles)
+            + len(self.arcs)
+            + len(self.polylines)
+            + len(self.texts)
+            + len(self.dimensions)
+            + len(self.blocks)
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -253,7 +273,7 @@ class DXFParseResult:
                 "texts": len(self.texts),
                 "dimensions": len(self.dimensions),
                 "blocks": len(self.blocks),
-                "layers": len(self.layers)
+                "layers": len(self.layers),
             },
             "extents": self.extents,
             "layers": [l.to_dict() for l in self.layers],
@@ -264,8 +284,8 @@ class DXFParseResult:
                 "polylines": [e.to_dict() for e in self.polylines],
                 "texts": [e.to_dict() for e in self.texts],
                 "dimensions": [e.to_dict() for e in self.dimensions],
-                "blocks": [e.to_dict() for e in self.blocks]
-            }
+                "blocks": [e.to_dict() for e in self.blocks],
+            },
         }
 
 
@@ -307,7 +327,7 @@ class DXFParserService:
         17: "Gigameters",
         18: "Astronomical units",
         19: "Light years",
-        20: "Parsecs"
+        20: "Parsecs",
     }
 
     def __init__(self):
@@ -334,7 +354,8 @@ class DXFParserService:
     def parse_bytes(self, content: bytes, filename: str = "upload.dxf") -> DXFParseResult:
         """Parse DXF content from bytes."""
         import io
-        stream = io.StringIO(content.decode('utf-8', errors='ignore'))
+
+        stream = io.StringIO(content.decode("utf-8", errors="ignore"))
 
         try:
             self.doc = ezdxf.read(stream)
@@ -355,11 +376,7 @@ class DXFParserService:
         units = self.UNITS.get(units_code, "Unknown")
 
         # Initialize result
-        result = DXFParseResult(
-            filename=filename,
-            dxf_version=dxf_version,
-            units=units
-        )
+        result = DXFParseResult(filename=filename, dxf_version=dxf_version, units=units)
 
         # Reset layer counts
         self.layer_entity_counts = {}
@@ -372,18 +389,21 @@ class DXFParserService:
         # Parse layers
         for layer in self.doc.layers:
             layer_name = layer.dxf.name
-            result.layers.append(DXFLayer(
-                name=layer_name,
-                color=layer.dxf.color,
-                linetype=layer.dxf.linetype,
-                is_on=layer.is_on(),
-                is_locked=layer.is_locked(),
-                entity_count=self.layer_entity_counts.get(layer_name, 0)
-            ))
+            result.layers.append(
+                DXFLayer(
+                    name=layer_name,
+                    color=layer.dxf.color,
+                    linetype=layer.dxf.linetype,
+                    is_on=layer.is_on(),
+                    is_locked=layer.is_locked(),
+                    entity_count=self.layer_entity_counts.get(layer_name, 0),
+                )
+            )
 
         # Calculate extents
         try:
             from ezdxf import bbox
+
             cache = bbox.Cache()
             extents = bbox.extents(msp, cache=cache)
             if extents.has_data:
@@ -393,8 +413,8 @@ class DXFParserService:
                     "size": {
                         "width": extents.extmax[0] - extents.extmin[0],
                         "height": extents.extmax[1] - extents.extmin[1],
-                        "depth": extents.extmax[2] - extents.extmin[2]
-                    }
+                        "depth": extents.extmax[2] - extents.extmin[2],
+                    },
                 }
         except Exception as e:
             logger.warning(f"Could not calculate extents: {e}")
@@ -405,86 +425,96 @@ class DXFParserService:
     def _parse_entity(self, entity: DXFEntity, result: DXFParseResult):
         """Parse a single DXF entity."""
         entity_type = entity.dxftype()
-        layer = entity.dxf.layer if hasattr(entity.dxf, 'layer') else "0"
+        layer = entity.dxf.layer if hasattr(entity.dxf, "layer") else "0"
 
         # Count entities per layer
         self.layer_entity_counts[layer] = self.layer_entity_counts.get(layer, 0) + 1
 
         try:
             if entity_type == "LINE":
-                result.lines.append(DXFLine(
-                    start=DXFPoint(*entity.dxf.start),
-                    end=DXFPoint(*entity.dxf.end),
-                    layer=layer,
-                    color=entity.dxf.color if hasattr(entity.dxf, 'color') else 256
-                ))
+                result.lines.append(
+                    DXFLine(
+                        start=DXFPoint(*entity.dxf.start),
+                        end=DXFPoint(*entity.dxf.end),
+                        layer=layer,
+                        color=entity.dxf.color if hasattr(entity.dxf, "color") else 256,
+                    )
+                )
 
             elif entity_type == "CIRCLE":
-                result.circles.append(DXFCircle(
-                    center=DXFPoint(*entity.dxf.center),
-                    radius=entity.dxf.radius,
-                    layer=layer
-                ))
+                result.circles.append(
+                    DXFCircle(
+                        center=DXFPoint(*entity.dxf.center), radius=entity.dxf.radius, layer=layer
+                    )
+                )
 
             elif entity_type == "ARC":
-                result.arcs.append(DXFArc(
-                    center=DXFPoint(*entity.dxf.center),
-                    radius=entity.dxf.radius,
-                    start_angle=entity.dxf.start_angle,
-                    end_angle=entity.dxf.end_angle,
-                    layer=layer
-                ))
+                result.arcs.append(
+                    DXFArc(
+                        center=DXFPoint(*entity.dxf.center),
+                        radius=entity.dxf.radius,
+                        start_angle=entity.dxf.start_angle,
+                        end_angle=entity.dxf.end_angle,
+                        layer=layer,
+                    )
+                )
 
             elif entity_type == "LWPOLYLINE":
                 points = [DXFPoint(p[0], p[1], 0) for p in entity.get_points()]
-                result.polylines.append(DXFPolyline(
-                    points=points,
-                    closed=entity.closed,
-                    layer=layer
-                ))
+                result.polylines.append(
+                    DXFPolyline(points=points, closed=entity.closed, layer=layer)
+                )
 
             elif entity_type == "POLYLINE":
                 points = [DXFPoint(*v.dxf.location) for v in entity.vertices]
-                result.polylines.append(DXFPolyline(
-                    points=points,
-                    closed=entity.is_closed,
-                    layer=layer
-                ))
+                result.polylines.append(
+                    DXFPolyline(points=points, closed=entity.is_closed, layer=layer)
+                )
 
             elif entity_type == "TEXT":
-                result.texts.append(DXFText(
-                    text=entity.dxf.text,
-                    position=DXFPoint(*entity.dxf.insert),
-                    height=entity.dxf.height,
-                    rotation=entity.dxf.rotation if hasattr(entity.dxf, 'rotation') else 0,
-                    layer=layer
-                ))
+                result.texts.append(
+                    DXFText(
+                        text=entity.dxf.text,
+                        position=DXFPoint(*entity.dxf.insert),
+                        height=entity.dxf.height,
+                        rotation=entity.dxf.rotation if hasattr(entity.dxf, "rotation") else 0,
+                        layer=layer,
+                    )
+                )
 
             elif entity_type == "MTEXT":
-                result.texts.append(DXFText(
-                    text=entity.plain_text(),
-                    position=DXFPoint(*entity.dxf.insert),
-                    height=entity.dxf.char_height,
-                    rotation=entity.dxf.rotation if hasattr(entity.dxf, 'rotation') else 0,
-                    layer=layer
-                ))
+                result.texts.append(
+                    DXFText(
+                        text=entity.plain_text(),
+                        position=DXFPoint(*entity.dxf.insert),
+                        height=entity.dxf.char_height,
+                        rotation=entity.dxf.rotation if hasattr(entity.dxf, "rotation") else 0,
+                        layer=layer,
+                    )
+                )
 
             elif entity_type == "DIMENSION":
-                result.dimensions.append(DXFDimension(
-                    dim_type=entity.dimtype.name if hasattr(entity, 'dimtype') else "UNKNOWN",
-                    measurement=entity.dxf.actual_measurement if hasattr(entity.dxf, 'actual_measurement') else 0,
-                    text_override=entity.dxf.text if hasattr(entity.dxf, 'text') else "",
-                    layer=layer
-                ))
+                result.dimensions.append(
+                    DXFDimension(
+                        dim_type=entity.dimtype.name if hasattr(entity, "dimtype") else "UNKNOWN",
+                        measurement=entity.dxf.actual_measurement
+                        if hasattr(entity.dxf, "actual_measurement")
+                        else 0,
+                        text_override=entity.dxf.text if hasattr(entity.dxf, "text") else "",
+                        layer=layer,
+                    )
+                )
 
             elif entity_type == "INSERT":
-                result.blocks.append(DXFBlock(
-                    name=entity.dxf.name,
-                    position=DXFPoint(*entity.dxf.insert),
-                    scale=(entity.dxf.xscale, entity.dxf.yscale, entity.dxf.zscale),
-                    rotation=entity.dxf.rotation if hasattr(entity.dxf, 'rotation') else 0,
-                    layer=layer
-                ))
+                result.blocks.append(
+                    DXFBlock(
+                        name=entity.dxf.name,
+                        position=DXFPoint(*entity.dxf.insert),
+                        scale=(entity.dxf.xscale, entity.dxf.yscale, entity.dxf.zscale),
+                        rotation=entity.dxf.rotation if hasattr(entity.dxf, "rotation") else 0,
+                        layer=layer,
+                    )
+                )
 
         except Exception as e:
             logger.debug(f"Could not parse {entity_type}: {e}")
@@ -505,10 +535,7 @@ class DXFParserService:
 
         for entity in msp.query(f'*[layer=="{layer_name}"]'):
             entity_type = entity.dxftype()
-            entities.append({
-                "type": entity_type,
-                "handle": entity.dxf.handle
-            })
+            entities.append({"type": entity_type, "handle": entity.dxf.handle})
 
         return entities
 
@@ -521,14 +548,16 @@ class DXFParserService:
 
         for i, poly in enumerate(result.polylines):
             if poly.closed and poly.area > 1.0:  # Min 1m² area
-                rooms.append({
-                    "id": i,
-                    "layer": poly.layer,
-                    "area": round(poly.area, 2),
-                    "perimeter": round(poly.length, 2),
-                    "vertices": len(poly.points),
-                    "centroid": self._calculate_centroid(poly.points)
-                })
+                rooms.append(
+                    {
+                        "id": i,
+                        "layer": poly.layer,
+                        "area": round(poly.area, 2),
+                        "perimeter": round(poly.length, 2),
+                        "vertices": len(poly.points),
+                        "centroid": self._calculate_centroid(poly.points),
+                    }
+                )
 
         # Sort by area descending
         rooms.sort(key=lambda r: r["area"], reverse=True)
@@ -543,8 +572,9 @@ class DXFParserService:
         y = sum(p.y for p in points) / len(points)
         return {"x": round(x, 2), "y": round(y, 2)}
 
-    def extract_texts_near_rooms(self, result: DXFParseResult, rooms: list[dict],
-                                  tolerance: float = 2.0) -> list[dict]:
+    def extract_texts_near_rooms(
+        self, result: DXFParseResult, rooms: list[dict], tolerance: float = 2.0
+    ) -> list[dict]:
         """
         Match texts to rooms based on proximity to centroid.
         Useful for finding room names/numbers.

@@ -10,6 +10,7 @@ Usage:
     python manage.py import_registry_seed --profiles path/to/profiles.json
     python manage.py import_registry_seed --dry-run
 """
+
 import json
 import logging
 from decimal import Decimal
@@ -27,8 +28,12 @@ from apps.registry.models import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODULES_PATH = Path(__file__).resolve().parents[6] / "nl2cad" / "docs" / "data" / "modules.json"
-DEFAULT_PROFILES_PATH = Path(__file__).resolve().parents[6] / "nl2cad" / "docs" / "data" / "profiles.json"
+DEFAULT_MODULES_PATH = (
+    Path(__file__).resolve().parents[6] / "nl2cad" / "docs" / "data" / "modules.json"
+)
+DEFAULT_PROFILES_PATH = (
+    Path(__file__).resolve().parents[6] / "nl2cad" / "docs" / "data" / "profiles.json"
+)
 
 
 class Command(BaseCommand):
@@ -65,9 +70,7 @@ class Command(BaseCommand):
         if modules_path.exists():
             self._import_modules(modules_path, dry_run)
         else:
-            self.stdout.write(
-                self.style.WARNING(f"modules.json nicht gefunden: {modules_path}")
-            )
+            self.stdout.write(self.style.WARNING(f"modules.json nicht gefunden: {modules_path}"))
 
         # ── Profile ─────────────────────────────────────────────────────────
         if profiles_path.exists():
@@ -92,9 +95,9 @@ class Command(BaseCommand):
             DiscountRule.objects.update_or_create(
                 min_modules=data.get("discount_threshold", 3),
                 defaults={
-                    "name":             f"Standard-Rabatt ab {data.get('discount_threshold', 3)} Modulen",
+                    "name": f"Standard-Rabatt ab {data.get('discount_threshold', 3)} Modulen",
                     "discount_percent": Decimal(str(data.get("discount_percent", 15))),
-                    "is_active":        True,
+                    "is_active": True,
                 },
             )
 
@@ -109,25 +112,25 @@ class Command(BaseCommand):
             obj, created = NL2CADModule.objects.update_or_create(
                 id=module_id,
                 defaults={
-                    "package":       m.get("package", ""),
-                    "name":          m.get("name", ""),
-                    "icon":          m.get("icon", "📦"),
-                    "color":         m.get("color", "#2563eb"),
-                    "tagline":       m.get("tagline", ""),
-                    "description":   m.get("description", ""),
-                    "features":      m.get("features", []),
-                    "deps":          m.get("deps", []),
-                    "norms":         m.get("norms", []),
-                    "main_classes":  m.get("main_classes", []),
-                    "is_required":   m.get("required", False),
-                    "status":        m.get("status", "planned"),
-                    "priority":      _map_priority(m.get("priority", "medium")),
-                    "story_points":  m.get("story_points", 0),
+                    "package": m.get("package", ""),
+                    "name": m.get("name", ""),
+                    "icon": m.get("icon", "📦"),
+                    "color": m.get("color", "#2563eb"),
+                    "tagline": m.get("tagline", ""),
+                    "description": m.get("description", ""),
+                    "features": m.get("features", []),
+                    "deps": m.get("deps", []),
+                    "norms": m.get("norms", []),
+                    "main_classes": m.get("main_classes", []),
+                    "is_required": m.get("required", False),
+                    "status": m.get("status", "planned"),
+                    "priority": _map_priority(m.get("priority", "medium")),
+                    "story_points": m.get("story_points", 0),
                     "target_quarter": m.get("target_quarter", ""),
-                    "adr_path":      m.get("adr") or "",
+                    "adr_path": m.get("adr") or "",
                     "workflow_path": m.get("workflow") or "",
-                    "pypi_url":      m.get("pypi") or "",
-                    "sort_order":    i,
+                    "pypi_url": m.get("pypi") or "",
+                    "sort_order": i,
                 },
             )
 
@@ -137,9 +140,9 @@ class Command(BaseCommand):
                 organization=None,
                 defaults={
                     "pricing_type": "free" if pricing.get("monthly_eur", 0) == 0 else "standard",
-                    "setup_eur":    Decimal(str(pricing.get("setup_eur", 0))),
-                    "monthly_eur":  Decimal(str(pricing.get("monthly_eur", 0))),
-                    "label":        pricing.get("label", ""),
+                    "setup_eur": Decimal(str(pricing.get("setup_eur", 0))),
+                    "monthly_eur": Decimal(str(pricing.get("monthly_eur", 0))),
+                    "label": pricing.get("label", ""),
                 },
             )
 
@@ -163,16 +166,16 @@ class Command(BaseCommand):
             obj, created = BerufsProfil.objects.update_or_create(
                 id=profil_id,
                 defaults={
-                    "name":            p.get("name", ""),
-                    "icon":            p.get("icon", "👤"),
-                    "fokus":           p.get("fokus", ""),
-                    "bereitschaft":    p.get("bereitschaft", ""),
+                    "name": p.get("name", ""),
+                    "icon": p.get("icon", "👤"),
+                    "fokus": p.get("fokus", ""),
+                    "bereitschaft": p.get("bereitschaft", ""),
                     "install_command": p.get("install", ""),
-                    "yaml_config":     p.get("yaml_config", ""),
-                    "nlp_keywords":    ", ".join(p.get("nlp_keywords", [])),
+                    "yaml_config": p.get("yaml_config", ""),
+                    "nlp_keywords": ", ".join(p.get("nlp_keywords", [])),
                     "report_template": p.get("report_template", ""),
-                    "primary_output":  p.get("primary_output", ""),
-                    "sort_order":      i,
+                    "primary_output": p.get("primary_output", ""),
+                    "sort_order": i,
                 },
             )
 
@@ -192,7 +195,7 @@ class Command(BaseCommand):
                     profil=obj,
                     module=module,
                     defaults={
-                        "mapping_type":  mapping.get("mapping_type", "neu"),
+                        "mapping_type": mapping.get("mapping_type", "neu"),
                         "is_recommended": mapping.get("recommended", True),
                     },
                 )
@@ -203,11 +206,11 @@ class Command(BaseCommand):
 
 def _map_priority(value: str) -> str:
     mapping = {
-        "hoch":    "high",
-        "mittel":  "medium",
+        "hoch": "high",
+        "mittel": "medium",
         "niedrig": "low",
-        "high":    "high",
-        "medium":  "medium",
-        "low":     "low",
+        "high": "high",
+        "medium": "medium",
+        "low": "low",
     }
     return mapping.get(value.lower(), "medium")

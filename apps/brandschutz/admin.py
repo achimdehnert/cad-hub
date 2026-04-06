@@ -1,4 +1,5 @@
 """Brandschutz admin — source: bfagent/apps/cad_hub/admin_brandschutz.py."""
+
 import json
 
 from django.contrib import admin
@@ -19,8 +20,11 @@ class BrandschutzMangelInline(admin.TabularInline):
     model = BrandschutzMangel
     extra = 0
     fields = [
-        "kategorie", "schweregrad", "beschreibung",
-        "regelwerk_referenz", "behoben",
+        "kategorie",
+        "schweregrad",
+        "beschreibung",
+        "regelwerk_referenz",
+        "behoben",
     ]
     readonly_fields = ["erstellt_am"]
 
@@ -33,8 +37,11 @@ class BrandschutzSymbolInline(admin.TabularInline):
     model = BrandschutzSymbolVorschlag
     extra = 0
     fields = [
-        "symbol_typ", "position_x", "position_y",
-        "status", "begruendung",
+        "symbol_typ",
+        "position_x",
+        "position_y",
+        "status",
+        "begruendung",
     ]
     readonly_fields = ["erstellt_am"]
 
@@ -42,23 +49,34 @@ class BrandschutzSymbolInline(admin.TabularInline):
 @admin.register(BrandschutzPruefung)
 class BrandschutzPruefungAdmin(admin.ModelAdmin):
     list_display = [
-        "titel", "projekt_name", "status_badge",
-        "mangel_count", "symbol_count",
-        "pruefer", "pruef_datum",
+        "titel",
+        "projekt_name",
+        "status_badge",
+        "mangel_count",
+        "symbol_count",
+        "pruefer",
+        "pruef_datum",
     ]
     list_filter = [
-        "status", "pruef_datum",
-        "pruefer", "gebaeude_typ",
+        "status",
+        "pruef_datum",
+        "pruefer",
+        "gebaeude_typ",
     ]
     search_fields = [
-        "titel", "projekt_name",
-        "pruefer", "beschreibung",
+        "titel",
+        "projekt_name",
+        "pruefer",
+        "beschreibung",
     ]
     date_hierarchy = "pruef_datum"
     ordering = ["-pruef_datum"]
     readonly_fields = [
-        "id", "erstellt_am", "aktualisiert_am",
-        "analyse_ergebnis_display", "mangel_statistik",
+        "id",
+        "erstellt_am",
+        "aktualisiert_am",
+        "analyse_ergebnis_display",
+        "mangel_statistik",
     ]
 
     fieldsets = (
@@ -70,8 +88,10 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
             "Gebäude-Information",
             {
                 "fields": (
-                    "gebaeude_typ", "etage",
-                    "flaeche_qm", "beschreibung",
+                    "gebaeude_typ",
+                    "etage",
+                    "flaeche_qm",
+                    "beschreibung",
                 ),
             },
         ),
@@ -79,7 +99,8 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
             "Prüfung",
             {
                 "fields": (
-                    "pruefer", "pruef_datum",
+                    "pruefer",
+                    "pruef_datum",
                     "naechste_pruefung",
                 ),
             },
@@ -105,7 +126,9 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
             "Metadaten",
             {
                 "fields": (
-                    "id", "erstellt_am", "aktualisiert_am",
+                    "id",
+                    "erstellt_am",
+                    "aktualisiert_am",
                 ),
                 "classes": ("collapse",),
             },
@@ -139,9 +162,7 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
         offen = obj.maengel.filter(behoben=False).count()
         if offen > 0:
             return format_html(
-                '<span style="color:#dc3545; '
-                'font-weight:bold;">'
-                "{} ({} offen)</span>",
+                '<span style="color:#dc3545; font-weight:bold;">{} ({} offen)</span>',
                 count,
                 offen,
             )
@@ -168,14 +189,10 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
             ),
         )
 
-    analyse_ergebnis_display.short_description = (
-        "Analyse-Ergebnis (JSON)"
-    )
+    analyse_ergebnis_display.short_description = "Analyse-Ergebnis (JSON)"
 
     def mangel_statistik(self, obj):
-        stats = obj.maengel.values("schweregrad").annotate(
-            count=Count("id")
-        )
+        stats = obj.maengel.values("schweregrad").annotate(count=Count("id"))
         if not stats:
             return "Keine Mängel"
         html = "<ul>"
@@ -195,17 +212,24 @@ class BrandschutzPruefungAdmin(admin.ModelAdmin):
 @admin.register(BrandschutzMangel)
 class BrandschutzMangelAdmin(admin.ModelAdmin):
     list_display = [
-        "kurz_beschreibung", "pruefung",
-        "kategorie", "schweregrad_badge",
-        "regelwerk_referenz", "behoben",
-        "behoben_status", "erstellt_am",
+        "kurz_beschreibung",
+        "pruefung",
+        "kategorie",
+        "schweregrad_badge",
+        "regelwerk_referenz",
+        "behoben",
+        "behoben_status",
+        "erstellt_am",
     ]
     list_filter = [
-        "kategorie", "schweregrad",
-        "behoben", "pruefung__status",
+        "kategorie",
+        "schweregrad",
+        "behoben",
+        "pruefung__status",
     ]
     search_fields = [
-        "beschreibung", "regelwerk_referenz",
+        "beschreibung",
+        "regelwerk_referenz",
         "pruefung__titel",
     ]
     list_editable = ["behoben"]
@@ -216,7 +240,9 @@ class BrandschutzMangelAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "pruefung", "kategorie", "schweregrad",
+                    "pruefung",
+                    "kategorie",
+                    "schweregrad",
                 ),
             },
         ),
@@ -224,8 +250,10 @@ class BrandschutzMangelAdmin(admin.ModelAdmin):
             "Details",
             {
                 "fields": (
-                    "beschreibung", "regelwerk_referenz",
-                    "position_x", "position_y",
+                    "beschreibung",
+                    "regelwerk_referenz",
+                    "position_x",
+                    "position_y",
                 ),
             },
         ),
@@ -233,7 +261,8 @@ class BrandschutzMangelAdmin(admin.ModelAdmin):
             "Status",
             {
                 "fields": (
-                    "behoben", "behoben_am",
+                    "behoben",
+                    "behoben_am",
                     "behoben_kommentar",
                 ),
             },
@@ -279,13 +308,8 @@ class BrandschutzMangelAdmin(admin.ModelAdmin):
 
     def behoben_status(self, obj):
         if obj.behoben:
-            return format_html(
-                '<span style="color:#28a745;">'
-                "Behoben</span>"
-            )
-        return format_html(
-            '<span style="color:#dc3545;">Offen</span>'
-        )
+            return format_html('<span style="color:#28a745;">Behoben</span>')
+        return format_html('<span style="color:#dc3545;">Offen</span>')
 
     behoben_status.short_description = "Status"
     behoben_status.admin_order_field = "behoben"
@@ -294,16 +318,22 @@ class BrandschutzMangelAdmin(admin.ModelAdmin):
 @admin.register(BrandschutzSymbolVorschlag)
 class BrandschutzSymbolVorschlagAdmin(admin.ModelAdmin):
     list_display = [
-        "symbol_typ", "pruefung",
-        "position_display", "status_badge",
-        "prioritaet", "erstellt_am",
+        "symbol_typ",
+        "pruefung",
+        "position_display",
+        "status_badge",
+        "prioritaet",
+        "erstellt_am",
     ]
     list_filter = [
-        "symbol_typ", "status",
-        "prioritaet", "pruefung__status",
+        "symbol_typ",
+        "status",
+        "prioritaet",
+        "pruefung__status",
     ]
     search_fields = [
-        "symbol_typ", "begruendung",
+        "symbol_typ",
+        "begruendung",
         "pruefung__titel",
     ]
     ordering = ["prioritaet", "-erstellt_am"]
@@ -313,7 +343,9 @@ class BrandschutzSymbolVorschlagAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "pruefung", "symbol_typ", "status",
+                    "pruefung",
+                    "symbol_typ",
+                    "status",
                 ),
             },
         ),
@@ -321,7 +353,8 @@ class BrandschutzSymbolVorschlagAdmin(admin.ModelAdmin):
             "Position",
             {
                 "fields": (
-                    "position_x", "position_y",
+                    "position_x",
+                    "position_y",
                     "raum_referenz",
                 ),
             },
@@ -330,7 +363,8 @@ class BrandschutzSymbolVorschlagAdmin(admin.ModelAdmin):
             "Details",
             {
                 "fields": (
-                    "begruendung", "prioritaet",
+                    "begruendung",
+                    "prioritaet",
                     "regelwerk_basis",
                 ),
             },
@@ -365,8 +399,11 @@ class BrandschutzSymbolVorschlagAdmin(admin.ModelAdmin):
 @admin.register(BrandschutzSymbol)
 class BrandschutzSymbolAdmin(admin.ModelAdmin):
     list_display = [
-        "din_nummer", "name", "kategorie",
-        "groesse_mm", "aktiv",
+        "din_nummer",
+        "name",
+        "kategorie",
+        "groesse_mm",
+        "aktiv",
     ]
     list_filter = ["kategorie", "aktiv"]
     search_fields = ["din_nummer", "name", "beschreibung"]
@@ -376,8 +413,12 @@ class BrandschutzSymbolAdmin(admin.ModelAdmin):
 @admin.register(BrandschutzRegelwerk)
 class BrandschutzRegelwerkAdmin(admin.ModelAdmin):
     list_display = [
-        "kuerzel", "name", "typ", "version",
-        "aktiv_badge", "gueltig_ab",
+        "kuerzel",
+        "name",
+        "typ",
+        "version",
+        "aktiv_badge",
+        "gueltig_ab",
     ]
     list_filter = ["aktiv", "typ", "gueltig_ab"]
     search_fields = ["kuerzel", "name"]
@@ -388,8 +429,11 @@ class BrandschutzRegelwerkAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "kuerzel", "name", "typ",
-                    "version", "aktiv",
+                    "kuerzel",
+                    "name",
+                    "typ",
+                    "version",
+                    "aktiv",
                 ),
             },
         ),
@@ -408,11 +452,7 @@ class BrandschutzRegelwerkAdmin(admin.ModelAdmin):
 
     def aktiv_badge(self, obj):
         if obj.aktiv:
-            return format_html(
-                '<span style="color:#28a745;">Aktiv</span>'
-            )
-        return format_html(
-            '<span style="color:#6c757d;">Inaktiv</span>'
-        )
+            return format_html('<span style="color:#28a745;">Aktiv</span>')
+        return format_html('<span style="color:#6c757d;">Inaktiv</span>')
 
     aktiv_badge.short_description = "Status"

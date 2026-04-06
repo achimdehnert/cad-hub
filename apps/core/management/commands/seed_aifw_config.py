@@ -10,9 +10,8 @@ Usage:
     python manage.py seed_aifw_config
 """
 
-from django.core.management.base import BaseCommand
-
 from aifw.models import AIActionType, LLMModel, LLMProvider
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -24,13 +23,15 @@ class Command(BaseCommand):
         # Providers
         providers_data = [
             {"name": "openai", "display_name": "OpenAI", "api_key_env_var": "OPENAI_API_KEY"},
-            {"name": "anthropic", "display_name": "Anthropic Claude", "api_key_env_var": "ANTHROPIC_API_KEY"},
+            {
+                "name": "anthropic",
+                "display_name": "Anthropic Claude",
+                "api_key_env_var": "ANTHROPIC_API_KEY",
+            },
         ]
         providers = {}
         for data in providers_data:
-            p, created = LLMProvider.objects.update_or_create(
-                name=data["name"], defaults=data
-            )
+            p, created = LLMProvider.objects.update_or_create(name=data["name"], defaults=data)
             providers[data["name"]] = p
             self.stdout.write(f"  {'Created' if created else 'Exists'} provider: {p.display_name}")
 

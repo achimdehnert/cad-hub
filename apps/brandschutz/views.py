@@ -2,6 +2,7 @@
 """
 Views für Brandschutz-Frontend.
 """
+
 import json
 from datetime import datetime
 from pathlib import Path
@@ -57,9 +58,9 @@ class BrandschutzDashboardView(LoginRequiredMixin, View):
         letzte_pruefungen = pruefungen.order_by("-pruef_datum")[:5]
 
         # Dringende Mängel
-        dringende_maengel = offene_maengel.filter(
-            schweregrad__in=["kritisch", "hoch"]
-        ).order_by("-erstellt_am")[:10]
+        dringende_maengel = offene_maengel.filter(schweregrad__in=["kritisch", "hoch"]).order_by(
+            "-erstellt_am"
+        )[:10]
 
         context = {
             "stats": stats,
@@ -80,10 +81,15 @@ class BrandschutzPruefungListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = super().get_queryset().annotate(
-            mangel_count=Count("maengel"),
-            offene_maengel=Count("maengel", filter=Q(maengel__behoben=False)),
-        ).order_by("-pruef_datum")
+        queryset = (
+            super()
+            .get_queryset()
+            .annotate(
+                mangel_count=Count("maengel"),
+                offene_maengel=Count("maengel", filter=Q(maengel__behoben=False)),
+            )
+            .order_by("-pruef_datum")
+        )
 
         # Filter
         status = self.request.GET.get("status")
@@ -93,9 +99,9 @@ class BrandschutzPruefungListView(LoginRequiredMixin, ListView):
         search = self.request.GET.get("q")
         if search:
             queryset = queryset.filter(
-                Q(titel__icontains=search) |
-                Q(projekt_name__icontains=search) |
-                Q(pruefer__icontains=search)
+                Q(titel__icontains=search)
+                | Q(projekt_name__icontains=search)
+                | Q(pruefer__icontains=search)
             )
 
         return queryset
@@ -152,8 +158,14 @@ class BrandschutzPruefungCreateView(LoginRequiredMixin, CreateView):
     model = BrandschutzPruefung
     template_name = "cad_hub/brandschutz/pruefung_form.html"
     fields = [
-        "titel", "projekt_name", "gebaeude_typ", "etage",
-        "flaeche_qm", "beschreibung", "pruefer", "quelldatei"
+        "titel",
+        "projekt_name",
+        "gebaeude_typ",
+        "etage",
+        "flaeche_qm",
+        "beschreibung",
+        "pruefer",
+        "quelldatei",
     ]
     success_url = reverse_lazy("brandschutz:pruefung_list")
 
@@ -175,8 +187,15 @@ class BrandschutzPruefungUpdateView(LoginRequiredMixin, UpdateView):
     model = BrandschutzPruefung
     template_name = "cad_hub/brandschutz/pruefung_form.html"
     fields = [
-        "titel", "projekt_name", "status", "gebaeude_typ", "etage",
-        "flaeche_qm", "beschreibung", "pruefer", "naechste_pruefung"
+        "titel",
+        "projekt_name",
+        "status",
+        "gebaeude_typ",
+        "etage",
+        "flaeche_qm",
+        "beschreibung",
+        "pruefer",
+        "naechste_pruefung",
     ]
 
     def get_success_url(self):
@@ -220,6 +239,7 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
         elif uploaded_file:
             # Temporär speichern
             import tempfile
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=uploaded_file.name) as tmp:
                 for chunk in uploaded_file.chunks():
                     tmp.write(chunk)
@@ -236,10 +256,12 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
             suffix = Path(file_path).suffix.lower()
             if suffix == ".dxf":
                 import ezdxf
+
                 doc = ezdxf.readfile(file_path)
                 analyse_input = {"loader": doc, "format": "dxf"}
             elif suffix == ".ifc":
                 import ifcopenshell
+
                 model = ifcopenshell.open(file_path)
                 analyse_input = {"loader": model, "format": "ifc"}
             else:
@@ -250,10 +272,12 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
 
             if result.success:
                 # Symbol-Vorschläge generieren
-                sym_result = sym_handler.execute({
-                    "analyse_ergebnis": result.data,
-                    "format": suffix.strip("."),
-                })
+                sym_result = sym_handler.execute(
+                    {
+                        "analyse_ergebnis": result.data,
+                        "format": suffix.strip("."),
+                    }
+                )
 
                 # Prüfung aktualisieren
                 if pruefung:
@@ -272,7 +296,9 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
 
                     # Symbole erstellen
                     if sym_result.success:
-                        for sym in sym_result.data.get("symbole", {}).get("vorgeschlagene_symbole", []):
+                        for sym in sym_result.data.get("symbole", {}).get(
+                            "vorgeschlagene_symbole", []
+                        ):
                             BrandschutzSymbolVorschlag.objects.create(
                                 pruefung=pruefung,
                                 symbol_typ=sym.get("symbol_typ", "UNBEKANNT"),
@@ -283,12 +309,18 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
                                 status="vorgeschlagen",
                             )
 
-                return JsonResponse({
-                    "success": True,
-                    "analyse": result.data,
-                    "symbole": sym_result.data if sym_result.success else {},
-                    "redirect": reverse("brandschutz:pruefung_detail", kwargs={"pk": pruefung.pk}) if pruefung else None,
-                })
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "analyse": result.data,
+                        "symbole": sym_result.data if sym_result.success else {},
+                        "redirect": reverse(
+                            "brandschutz:pruefung_detail", kwargs={"pk": pruefung.pk}
+                        )
+                        if pruefung
+                        else None,
+                    }
+                )
             else:
                 return JsonResponse({"error": str(result.errors)}, status=400)
 
@@ -306,25 +338,33 @@ class BrandschutzReportView(LoginRequiredMixin, View):
         handler = BrandschutzReportHandler()
 
         # Daten sammeln
-        maengel = list(pruefung.maengel.values(
-            "kategorie", "schweregrad", "beschreibung", "regelwerk_referenz", "behoben"
-        ))
-        symbole = list(pruefung.symbole.values(
-            "symbol_typ", "position_x", "position_y", "status", "begruendung"
-        ))
+        maengel = list(
+            pruefung.maengel.values(
+                "kategorie", "schweregrad", "beschreibung", "regelwerk_referenz", "behoben"
+            )
+        )
+        symbole = list(
+            pruefung.symbole.values(
+                "symbol_typ", "position_x", "position_y", "status", "begruendung"
+            )
+        )
 
-        result = handler.execute({
-            "analyse_ergebnis": pruefung.analyse_ergebnis or {},
-            "symbol_ergebnis": {"symbole": {"vorgeschlagene_symbole": symbole}},
-            "format": format,
-            "konfiguration": {
-                "projekt_name": pruefung.projekt_name,
-                "etage": pruefung.etage or "-",
-                "pruefer": pruefung.pruefer or "-",
-                "pruef_datum": pruefung.pruef_datum.isoformat() if pruefung.pruef_datum else "-",
-                "maengel_liste": maengel,
+        result = handler.execute(
+            {
+                "analyse_ergebnis": pruefung.analyse_ergebnis or {},
+                "symbol_ergebnis": {"symbole": {"vorgeschlagene_symbole": symbole}},
+                "format": format,
+                "konfiguration": {
+                    "projekt_name": pruefung.projekt_name,
+                    "etage": pruefung.etage or "-",
+                    "pruefer": pruefung.pruefer or "-",
+                    "pruef_datum": pruefung.pruef_datum.isoformat()
+                    if pruefung.pruef_datum
+                    else "-",
+                    "maengel_liste": maengel,
+                },
             }
-        })
+        )
 
         if not result.success:
             messages.error(request, f"Report-Fehler: {result.errors}")
@@ -332,21 +372,15 @@ class BrandschutzReportView(LoginRequiredMixin, View):
 
         # Response je nach Format
         if format == "html":
-            return HttpResponse(
-                result.data["bericht"],
-                content_type="text/html"
-            )
+            return HttpResponse(result.data["bericht"], content_type="text/html")
         elif format == "pdf":
-            response = HttpResponse(
-                result.data["bericht"],
-                content_type="application/pdf"
-            )
+            response = HttpResponse(result.data["bericht"], content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="brandschutz_report_{pk}.pdf"'
             return response
         elif format == "excel":
             response = HttpResponse(
                 result.data["bericht"],
-                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
             response["Content-Disposition"] = f'attachment; filename="brandschutz_report_{pk}.xlsx"'
             return response
@@ -369,9 +403,7 @@ class BrandschutzMangelToggleView(LoginRequiredMixin, View):
         mangel.save()
 
         # HTMX partial response
-        return render(request, "cad_hub/brandschutz/partials/mangel_row.html", {
-            "mangel": mangel
-        })
+        return render(request, "cad_hub/brandschutz/partials/mangel_row.html", {"mangel": mangel})
 
 
 class BrandschutzSymbolApproveView(LoginRequiredMixin, View):
@@ -385,9 +417,7 @@ class BrandschutzSymbolApproveView(LoginRequiredMixin, View):
             symbol.status = action
             symbol.save()
 
-        return render(request, "cad_hub/brandschutz/partials/symbol_row.html", {
-            "symbol": symbol
-        })
+        return render(request, "cad_hub/brandschutz/partials/symbol_row.html", {"symbol": symbol})
 
 
 class BrandschutzRegelwerkListView(LoginRequiredMixin, ListView):
@@ -408,6 +438,7 @@ class BrandschutzRegelwerkListView(LoginRequiredMixin, ListView):
 
 # API Endpoints für HTMX
 
+
 class BrandschutzStatsAPIView(LoginRequiredMixin, View):
     """API: Dashboard-Statistiken."""
 
@@ -415,16 +446,18 @@ class BrandschutzStatsAPIView(LoginRequiredMixin, View):
         pruefungen = BrandschutzPruefung.objects.all()
         maengel = BrandschutzMangel.objects.filter(behoben=False)
 
-        return JsonResponse({
-            "pruefungen": {
-                "gesamt": pruefungen.count(),
-                "offen": pruefungen.exclude(status=PruefStatus.FREIGEGEBEN).count(),
-            },
-            "maengel": {
-                "offen": maengel.count(),
-                "kritisch": maengel.filter(schweregrad="kritisch").count(),
+        return JsonResponse(
+            {
+                "pruefungen": {
+                    "gesamt": pruefungen.count(),
+                    "offen": pruefungen.exclude(status=PruefStatus.FREIGEGEBEN).count(),
+                },
+                "maengel": {
+                    "offen": maengel.count(),
+                    "kritisch": maengel.filter(schweregrad="kritisch").count(),
+                },
             }
-        })
+        )
 
 
 class BrandschutzSearchAPIView(LoginRequiredMixin, View):
@@ -437,8 +470,7 @@ class BrandschutzSearchAPIView(LoginRequiredMixin, View):
             return JsonResponse({"results": []})
 
         pruefungen = BrandschutzPruefung.objects.filter(
-            Q(titel__icontains=query) |
-            Q(projekt_name__icontains=query)
+            Q(titel__icontains=query) | Q(projekt_name__icontains=query)
         )[:10]
 
         results = [

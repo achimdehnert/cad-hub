@@ -1,4 +1,5 @@
 """Registry URL patterns."""
+
 from django.urls import path
 
 from .views import ModuleListView, ProfileListView, RegistryConfigView

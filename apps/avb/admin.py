@@ -1,4 +1,5 @@
 """AVB admin — source: bfagent/apps/cad_hub/admin_avb.py."""
+
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -20,8 +21,11 @@ class ProjectMilestoneInline(admin.TabularInline):
     model = ProjectMilestone
     extra = 0
     fields = [
-        "name", "phase", "due_date",
-        "completed_at", "order",
+        "name",
+        "phase",
+        "due_date",
+        "completed_at",
+        "order",
     ]
     ordering = ["order", "due_date"]
 
@@ -30,8 +34,12 @@ class CostEstimateInline(admin.TabularInline):
     model = CostEstimateEntry
     extra = 0
     fields = [
-        "cost_group", "description", "quantity",
-        "unit", "unit_price", "total",
+        "cost_group",
+        "description",
+        "quantity",
+        "unit",
+        "unit_price",
+        "total",
     ]
     readonly_fields = ["total"]
     ordering = ["cost_group"]
@@ -41,8 +49,12 @@ class TenderPositionInline(admin.TabularInline):
     model = TenderPosition
     extra = 0
     fields = [
-        "oz", "short_text", "quantity",
-        "unit", "stlb_code", "order",
+        "oz",
+        "short_text",
+        "quantity",
+        "unit",
+        "stlb_code",
+        "order",
     ]
     ordering = ["order", "oz"]
 
@@ -51,8 +63,10 @@ class BidPositionInline(admin.TabularInline):
     model = BidPosition
     extra = 0
     fields = [
-        "tender_position", "unit_price",
-        "total_price", "notes",
+        "tender_position",
+        "unit_price",
+        "total_price",
+        "notes",
     ]
     readonly_fields = ["total_price"]
 
@@ -61,7 +75,10 @@ class BidInline(admin.TabularInline):
     model = Bid
     extra = 0
     fields = [
-        "bidder", "status", "total_price", "received_at",
+        "bidder",
+        "status",
+        "total_price",
+        "received_at",
     ]
     readonly_fields = ["received_at"]
     show_change_link = True
@@ -70,13 +87,18 @@ class BidInline(admin.TabularInline):
 @admin.register(ConstructionProject)
 class ConstructionProjectAdmin(admin.ModelAdmin):
     list_display = [
-        "project_number", "ifc_project", "client",
-        "current_phase", "budget_display",
-        "cost_estimate_display", "tenders_count",
+        "project_number",
+        "ifc_project",
+        "client",
+        "current_phase",
+        "budget_display",
+        "cost_estimate_display",
+        "tenders_count",
     ]
     list_filter = ["current_phase", "created_at"]
     search_fields = [
-        "project_number", "client",
+        "project_number",
+        "client",
         "ifc_project__name",
     ]
     readonly_fields = ["created_at", "updated_at"]
@@ -86,8 +108,10 @@ class ConstructionProjectAdmin(admin.ModelAdmin):
             "Projekt",
             {
                 "fields": [
-                    "ifc_project", "project_number",
-                    "client", "client_contact",
+                    "ifc_project",
+                    "project_number",
+                    "client",
+                    "client_contact",
                 ],
             },
         ),
@@ -102,8 +126,10 @@ class ConstructionProjectAdmin(admin.ModelAdmin):
             "Planung",
             {
                 "fields": [
-                    "current_phase", "planning_start",
-                    "construction_start", "construction_end",
+                    "current_phase",
+                    "planning_start",
+                    "construction_start",
+                    "construction_end",
                 ],
             },
         ),
@@ -115,7 +141,9 @@ class ConstructionProjectAdmin(admin.ModelAdmin):
             "Meta",
             {
                 "fields": [
-                    "created_by", "created_at", "updated_at",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
                 ],
                 "classes": ["collapse"],
             },
@@ -143,16 +171,26 @@ class ConstructionProjectAdmin(admin.ModelAdmin):
 @admin.register(Tender)
 class TenderAdmin(admin.ModelAdmin):
     list_display = [
-        "tender_number", "title", "project", "trade",
-        "status_badge", "estimated_value_display",
-        "positions_count", "bids_count",
+        "tender_number",
+        "title",
+        "project",
+        "trade",
+        "status_badge",
+        "estimated_value_display",
+        "positions_count",
+        "bids_count",
         "submission_deadline",
     ]
     list_filter = [
-        "status", "cost_group", "project", "created_at",
+        "status",
+        "cost_group",
+        "project",
+        "created_at",
     ]
     search_fields = [
-        "tender_number", "title", "trade",
+        "tender_number",
+        "title",
+        "trade",
         "project__ifc_project__name",
     ]
     readonly_fields = ["created_at", "updated_at"]
@@ -163,8 +201,10 @@ class TenderAdmin(admin.ModelAdmin):
             "Identifikation",
             {
                 "fields": [
-                    "project", "tender_number",
-                    "title", "description",
+                    "project",
+                    "tender_number",
+                    "title",
+                    "description",
                 ],
             },
         ),
@@ -176,8 +216,10 @@ class TenderAdmin(admin.ModelAdmin):
             "Status & Termine",
             {
                 "fields": [
-                    "status", "publication_date",
-                    "submission_deadline", "opening_date",
+                    "status",
+                    "publication_date",
+                    "submission_deadline",
+                    "opening_date",
                 ],
             },
         ),
@@ -193,7 +235,9 @@ class TenderAdmin(admin.ModelAdmin):
             "Meta",
             {
                 "fields": [
-                    "created_by", "created_at", "updated_at",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
                 ],
                 "classes": ["collapse"],
             },
@@ -241,12 +285,19 @@ class TenderAdmin(admin.ModelAdmin):
 @admin.register(TenderPosition)
 class TenderPositionAdmin(admin.ModelAdmin):
     list_display = [
-        "oz", "short_text", "tender",
-        "quantity", "unit", "stlb_code",
+        "oz",
+        "short_text",
+        "tender",
+        "quantity",
+        "unit",
+        "stlb_code",
     ]
     list_filter = ["tender", "unit"]
     search_fields = [
-        "oz", "short_text", "long_text", "stlb_code",
+        "oz",
+        "short_text",
+        "long_text",
+        "stlb_code",
     ]
     ordering = ["tender", "order", "oz"]
 
@@ -261,14 +312,21 @@ class TenderGroupAdmin(admin.ModelAdmin):
 @admin.register(Bidder)
 class BidderAdmin(admin.ModelAdmin):
     list_display = [
-        "company_name", "contact_person", "city",
-        "email", "rating_display",
-        "is_preferred", "is_active", "bids_count",
+        "company_name",
+        "contact_person",
+        "city",
+        "email",
+        "rating_display",
+        "is_preferred",
+        "is_active",
+        "bids_count",
     ]
     list_filter = ["is_active", "is_preferred", "city"]
     search_fields = [
-        "company_name", "contact_person",
-        "email", "city",
+        "company_name",
+        "contact_person",
+        "email",
+        "city",
     ]
     readonly_fields = ["created_at", "updated_at"]
 
@@ -277,7 +335,8 @@ class BidderAdmin(admin.ModelAdmin):
             "Firma",
             {
                 "fields": [
-                    "company_name", "contact_person",
+                    "company_name",
+                    "contact_person",
                 ],
             },
         ),
@@ -285,7 +344,10 @@ class BidderAdmin(admin.ModelAdmin):
             "Adresse",
             {
                 "fields": [
-                    "street", "zip_code", "city", "country",
+                    "street",
+                    "zip_code",
+                    "city",
+                    "country",
                 ],
             },
         ),
@@ -304,8 +366,10 @@ class BidderAdmin(admin.ModelAdmin):
             "Bewertung",
             {
                 "fields": [
-                    "rating", "is_preferred",
-                    "is_active", "notes",
+                    "rating",
+                    "is_preferred",
+                    "is_active",
+                    "notes",
                 ],
             },
         ),
@@ -328,20 +392,29 @@ class BidderAdmin(admin.ModelAdmin):
 @admin.register(Bid)
 class BidAdmin(admin.ModelAdmin):
     list_display = [
-        "bidder", "tender", "status_badge",
-        "total_price_display", "discount_display",
-        "final_price_display", "rank_display",
+        "bidder",
+        "tender",
+        "status_badge",
+        "total_price_display",
+        "discount_display",
+        "final_price_display",
+        "rank_display",
         "received_at",
     ]
     list_filter = [
-        "status", "tender", "tender__project",
+        "status",
+        "tender",
+        "tender__project",
     ]
     search_fields = [
-        "bidder__company_name", "tender__title",
+        "bidder__company_name",
+        "tender__title",
     ]
     readonly_fields = [
-        "created_at", "updated_at",
-        "final_price_display", "rank_display",
+        "created_at",
+        "updated_at",
+        "final_price_display",
+        "rank_display",
     ]
     date_hierarchy = "received_at"
 
@@ -354,7 +427,9 @@ class BidAdmin(admin.ModelAdmin):
             "Termine",
             {
                 "fields": [
-                    "invited_at", "received_at", "valid_until",
+                    "invited_at",
+                    "received_at",
+                    "valid_until",
                 ],
             },
         ),
@@ -362,8 +437,10 @@ class BidAdmin(admin.ModelAdmin):
             "Preise",
             {
                 "fields": [
-                    "total_price", "total_price_gross",
-                    "discount_percent", "discount_absolute",
+                    "total_price",
+                    "total_price_gross",
+                    "discount_percent",
+                    "discount_absolute",
                 ],
             },
         ),
@@ -371,7 +448,8 @@ class BidAdmin(admin.ModelAdmin):
             "Bewertung",
             {
                 "fields": [
-                    "technical_score", "price_score",
+                    "technical_score",
+                    "price_score",
                     "total_score",
                 ],
             },
@@ -437,10 +515,7 @@ class BidAdmin(admin.ModelAdmin):
     def rank_display(self, obj):
         rank = obj.rank
         if rank == 1:
-            return format_html(
-                '<span style="color:#28a745; '
-                'font-weight:bold;">1.</span>'
-            )
+            return format_html('<span style="color:#28a745; font-weight:bold;">1.</span>')
         return f"{rank}."
 
     rank_display.short_description = "Rang"
@@ -449,8 +524,11 @@ class BidAdmin(admin.ModelAdmin):
 @admin.register(Award)
 class AwardAdmin(admin.ModelAdmin):
     list_display = [
-        "tender", "bidder_display", "award_date",
-        "contract_value_display", "contract_number",
+        "tender",
+        "bidder_display",
+        "award_date",
+        "contract_value_display",
+        "contract_number",
     ]
     list_filter = ["award_date", "tender__project"]
     search_fields = [
@@ -470,7 +548,8 @@ class AwardAdmin(admin.ModelAdmin):
             "Vertrag",
             {
                 "fields": [
-                    "contract_value", "contract_number",
+                    "contract_value",
+                    "contract_number",
                     "contract_file",
                 ],
             },

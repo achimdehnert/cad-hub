@@ -7,6 +7,7 @@ Integriert die Handler-Pipeline für:
 - Raum-Analyse & DIN 277
 - Massenberechnung & GAEB
 """
+
 import json
 import logging
 
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class NL2CADView(TemplateView):
     """NL2CAD Hauptseite mit Chat-Interface."""
+
     template_name = "cad_hub/nl2cad/index.html"
 
     def get_context_data(self, **kwargs):
@@ -59,9 +61,9 @@ class NL2CADUploadView(View):
         # Validate extension
         valid_extensions = [".ifc", ".dxf", ".dwg"]
         if not any(filename.endswith(ext) for ext in valid_extensions):
-            return JsonResponse({
-                "error": f"Ungültiges Format. Erlaubt: {', '.join(valid_extensions)}"
-            }, status=400)
+            return JsonResponse(
+                {"error": f"Ungültiges Format. Erlaubt: {', '.join(valid_extensions)}"}, status=400
+            )
 
         try:
             content = uploaded_file.read()
@@ -72,23 +74,27 @@ class NL2CADUploadView(View):
             pipeline.add(RoomAnalysisHandler())
             pipeline.add(MassenHandler())
 
-            pipeline.run({
-                "file_content": content,
-                "filename": uploaded_file.name,
-                "classify_din277": True,
-                "include_gaeb": True,
-            })
+            pipeline.run(
+                {
+                    "file_content": content,
+                    "filename": uploaded_file.name,
+                    "classify_din277": True,
+                    "include_gaeb": True,
+                }
+            )
 
             final = pipeline.get_final_result()
 
-            return JsonResponse({
-                "success": final["success"],
-                "filename": uploaded_file.name,
-                "data": final["data"],
-                "handlers": final["handlers"],
-                "errors": final["errors"],
-                "warnings": final["warnings"],
-            })
+            return JsonResponse(
+                {
+                    "success": final["success"],
+                    "filename": uploaded_file.name,
+                    "data": final["data"],
+                    "handlers": final["handlers"],
+                    "errors": final["errors"],
+                    "warnings": final["warnings"],
+                }
+            )
 
         except Exception as e:
             logger.exception(f"NL2CAD upload failed: {e}")
@@ -138,35 +144,41 @@ class NL2CADQueryView(View):
                 pipeline.add(CADFileInputHandler())
                 pipeline.add(NLQueryHandler())
 
-                pipeline.run({
-                    "file_content": file_content,
-                    "filename": filename,
-                    "query": query,
-                    "use_llm": use_llm,
-                })
+                pipeline.run(
+                    {
+                        "file_content": file_content,
+                        "filename": filename,
+                        "query": query,
+                        "use_llm": use_llm,
+                    }
+                )
 
                 final = pipeline.get_final_result()
 
-                return JsonResponse({
-                    "success": final["success"],
-                    "query": query,
-                    "response": final["data"].get("response", ""),
-                    "intent": final["data"].get("intent", "unknown"),
-                    "data": final["data"],
-                })
+                return JsonResponse(
+                    {
+                        "success": final["success"],
+                        "query": query,
+                        "response": final["data"].get("response", ""),
+                        "intent": final["data"].get("intent", "unknown"),
+                        "data": final["data"],
+                    }
+                )
 
             # Query only (no file)
             handler = NLQueryHandler(context=context)
             result = handler.run({"query": query, "use_llm": use_llm})
 
-            return JsonResponse({
-                "success": result.success,
-                "query": query,
-                "response": result.data.get("response", ""),
-                "intent": result.data.get("intent", "unknown"),
-                "confidence": result.data.get("confidence", 0),
-                "next_handler": result.data.get("next_handler", ""),
-            })
+            return JsonResponse(
+                {
+                    "success": result.success,
+                    "query": query,
+                    "response": result.data.get("response", ""),
+                    "intent": result.data.get("intent", "unknown"),
+                    "confidence": result.data.get("confidence", 0),
+                    "next_handler": result.data.get("next_handler", ""),
+                }
+            )
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Ungültiges JSON"}, status=400)
@@ -190,23 +202,27 @@ class NL2CADRoomsView(View):
             pipeline.add(CADFileInputHandler())
             pipeline.add(RoomAnalysisHandler())
 
-            pipeline.run({
-                "file_content": content,
-                "filename": filename,
-                "classify_din277": True,
-            })
+            pipeline.run(
+                {
+                    "file_content": content,
+                    "filename": filename,
+                    "classify_din277": True,
+                }
+            )
 
             final = pipeline.get_final_result()
 
-            return JsonResponse({
-                "success": final["success"],
-                "rooms": final["data"].get("rooms", []),
-                "room_count": final["data"].get("room_count", 0),
-                "total_area": final["data"].get("total_area", 0),
-                "din277_summary": final["data"].get("din277_summary", {}),
-                "doors": final["data"].get("doors", []),
-                "windows": final["data"].get("windows", []),
-            })
+            return JsonResponse(
+                {
+                    "success": final["success"],
+                    "rooms": final["data"].get("rooms", []),
+                    "room_count": final["data"].get("room_count", 0),
+                    "total_area": final["data"].get("total_area", 0),
+                    "din277_summary": final["data"].get("din277_summary", {}),
+                    "doors": final["data"].get("doors", []),
+                    "windows": final["data"].get("windows", []),
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -229,21 +245,25 @@ class NL2CADMassenView(View):
             pipeline.add(RoomAnalysisHandler())
             pipeline.add(MassenHandler())
 
-            pipeline.run({
-                "file_content": content,
-                "filename": filename,
-                "wall_height": wall_height,
-                "include_gaeb": True,
-            })
+            pipeline.run(
+                {
+                    "file_content": content,
+                    "filename": filename,
+                    "wall_height": wall_height,
+                    "include_gaeb": True,
+                }
+            )
 
             final = pipeline.get_final_result()
 
-            return JsonResponse({
-                "success": final["success"],
-                "categories": final["data"].get("categories", {}),
-                "summary": final["data"].get("summary", {}),
-                "gaeb_positions": final["data"].get("gaeb_positions", []),
-            })
+            return JsonResponse(
+                {
+                    "success": final["success"],
+                    "categories": final["data"].get("categories", {}),
+                    "summary": final["data"].get("summary", {}),
+                    "gaeb_positions": final["data"].get("gaeb_positions", []),
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -265,11 +285,13 @@ class NL2CADGAEBExportView(View):
             pipeline.add(RoomAnalysisHandler())
             pipeline.add(MassenHandler())
 
-            pipeline.run({
-                "file_content": content,
-                "filename": filename,
-                "include_gaeb": True,
-            })
+            pipeline.run(
+                {
+                    "file_content": content,
+                    "filename": filename,
+                    "include_gaeb": True,
+                }
+            )
 
             final = pipeline.get_final_result()
             gaeb_positions = final["data"].get("gaeb_positions", [])
@@ -284,11 +306,13 @@ class NL2CADGAEBExportView(View):
                 "summary": final["data"].get("summary", {}),
             }
 
-            return JsonResponse({
-                "success": True,
-                "gaeb": gaeb_data,
-                "position_count": len(gaeb_positions),
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "gaeb": gaeb_data,
+                    "position_count": len(gaeb_positions),
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -323,14 +347,16 @@ class NL2CADUseCasesView(View):
                 title=title,
                 description=description or f"Feature Request: {title}",
                 query=query,
-                tags=tags if isinstance(tags, list) else [tags] if tags else []
+                tags=tags if isinstance(tags, list) else [tags] if tags else [],
             )
 
-            return JsonResponse({
-                "success": True,
-                "message": f"Feature Request erfasst: {title}",
-                "use_case": uc.to_dict(),
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f"Feature Request erfasst: {title}",
+                    "use_case": uc.to_dict(),
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -345,16 +371,16 @@ class NL2CADUseCasesView(View):
             priority_filter = request.GET.get("priority")
 
             use_cases = tracker.list_use_cases(
-                status=status_filter,
-                priority=priority_filter,
-                limit=20
+                status=status_filter, priority=priority_filter, limit=20
             )
 
-            return JsonResponse({
-                "success": True,
-                "stats": stats,
-                "use_cases": [uc.to_dict() for uc in use_cases],
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "stats": stats,
+                    "use_cases": [uc.to_dict() for uc in use_cases],
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -384,17 +410,20 @@ class NL2CADClassifierView(View):
 
             valid_categories = [c.value for c in AreaCategory]
             if category not in valid_categories:
-                return JsonResponse({
-                    "error": f"Ungültige Kategorie. Erlaubt: {', '.join(valid_categories)}"
-                }, status=400)
+                return JsonResponse(
+                    {"error": f"Ungültige Kategorie. Erlaubt: {', '.join(valid_categories)}"},
+                    status=400,
+                )
 
             classifier = get_area_classifier()
             classifier.learn(layer_name, category, confidence=1.0, source="user")
 
-            return JsonResponse({
-                "success": True,
-                "message": f"Gelernt: '{layer_name}' → {category}",
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f"Gelernt: '{layer_name}' → {category}",
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -407,19 +436,23 @@ class NL2CADClassifierView(View):
 
             if layer_name:
                 category, confidence = classifier.classify(layer_name)
-                return JsonResponse({
-                    "layer_name": layer_name,
-                    "category": category.value,
-                    "confidence": confidence,
-                })
+                return JsonResponse(
+                    {
+                        "layer_name": layer_name,
+                        "category": category.value,
+                        "confidence": confidence,
+                    }
+                )
 
             # Statistiken
             stats = classifier.get_stats()
-            return JsonResponse({
-                "success": True,
-                "stats": stats,
-                "categories": [c.value for c in AreaCategory],
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "stats": stats,
+                    "categories": [c.value for c in AreaCategory],
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -445,30 +478,37 @@ class NL2CADLearnView(View):
             intent = data.get("intent", "").strip()
 
             if not query or not intent:
-                return JsonResponse({
-                    "error": "query und intent erforderlich"
-                }, status=400)
+                return JsonResponse({"error": "query und intent erforderlich"}, status=400)
 
             # Valid intents
             valid_intents = [
-                "room_list", "room_area", "total_area", "layer_info",
-                "entity_count", "dimension_info", "door_count",
-                "window_count", "quality_check", "export"
+                "room_list",
+                "room_area",
+                "total_area",
+                "layer_info",
+                "entity_count",
+                "dimension_info",
+                "door_count",
+                "window_count",
+                "quality_check",
+                "export",
             ]
 
             if intent not in valid_intents:
-                return JsonResponse({
-                    "error": f"Ungültiger Intent. Erlaubt: {', '.join(valid_intents)}"
-                }, status=400)
+                return JsonResponse(
+                    {"error": f"Ungültiger Intent. Erlaubt: {', '.join(valid_intents)}"}, status=400
+                )
 
             store = get_learning_store()
             pattern = store.learn(query, intent, source="user_feedback")
 
-            return JsonResponse({
-                "success": True,
-                "message": f"Gelernt: '{query}' → {intent}",
-                "pattern": pattern.to_dict(),
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f"Gelernt: '{query}' → {intent}",
+                    "pattern": pattern.to_dict(),
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -479,16 +519,16 @@ class NL2CADLearnView(View):
             store = get_learning_store()
             stats = store.get_stats()
 
-            return JsonResponse({
-                "success": True,
-                "stats": {
-                    "total_patterns": stats["total_patterns"],
-                    "intents": stats["intents"],
-                },
-                "recent_patterns": [
-                    p.to_dict() for p in stats.get("most_used", [])[:10]
-                ],
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "stats": {
+                        "total_patterns": stats["total_patterns"],
+                        "intents": stats["intents"],
+                    },
+                    "recent_patterns": [p.to_dict() for p in stats.get("most_used", [])[:10]],
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

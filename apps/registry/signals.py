@@ -9,6 +9,7 @@ Konfiguration via settings:
     GITHUB_REGISTRY_OWNER = "achimdehnert"
     GITHUB_REGISTRY_REPO  = "nl2cad"
 """
+
 import logging
 from decimal import Decimal
 
@@ -33,12 +34,12 @@ def _trigger_onboarding_workflow(subscription: "TenantSubscription") -> bool:
 
     token = getattr(settings, "GITHUB_REGISTRY_TOKEN", "")
     owner = getattr(settings, "GITHUB_REGISTRY_OWNER", "achimdehnert")
-    repo  = getattr(settings, "GITHUB_REGISTRY_REPO", "nl2cad")
+    repo = getattr(settings, "GITHUB_REGISTRY_REPO", "nl2cad")
 
     if not token:
         logger.warning(
-            "[Registry] GITHUB_REGISTRY_TOKEN nicht gesetzt — "
-            "Workflow-Trigger für %s übersprungen", subscription.id
+            "[Registry] GITHUB_REGISTRY_TOKEN nicht gesetzt — Workflow-Trigger für %s übersprungen",
+            subscription.id,
         )
         return False
 
@@ -47,29 +48,28 @@ def _trigger_onboarding_workflow(subscription: "TenantSubscription") -> bool:
 
     # Alle aktiven Module dieser Organisation sammeln
     from .models import TenantSubscription
-    active_modules = (
-        TenantSubscription.objects
-        .filter(organization=org, status="active")
-        .values_list("module_id", flat=True)
-    )
+
+    active_modules = TenantSubscription.objects.filter(
+        organization=org, status="active"
+    ).values_list("module_id", flat=True)
     enabled_packages = ",".join(sorted(active_modules))
 
     monthly_total = (
-        TenantSubscription.objects
-        .filter(organization=org, status="active")
-        .aggregate(total=__import__("django.db.models", fromlist=["Sum"]).Sum("monthly_eur"))
+        TenantSubscription.objects.filter(organization=org, status="active").aggregate(
+            total=__import__("django.db.models", fromlist=["Sum"]).Sum("monthly_eur")
+        )
     )["total"] or Decimal("0")
 
     payload = {
         "ref": "main",
         "inputs": {
-            "tenant_id":       str(org.slug),
-            "tenant_name":     str(org.name),
-            "contact_email":   str(org.owner_email if hasattr(org, "owner_email") else ""),
-            "branch":          str(subscription.berufsprofil_id or "sonstige"),
+            "tenant_id": str(org.slug),
+            "tenant_name": str(org.name),
+            "contact_email": str(org.owner_email if hasattr(org, "owner_email") else ""),
+            "branch": str(subscription.berufsprofil_id or "sonstige"),
             "enabled_packages": enabled_packages,
-            "monthly_eur":     str(float(monthly_total)),
-            "approved_by":     str(subscription.approved_by or "admin"),
+            "monthly_eur": str(float(monthly_total)),
+            "approved_by": str(subscription.approved_by or "admin"),
         },
     }
 
@@ -85,13 +85,15 @@ def _trigger_onboarding_workflow(subscription: "TenantSubscription") -> bool:
         if resp.status_code == 204:
             logger.info(
                 "[Registry] GitHub Actions tenant-onboarding.yml getriggert: org=%s module=%s",
-                org.slug, module.id,
+                org.slug,
+                module.id,
             )
             return True
         else:
             logger.error(
                 "[Registry] Workflow-Trigger fehlgeschlagen: status=%s body=%s",
-                resp.status_code, resp.text[:200],
+                resp.status_code,
+                resp.text[:200],
             )
             return False
     except Exception as exc:
@@ -114,9 +116,7 @@ def on_subscription_saved(sender, instance, created: bool, **kwargs) -> None:
 
     # activated_at setzen (ohne erneutes Signal)
     if not instance.activated_at:
-        TenantSubscription.objects.filter(pk=instance.pk).update(
-            activated_at=timezone.now()
-        )
+        TenantSubscription.objects.filter(pk=instance.pk).update(activated_at=timezone.now())
 
     # Nur triggern wenn gerade aktiviert (nicht bei jedem Save)
     # Erkennung: created=True ODER previous_status != active

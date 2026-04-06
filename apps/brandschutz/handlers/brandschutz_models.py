@@ -4,6 +4,7 @@ Brandschutz data models.
 Kern-Domänenobjekte werden aus nl2cad.brandschutz.models re-exportiert.
 Symbol- und Report-Modelle (cad-hub-spezifisch) verbleiben hier.
 """
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -13,8 +14,8 @@ try:
     from nl2cad_brandschutz.models import (
         Brandabschnitt,
         BrandschutzAnalyse,
-        BrandschutzKategorie,
         Brandschutzeinrichtung,
+        BrandschutzKategorie,
         ExBereich,
         ExZone,
         Fluchtweg,
@@ -48,6 +49,7 @@ __all__ = [
 
 class Feuerwiderstand(Enum):
     """Feuerwiderstandsklassen nach DIN 4102 / EN 13501."""
+
     F30 = "F30"
     F60 = "F60"
     F90 = "F90"
@@ -63,6 +65,7 @@ class Feuerwiderstand(Enum):
 
 class SymbolTyp(Enum):
     """Brandschutz-Symboltypen nach DIN EN ISO 7010."""
+
     NOTAUSGANG = "E001"
     NOTAUSGANG_LINKS = "E001-L"
     NOTAUSGANG_RECHTS = "E001-R"
@@ -84,6 +87,7 @@ class SymbolTyp(Enum):
 @dataclass
 class PlatzierungsRegel:
     """Regel für Symbol-Platzierung."""
+
     symbol_typ: SymbolTyp
     max_abstand_m: float = 0.0
     max_flaeche_m2: float = 0.0
@@ -97,6 +101,7 @@ class PlatzierungsRegel:
 @dataclass
 class SymbolPlatzierung:
     """Vorgeschlagene Symbol-Platzierung."""
+
     symbol_typ: str
     position_x: float
     position_y: float
@@ -112,6 +117,7 @@ class SymbolPlatzierung:
 @dataclass
 class SymbolInsertionResult:
     """Ergebnis der Symbol-Analyse und -Einfügung."""
+
     vorgeschlagene_symbole: list[SymbolPlatzierung] = field(default_factory=list)
     eingefuegte_symbole: list[SymbolPlatzierung] = field(default_factory=list)
     warnungen: list[str] = field(default_factory=list)
@@ -136,6 +142,7 @@ class SymbolInsertionResult:
 
 class BerichtKonfiguration:
     """Konfiguration für Berichtserstellung."""
+
     titel: str = "Brandschutz-Prüfbericht"
     projekt_name: str = ""
     etage: str = ""

@@ -3,6 +3,7 @@ IFC Component Views
 
 ListView for Windows, Doors, Walls, Slabs.
 """
+
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
