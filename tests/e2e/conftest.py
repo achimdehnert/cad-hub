@@ -7,8 +7,11 @@ Stellt authentifizierte Browser-Sessions für AVB-Tests bereit.
 from __future__ import annotations
 
 import pytest
-from django.contrib.auth.models import User
-from playwright.sync_api import Page, expect
+
+pytest.importorskip("playwright", reason="Playwright not installed — skip e2e tests")
+
+from django.contrib.auth.models import User  # noqa: E402
+from playwright.sync_api import Page, expect  # noqa: E402
 
 
 @pytest.fixture

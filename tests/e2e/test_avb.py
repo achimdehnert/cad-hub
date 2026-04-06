@@ -10,7 +10,10 @@ from __future__ import annotations
 import re
 
 import pytest
-from playwright.sync_api import Page, expect
+
+pytest.importorskip("playwright", reason="Playwright not installed — skip e2e tests")
+
+from playwright.sync_api import Page, expect  # noqa: E402
 
 BASE_URL = "http://localhost:8094"
 pytestmark = pytest.mark.e2e
