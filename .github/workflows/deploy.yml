@@ -40,7 +40,7 @@ jobs:
       app_name: "cad-hub"
       app_path: "/opt/cad-hub"
       dockerfile_path: "docker/app/Dockerfile"
-      health_check_url: "https://cad.iil.pet/healthz/"
+      health_check_url: "https://nl2cad.de/healthz/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
       target_environment: ${{ inputs.target_environment || 'production' }}
       notify_discord: true
