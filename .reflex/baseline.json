@@ -1,0 +1,135 @@
+{
+  "created_at": "2026-04-18T10:55:21.999926+00:00",
+  "findings": [
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-029-cad-hub-extraction: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-029-cad-hub-extraction.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-029-cad-hub-extraction: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-029-cad-hub-extraction.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-029-cad-hub-extraction: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-029-cad-hub-extraction.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-029-cad-hub-extraction: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-029-cad-hub-extraction.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-029-cad-hub-extraction: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-029-cad-hub-extraction.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-034-cad-etl-chat-agent: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-034-cad-etl-chat-agent.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_implementation_status",
+      "severity": "block",
+      "message": "ADR-034-cad-etl-chat-agent: Accepted ADR missing 'implementation_status' (ADR-138)",
+      "adr_ref": "ADR-138",
+      "fix_hint": "Add 'implementation_status: none' to frontmatter",
+      "file_path": "docs/adr/ADR-034-cad-etl-chat-agent.md",
+      "auto_fixable": true,
+      "fix_complexity": "trivial"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-034-cad-etl-chat-agent: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-034-cad-etl-chat-agent.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-034-cad-etl-chat-agent: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-034-cad-etl-chat-agent.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-034-cad-etl-chat-agent: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-034-cad-etl-chat-agent.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "compose.healthcheck_in_dockerfile",
+      "severity": "block",
+      "message": "HEALTHCHECK in docker/app/Dockerfile — must be per-service in docker-compose.prod.yml only (coach-hub incident)",
+      "adr_ref": "ADR-021 §3.4",
+      "fix_hint": "Remove HEALTHCHECK from docker/app/Dockerfile, add per-service in compose",
+      "file_path": "docker/app/Dockerfile",
+      "auto_fixable": true,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "repo.env_interpolation",
+      "severity": "block",
+      "message": "docker-compose.prod.yml uses ${VAR} interpolation — use env_file instead",
+      "adr_ref": "ADR-021 §2.11",
+      "fix_hint": null,
+      "file_path": "docker-compose.prod.yml",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.no_uc_directory",
+      "severity": "warn",
+      "message": "No use-cases directory found. Expected: docs/use-cases/",
+      "adr_ref": "ADR-162",
+      "fix_hint": "mkdir -p docs/use-cases/",
+      "file_path": null,
+      "auto_fixable": true,
+      "fix_complexity": "trivial"
+    }
+  ]
+}

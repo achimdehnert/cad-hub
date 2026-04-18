@@ -1,0 +1,77 @@
+# REFLEX Configuration — cad-hub
+# ADR-162: Reflexive Evidence-based Loop for UI Development
+# ADR-163: Tier 1 — Full Reflex
+
+hub_name: cad-hub
+vertical: general
+
+domain_keywords:
+  - # TODO: Add domain-specific keywords
+
+quality:
+  min_acceptance_criteria: 2
+  max_uc_steps: 7
+  require_error_cases: true
+  require_specific_actor: true
+  forbid_implementation_details: true
+  forbid_soft_language: true
+
+viewports:
+  - name: desktop
+    width: 1280
+    height: 800
+  - name: tablet
+    width: 768
+    height: 1024
+  - name: mobile
+    width: 375
+    height: 812
+
+htmx_patterns:
+  banned:
+    - hx-boost
+  required_on_forms:
+    - hx-indicator
+    - hx-disabled-elt
+
+permissions_matrix:
+  /dashboard/:
+    admin: 200
+    viewer: 200
+    anonymous: 302
+  # TODO: Add routes and expected status codes per role
+
+test_users:
+  admin:
+    username: admin
+    password: "<test-password>"
+  viewer:
+    username: viewer
+    password: "<test-password>"
+  # TODO: Set actual test credentials
+
+dev_cycle:
+  base_url: http://localhost:8094
+  login_url: /accounts/login/
+  backend_test_cmd: "pytest src/ -q --tb=short"
+  lint_cmd: "ruff check src/"
+  max_fix_iterations: 3
+  public_routes:
+    - /accounts/login/
+    - /livez/
+    - /healthz/
+
+test_routes:
+  - url: /livez/
+    expect: 200
+    auth: false
+    label: Liveness
+  - url: /healthz/
+    expect: 200
+    auth: false
+    label: Readiness
+  - url: /accounts/login/
+    expect: 200
+    auth: false
+    label: Login Page
+  # TODO: Add authenticated routes
