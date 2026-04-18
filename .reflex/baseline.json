@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-04-18T10:55:21.999926+00:00",
+  "created_at": "2026-04-18T11:04:50.589739+00:00",
   "findings": [
     {
       "rule_id": "adr.missing_frontmatter_title",
@@ -120,6 +120,16 @@
       "file_path": "docker-compose.prod.yml",
       "auto_fixable": false,
       "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "security.hardcoded_secret",
+      "severity": "block",
+      "message": "vendor/creative_services/prompts/integration/llm_clients.py: Hardcoded secret detected in source code",
+      "adr_ref": null,
+      "fix_hint": "Move to .env file and use os.getenv()",
+      "file_path": "vendor/creative_services/prompts/integration/llm_clients.py",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
     },
     {
       "rule_id": "uc.no_uc_directory",
