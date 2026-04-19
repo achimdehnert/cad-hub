@@ -2,14 +2,16 @@
 # docker-compose.prod.yml — CAD Hub (ADR-022)
 # ===========================================================================
 # Port: 8094 (nl2cad.de)
-# env_file: .env.prod (no ${VAR} interpolation in environment:)
+# env_file: /opt/shared-secrets/api-keys.env + .env.prod (ADR-159)
 # ===========================================================================
 
 services:
   migrate:
     image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
     entrypoint: ["python", "manage.py", "migrate", "--noinput", "--skip-checks"]
-    env_file: .env.prod
+    env_file:
+      - /opt/shared-secrets/api-keys.env
+      - .env.prod
     depends_on:
       db:
         condition: service_healthy
@@ -32,7 +34,9 @@ services:
     image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
     container_name: cad_hub_web
     command: ["web"]
-    env_file: .env.prod
+    env_file:
+      - /opt/shared-secrets/api-keys.env
+      - .env.prod
     ports:
       - "127.0.0.1:8094:8000"
     depends_on:
@@ -66,7 +70,9 @@ services:
     image: ghcr.io/achimdehnert/cad-hub:${IMAGE_TAG:-latest}
     container_name: cad_hub_worker
     command: ["worker"]
-    env_file: .env.prod
+    env_file:
+      - /opt/shared-secrets/api-keys.env
+      - .env.prod
     depends_on:
       migrate:
         condition: service_completed_successfully

@@ -2,7 +2,6 @@
 Base settings shared across all environments.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -17,7 +16,7 @@ VENDOR_DIR = str(BASE_DIR / "vendor")
 if VENDOR_DIR not in sys.path:
     sys.path.insert(0, VENDOR_DIR)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-only-change-in-production")
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-only-change-in-production")
 
 DEBUG = False
 
@@ -122,8 +121,8 @@ GITHUB_REGISTRY_OWNER = config("GITHUB_REGISTRY_OWNER", default="achimdehnert")
 GITHUB_REGISTRY_REPO = config("GITHUB_REGISTRY_REPO", default="nl2cad")
 
 # Celery
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

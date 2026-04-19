@@ -6,7 +6,13 @@ hub_name: cad-hub
 vertical: general
 
 domain_keywords:
-  - # TODO: Add domain-specific keywords
+  - IFC
+  - DXF
+  - CAD
+  - BIM
+  - Brandschutz
+  - AVB
+  - Ausschreibung
 
 quality:
   min_acceptance_criteria: 2
@@ -35,11 +41,34 @@ htmx_patterns:
     - hx-disabled-elt
 
 permissions_matrix:
-  /dashboard/:
+  /:
+    admin: 200
+    viewer: 200
+    anonymous: 200
+  /ifc/:
     admin: 200
     viewer: 200
     anonymous: 302
-  # TODO: Add routes and expected status codes per role
+  /dxf/:
+    admin: 200
+    viewer: 200
+    anonymous: 302
+  /brandschutz/:
+    admin: 200
+    viewer: 200
+    anonymous: 302
+  /avb/:
+    admin: 200
+    viewer: 200
+    anonymous: 302
+  /api/registry/modules/:
+    admin: 200
+    viewer: 200
+    anonymous: 302
+  /admin/:
+    admin: 200
+    viewer: 302
+    anonymous: 302
 
 test_users:
   admin:
@@ -53,8 +82,8 @@ test_users:
 dev_cycle:
   base_url: http://localhost:8094
   login_url: /accounts/login/
-  backend_test_cmd: "pytest src/ -q --tb=short"
-  lint_cmd: "ruff check src/"
+  backend_test_cmd: "pytest tests/ -q --tb=short"
+  lint_cmd: "ruff check apps/ config/"
   max_fix_iterations: 3
   public_routes:
     - /accounts/login/
@@ -70,8 +99,27 @@ test_routes:
     expect: 200
     auth: false
     label: Readiness
-  - url: /accounts/login/
+  - url: /login/
     expect: 200
     auth: false
     label: Login Page
-  # TODO: Add authenticated routes
+  - url: /
+    expect: 200
+    auth: false
+    label: Landing Page
+  - url: /ifc/
+    expect: 200
+    auth: true
+    label: IFC Dashboard
+  - url: /brandschutz/
+    expect: 200
+    auth: true
+    label: Brandschutz Dashboard
+  - url: /avb/
+    expect: 200
+    auth: true
+    label: AVB Dashboard
+  - url: /api/registry/modules/
+    expect: 200
+    auth: true
+    label: Registry Modules
