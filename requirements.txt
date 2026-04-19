@@ -1,5 +1,5 @@
 # Core
-Django>=5.1,<5.2
+Django>=5.2,<5.3
 gunicorn>=22.0,<23.0
 psycopg2-binary>=2.9,<3.0
 python-decouple>=3.8,<4.0
