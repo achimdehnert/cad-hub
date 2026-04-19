@@ -18,6 +18,7 @@ from .handlers import BrandschutzHandler, BrandschutzReportHandler, BrandschutzS
 from .models import (
     BrandschutzMangel,
     BrandschutzPruefung,
+    BrandschutzRegelwerk,
     PruefStatus,
 )
 from .services import brandschutz_service

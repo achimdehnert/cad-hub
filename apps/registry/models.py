@@ -6,7 +6,6 @@ Seed via: python manage.py import_registry_seed
 API: GET /api/registry/modules/?product=nl2cad
 """
 
-import uuid
 from decimal import Decimal
 
 from django.db import models
@@ -145,7 +144,6 @@ class ModulePricing(models.Model):
         CUSTOM = "custom", "Individuell (Tenant-spezifisch)"
         FREE = "free", "Kostenlos"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     module = models.ForeignKey(
         NL2CADModule,
         on_delete=models.CASCADE,
@@ -357,7 +355,6 @@ class TenantSubscription(models.Model):
         SUSPENDED = "suspended", "Gesperrt"
         CANCELLED = "cancelled", "Gekündigt"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     organization = models.ForeignKey(
         "django_tenancy.Organization",
@@ -430,7 +427,6 @@ class TenantSubscription(models.Model):
 class DiscountRule(models.Model):
     """Rabatt-Regeln für das nl2cad-Modul-Bundle (z.B. 15% ab 3 Modulen)."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, verbose_name="Bezeichnung")
     min_modules = models.PositiveIntegerField(
         default=3,

@@ -5,8 +5,6 @@ Source: bfagent/apps/cad_hub/models/brandschutz.py
 Changes: app_label → brandschutz, tenant_id added.
 """
 
-import uuid
-
 from django.db import models
 from django.utils import timezone
 
@@ -56,7 +54,6 @@ class BrandschutzSymbol(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     name = models.CharField(max_length=100)
     din_nummer = models.CharField(max_length=20)
@@ -94,7 +91,6 @@ class BrandschutzPruefung(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     titel = models.CharField(max_length=200)
     projekt_name = models.CharField(max_length=200)
@@ -147,7 +143,6 @@ class BrandschutzMangel(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     pruefung = models.ForeignKey(
         BrandschutzPruefung,
@@ -204,7 +199,6 @@ class BrandschutzSymbolVorschlag(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     pruefung = models.ForeignKey(
         BrandschutzPruefung,
@@ -244,7 +238,6 @@ class BrandschutzSymbolVorschlag(models.Model):
 class BrandschutzRegelwerk(models.Model):
     """Regelwerk-Referenz für Brandschutz-Prüfungen."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     kuerzel = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)

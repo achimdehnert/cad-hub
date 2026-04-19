@@ -4,8 +4,6 @@ IFC Component Models
 Window, Door, Wall, Slab models.
 """
 
-import uuid
-
 from django.db import models
 
 from apps.core.managers import TenantAwareManager
@@ -18,7 +16,6 @@ class Window(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
@@ -110,7 +107,6 @@ class Door(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
@@ -188,7 +184,6 @@ class Wall(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
@@ -284,7 +279,6 @@ class Slab(models.Model):
         BASESLAB = "BASESLAB", "Bodenplatte"
         LANDING = "LANDING", "Podest"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,

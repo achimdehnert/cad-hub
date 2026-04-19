@@ -4,7 +4,6 @@ AVB Tender & Bid Models
 Tender, TenderPosition, TenderGroup, Bidder, Bid, BidPosition, Award.
 """
 
-import uuid
 from decimal import Decimal
 
 from django.conf import settings
@@ -25,7 +24,6 @@ class Tender(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         ConstructionProject,
@@ -118,7 +116,6 @@ class TenderPosition(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     tender = models.ForeignKey(
         Tender,
@@ -159,7 +156,6 @@ class TenderGroup(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     tender = models.ForeignKey(
         Tender,
@@ -195,7 +191,6 @@ class Bidder(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     company_name = models.CharField(max_length=255, verbose_name="Firmenname")
     contact_person = models.CharField(
@@ -248,7 +243,6 @@ class Bid(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     tender = models.ForeignKey(
         Tender,
@@ -361,7 +355,6 @@ class BidPosition(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     bid = models.ForeignKey(
         Bid,
@@ -417,7 +410,6 @@ class Award(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     tender = models.OneToOneField(
         Tender,

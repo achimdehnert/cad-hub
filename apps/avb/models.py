@@ -5,7 +5,6 @@ Source: bfagent/apps/cad_hub/models_avb.py
 Changes: app_label → avb, tenant_id added, FK → ifc.IFCProject.
 """
 
-import uuid
 from decimal import Decimal
 
 from django.conf import settings
@@ -80,7 +79,6 @@ class ConstructionProject(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_project = models.OneToOneField(
         "ifc.IFCProject",
@@ -149,7 +147,6 @@ class ProjectMilestone(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         ConstructionProject,
@@ -198,7 +195,6 @@ class CostEstimateEntry(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         ConstructionProject,

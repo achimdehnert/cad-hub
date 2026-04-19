@@ -5,8 +5,6 @@ Source: bfagent/apps/cad_hub/models/ifc.py
 Changes: app_label → ifc, tenant_id added to all models.
 """
 
-import uuid
-
 from django.conf import settings
 from django.db import models
 
@@ -23,12 +21,6 @@ class IFCProject(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-        help_text="Same UUID as IFC MCP Backend",
-    )
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
 
     name = models.CharField(max_length=255, verbose_name="Projektname")
@@ -95,7 +87,6 @@ class IFCModel(models.Model):
         READY = "ready", "Bereit"
         ERROR = "error", "Fehler"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     project = models.ForeignKey(
         IFCProject,
@@ -149,7 +140,6 @@ class Floor(models.Model):
 
     objects = TenantAwareManager()
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
@@ -195,7 +185,6 @@ class Room(models.Model):
         TF7 = "TF7", "TF 7 - Technikflächen"
         VF8 = "VF8", "VF 8 - Verkehrsflächen"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Multi-tenancy isolator")
     ifc_model = models.ForeignKey(
         IFCModel,
