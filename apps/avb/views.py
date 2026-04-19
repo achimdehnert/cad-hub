@@ -8,9 +8,12 @@ Komplettes Planungs-, Ausschreibungs- und Angebotstool.
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
+from django.db.models import Avg, Count, Max, Min, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import (
     CreateView,
@@ -173,8 +176,6 @@ class TenderListView(LoginRequiredMixin, ListView):
         ctx["create_url"] = reverse("avb:tender_create")
         ctx["tenders_open"] = qs.exclude(status="awarded").exclude(status="cancelled").count()
         ctx["tenders_awarded"] = qs.filter(status="awarded").count()
-        from django.db.models import Sum
-
         total = qs.aggregate(v=Sum("estimated_value"))["v"] or 0
         ctx["total_volume"] = f"{total:,.0f} €".replace(",", ".")
         return ctx
@@ -201,8 +202,6 @@ class TenderDetailView(LoginRequiredMixin, DetailView):
 
         # Statistik
         if tender.bids.exists():
-            from django.db.models import Avg, Max, Min
-
             ctx["bid_stats"] = tender.bids.aggregate(
                 min_price=Min("total_price"),
                 max_price=Max("total_price"),
@@ -288,8 +287,6 @@ class TenderPublishView(LoginRequiredMixin, View):
         if tender.status != "draft":
             messages.error(request, "Nur Entwürfe können veröffentlicht werden.")
         else:
-            from django.utils import timezone
-
             tender.status = "published"
             tender.publication_date = timezone.now().date()
             tender.save()
@@ -409,8 +406,6 @@ class BidCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
     def form_valid(self, form):
-        from django.utils import timezone
-
         form.instance.tender_id = self.kwargs["tender_id"]
         form.instance.status = "invited"
         form.instance.invited_at = timezone.now()
@@ -436,8 +431,6 @@ class BidReceiveView(LoginRequiredMixin, UpdateView):
     ]
 
     def form_valid(self, form):
-        from django.utils import timezone
-
         form.instance.status = "received"
         form.instance.received_at = timezone.now()
         messages.success(self.request, "Angebot erfasst.")
@@ -564,10 +557,8 @@ class TenderStatsAPIView(LoginRequiredMixin, View):
     def get(self, request, pk):
         tender = get_object_or_404(Tender, pk=pk)
 
-        from django.db.models import Avg, Max, Min
-
         stats = tender.bids.filter(status__in=["received", "evaluated"]).aggregate(
-            count=models.Count("id"),
+            count=Count("id"),
             min_price=Min("total_price"),
             max_price=Max("total_price"),
             avg_price=Avg("total_price"),
@@ -584,6 +575,3 @@ class TenderStatsAPIView(LoginRequiredMixin, View):
             }
         )
 
-
-# Import models für Aggregation
-from django.db import models

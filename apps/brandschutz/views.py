@@ -4,12 +4,10 @@ Views für Brandschutz-Frontend.
 """
 
 import json
-from datetime import datetime
 from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -18,13 +16,11 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from .handlers import BrandschutzHandler, BrandschutzReportHandler, BrandschutzSymbolHandler
 from .models import (
-    BrandschutzKategorie,
     BrandschutzMangel,
     BrandschutzPruefung,
-    BrandschutzRegelwerk,
-    BrandschutzSymbolVorschlag,
     PruefStatus,
 )
+from .services import brandschutz_service
 
 
 class BrandschutzDashboardView(LoginRequiredMixin, View):
@@ -33,40 +29,11 @@ class BrandschutzDashboardView(LoginRequiredMixin, View):
     template_name = "cad_hub/brandschutz/dashboard.html"
 
     def get(self, request):
-        # Statistiken
-        pruefungen = BrandschutzPruefung.objects.all()
-        stats = {
-            "gesamt": pruefungen.count(),
-            "entwurf": pruefungen.filter(status=PruefStatus.ENTWURF).count(),
-            "in_pruefung": pruefungen.filter(status=PruefStatus.IN_PRUEFUNG).count(),
-            "abgeschlossen": pruefungen.filter(status=PruefStatus.ABGESCHLOSSEN).count(),
-            "maengel": pruefungen.filter(status=PruefStatus.MAENGEL).count(),
-            "freigegeben": pruefungen.filter(status=PruefStatus.FREIGEGEBEN).count(),
-        }
-
-        # Offene Mängel
-        offene_maengel = BrandschutzMangel.objects.filter(behoben=False).select_related("pruefung")
-        mangel_stats = {
-            "gesamt": offene_maengel.count(),
-            "kritisch": offene_maengel.filter(schweregrad="kritisch").count(),
-            "hoch": offene_maengel.filter(schweregrad="hoch").count(),
-            "mittel": offene_maengel.filter(schweregrad="mittel").count(),
-            "gering": offene_maengel.filter(schweregrad="gering").count(),
-        }
-
-        # Letzte Prüfungen
-        letzte_pruefungen = pruefungen.order_by("-pruef_datum")[:5]
-
-        # Dringende Mängel
-        dringende_maengel = offene_maengel.filter(schweregrad__in=["kritisch", "hoch"]).order_by(
-            "-erstellt_am"
-        )[:10]
-
         context = {
-            "stats": stats,
-            "mangel_stats": mangel_stats,
-            "letzte_pruefungen": letzte_pruefungen,
-            "dringende_maengel": dringende_maengel,
+            "stats": brandschutz_service.get_dashboard_stats(),
+            "mangel_stats": brandschutz_service.get_mangel_stats(),
+            "letzte_pruefungen": brandschutz_service.get_letzte_pruefungen(),
+            "dringende_maengel": brandschutz_service.get_dringende_maengel(),
             "page_title": "Brandschutz Dashboard",
         }
         return render(request, self.template_name, context)
@@ -81,30 +48,10 @@ class BrandschutzPruefungListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = (
-            super()
-            .get_queryset()
-            .annotate(
-                mangel_count=Count("maengel"),
-                offene_maengel=Count("maengel", filter=Q(maengel__behoben=False)),
-            )
-            .order_by("-pruef_datum")
+        return brandschutz_service.get_pruefung_list_queryset(
+            status=self.request.GET.get("status"),
+            search=self.request.GET.get("q"),
         )
-
-        # Filter
-        status = self.request.GET.get("status")
-        if status:
-            queryset = queryset.filter(status=status)
-
-        search = self.request.GET.get("q")
-        if search:
-            queryset = queryset.filter(
-                Q(titel__icontains=search)
-                | Q(projekt_name__icontains=search)
-                | Q(pruefer__icontains=search)
-            )
-
-        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -281,33 +228,13 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
 
                 # Prüfung aktualisieren
                 if pruefung:
-                    pruefung.analyse_ergebnis = result.data
-                    pruefung.status = PruefStatus.IN_PRUEFUNG
-                    pruefung.save()
+                    brandschutz_service.update_pruefung_after_analyse(pruefung, result.data)
+                    brandschutz_service.create_maengel_from_analyse(pruefung, result.data)
 
-                    # Mängel erstellen
-                    for mangel_text in result.data.get("brandschutz", {}).get("maengel", []):
-                        BrandschutzMangel.objects.create(
-                            pruefung=pruefung,
-                            kategorie=BrandschutzKategorie.FLUCHTWEG,
-                            schweregrad="hoch",
-                            beschreibung=mangel_text,
-                        )
-
-                    # Symbole erstellen
                     if sym_result.success:
-                        for sym in sym_result.data.get("symbole", {}).get(
-                            "vorgeschlagene_symbole", []
-                        ):
-                            BrandschutzSymbolVorschlag.objects.create(
-                                pruefung=pruefung,
-                                symbol_typ=sym.get("symbol_typ", "UNBEKANNT"),
-                                position_x=sym.get("position_x", 0),
-                                position_y=sym.get("position_y", 0),
-                                begruendung=sym.get("begruendung", ""),
-                                prioritaet=sym.get("prioritaet", 3),
-                                status="vorgeschlagen",
-                            )
+                        brandschutz_service.create_symbole_from_analyse(
+                            pruefung, sym_result.data
+                        )
 
                 return JsonResponse(
                     {
@@ -395,12 +322,7 @@ class BrandschutzMangelToggleView(LoginRequiredMixin, View):
 
     def post(self, request, pk):
         mangel = get_object_or_404(BrandschutzMangel, pk=pk)
-        mangel.behoben = not mangel.behoben
-        if mangel.behoben:
-            mangel.behoben_am = datetime.now()
-        else:
-            mangel.behoben_am = None
-        mangel.save()
+        mangel = brandschutz_service.toggle_mangel(mangel)
 
         # HTMX partial response
         return render(request, "cad_hub/brandschutz/partials/mangel_row.html", {"mangel": mangel})
@@ -443,21 +365,7 @@ class BrandschutzStatsAPIView(LoginRequiredMixin, View):
     """API: Dashboard-Statistiken."""
 
     def get(self, request):
-        pruefungen = BrandschutzPruefung.objects.all()
-        maengel = BrandschutzMangel.objects.filter(behoben=False)
-
-        return JsonResponse(
-            {
-                "pruefungen": {
-                    "gesamt": pruefungen.count(),
-                    "offen": pruefungen.exclude(status=PruefStatus.FREIGEGEBEN).count(),
-                },
-                "maengel": {
-                    "offen": maengel.count(),
-                    "kritisch": maengel.filter(schweregrad="kritisch").count(),
-                },
-            }
-        )
+        return JsonResponse(brandschutz_service.get_api_stats())
 
 
 class BrandschutzSearchAPIView(LoginRequiredMixin, View):
@@ -469,19 +377,8 @@ class BrandschutzSearchAPIView(LoginRequiredMixin, View):
         if len(query) < 2:
             return JsonResponse({"results": []})
 
-        pruefungen = BrandschutzPruefung.objects.filter(
-            Q(titel__icontains=query) | Q(projekt_name__icontains=query)
-        )[:10]
-
-        results = [
-            {
-                "id": str(p.pk),
-                "titel": p.titel,
-                "projekt": p.projekt_name,
-                "status": p.get_status_display(),
-                "url": reverse("brandschutz:pruefung_detail", kwargs={"pk": p.pk}),
-            }
-            for p in pruefungen
-        ]
+        results = brandschutz_service.search_pruefungen(query)
+        for r in results:
+            r["url"] = reverse("brandschutz:pruefung_detail", kwargs={"pk": r.pop("pk")})
 
         return JsonResponse({"results": results})

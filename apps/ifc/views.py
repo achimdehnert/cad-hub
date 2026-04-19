@@ -5,7 +5,6 @@ Views für IFC Dashboard
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -19,7 +18,19 @@ from django.views.generic import (
 
 from apps.core.mixins import TenantMixin
 
-from .models import Floor, IFCModel, IFCProject, Room
+from .models import IFCModel, IFCProject, Room
+from .services.ifc_query_service import (
+    extract_ifc_data,
+    get_area_summary,
+    get_dashboard_stats,
+    get_floors_for_model,
+    get_floors_with_stats,
+    get_model_content_stats,
+    get_model_floor_stats,
+    get_next_version,
+    get_recent_projects,
+    get_rooms_queryset,
+)
 
 
 class HtmxMixin:
@@ -46,16 +57,8 @@ class DashboardView(LoginRequiredMixin, TenantMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         tid = self._tenant_id()
-
-        ctx["recent_projects"] = (
-            IFCProject.objects.filter(tenant_id=tid)[:5] if tid else IFCProject.objects.none()
-        )
-        ctx["stats"] = {
-            "projects": IFCProject.objects.filter(tenant_id=tid).count() if tid else 0,
-            "models": IFCModel.objects.filter(tenant_id=tid, status="ready").count() if tid else 0,
-            "rooms": Room.objects.filter(tenant_id=tid).count() if tid else 0,
-        }
-
+        ctx["recent_projects"] = get_recent_projects(tid)
+        ctx["stats"] = get_dashboard_stats(tid)
         return ctx
 
 
@@ -145,11 +148,7 @@ class ModelDetailView(TenantMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         model = self.get_object()
-
-        # Geschosse mit Raumanzahl
-        floors = model.floors.annotate(room_count=Count("rooms")).order_by("sort_order")
-
-        ctx["floors"] = floors
+        ctx["floors"] = get_model_floor_stats(model)
         ctx["room_count"] = model.rooms.count()
         return ctx
 
@@ -173,39 +172,8 @@ class IFCContentOverviewView(TenantMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         model = self.object
 
-        # Aggregierte Statistiken
-        ctx["stats"] = {
-            "floors": model.floors.count(),
-            "rooms": model.rooms.count(),
-            "windows": model.windows.count(),
-            "doors": model.doors.count(),
-            "walls": model.walls.count(),
-            "slabs": model.slabs.count(),
-            # Flächen
-            "total_room_area": model.rooms.aggregate(Sum("area"))["area__sum"] or 0,
-            "total_wall_gross_area": model.walls.aggregate(Sum("gross_area"))["gross_area__sum"]
-            or 0,
-            "total_wall_net_area": model.walls.aggregate(Sum("net_area"))["net_area__sum"] or 0,
-            "total_slab_area": model.slabs.aggregate(Sum("area"))["area__sum"] or 0,
-            # Wände
-            "external_walls": model.walls.filter(is_external=True).count(),
-            "internal_walls": model.walls.filter(is_external=False).count(),
-        }
-
-        # Pro Geschoss
-        ctx["floors_with_stats"] = []
-        for floor in model.floors.all():
-            ctx["floors_with_stats"].append(
-                {
-                    "floor": floor,
-                    "rooms": floor.rooms.count(),
-                    "windows": floor.windows.count(),
-                    "doors": floor.doors.count(),
-                    "walls": floor.walls.count(),
-                    "slabs": floor.slabs.count(),
-                    "room_area": floor.rooms.aggregate(Sum("area"))["area__sum"] or 0,
-                }
-            )
+        ctx["stats"] = get_model_content_stats(model)
+        ctx["floors_with_stats"] = get_floors_with_stats(model)
 
         # Beispieldaten (erste 5 pro Typ)
         ctx["sample_rooms"] = model.rooms.all()[:5]
@@ -234,11 +202,9 @@ class ModelUploadView(TenantMixin, LoginRequiredMixin, CreateView):
         tid = self._tenant_id()
         project = get_object_or_404(IFCProject, pk=self.kwargs["project_id"], tenant_id=tid)
 
-        last = IFCModel.objects.filter(project=project).order_by("-version").first()
-
         form.instance.tenant_id = tid
         form.instance.project = project
-        form.instance.version = (last.version + 1) if last else 1
+        form.instance.version = get_next_version(project)
         form.instance.status = IFCModel.Status.UPLOADING
 
         response = super().form_valid(form)
@@ -328,29 +294,19 @@ class RoomListView(HtmxMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        model_id = self.kwargs["model_id"]
-        qs = Room.objects.filter(ifc_model_id=model_id)
-
-        # Filter: Geschoss
-        if floor := self.request.GET.get("floor"):
-            qs = qs.filter(floor_id=floor)
-
-        # Filter: Nutzung
-        if usage := self.request.GET.get("usage"):
-            qs = qs.filter(usage_category=usage)
-
-        # Suche
-        if search := self.request.GET.get("q"):
-            qs = qs.filter(name__icontains=search)
-
-        return qs.select_related("floor").order_by("number")
+        return get_rooms_queryset(
+            model_id=self.kwargs["model_id"],
+            floor_id=self.request.GET.get("floor"),
+            usage=self.request.GET.get("usage"),
+            search=self.request.GET.get("q"),
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         model_id = self.kwargs["model_id"]
 
         ctx["ifc_model"] = get_object_or_404(IFCModel, pk=model_id)
-        ctx["floors"] = Floor.objects.filter(ifc_model_id=model_id)
+        ctx["floors"] = get_floors_for_model(model_id)
         ctx["usage_choices"] = Room.UsageCategory.choices
 
         return ctx
@@ -383,21 +339,9 @@ class AreaSummaryView(HtmxMixin, TemplateView):
         # Get model and project reference
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
 
-        # Einfache Flächenberechnung aus Räumen
-        rooms = Room.objects.filter(ifc_model=ifc_model)
-        total_area = rooms.aggregate(Sum("area"))["area__sum"] or 0
-
-        ctx["areas"] = {
-            "bgf": total_area,
-            "ngf": total_area * 0.85,  # Beispiel: 85% als Nutzfläche
-            "nf": total_area * 0.75,
-            "tf": total_area * 0.10,
-            "vf": total_area * 0.05,
-        }
-        ctx["din277"] = {
-            "total_area": total_area,
-            "rooms_count": rooms.count(),
-        }
+        summary = get_area_summary(ifc_model)
+        ctx["areas"] = summary["areas"]
+        ctx["din277"] = summary["din277"]
         ctx["ifc_model"] = ifc_model
 
         return ctx
@@ -416,8 +360,7 @@ class WoFlVSummaryView(HtmxMixin, TemplateView):
         # Get model and project reference
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
 
-        # Einfache WoFlV-Berechnung aus Räumen
-        Room.objects.filter(ifc_model=ifc_model)
+        # WoFlV placeholder (no calculation yet)
 
         ctx["woflv"] = {
             "wohnflaeche_gesamt": 0,

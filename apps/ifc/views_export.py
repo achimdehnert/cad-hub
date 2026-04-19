@@ -8,7 +8,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
 
-from .models import Door, IFCModel, Room, Slab, Wall, Window
+from .models import IFCModel, Room
+from .services.ifc_query_service import extract_ifc_data
 
 
 class ExportRaumbuchView(View):
@@ -52,11 +53,8 @@ class ExportWoFlVView(View):
         # WoFlV berechnen
         from nl2cad_areas.woflv import WoFlVCalculator
 
-        rooms_qs = list(
-            Room.objects.filter(ifc_model=ifc_model).values("name", "number", "area", "height")
-        )
-        # Feldname-Mapping: Django ORM 'area' → nl2cad 'area_m2'
-        rooms = [{**r, "area_m2": r["area"]} for r in rooms_qs]
+        ifc_data = extract_ifc_data(ifc_model)
+        rooms = ifc_data["rooms"]
 
         calculator = WoFlVCalculator()
         result = calculator.calculate_from_rooms(rooms)
@@ -145,10 +143,9 @@ class ExportGAEBView(View):
 
         format_type = request.GET.get("format", "excel")  # excel oder xml
 
-        # Räume laden — Feldname-Mapping: 'area' → 'area_m2'
-        rooms_qs = list(
-            Room.objects.filter(ifc_model=ifc_model).values("name", "number", "area", "perimeter")
-        )
+        # Räume laden via Service
+        ifc_data = extract_ifc_data(ifc_model)
+        rooms_qs = ifc_data["rooms"]
 
         # LV erstellen
         lv = Leistungsverzeichnis(
@@ -223,7 +220,7 @@ class ExportX83View(View):
         from nl2cad_gaeb.converter import IFCX83Converter
 
         # IFC-Daten aus Datenbank laden
-        ifc_data = self._extract_ifc_data(ifc_model)
+        ifc_data = extract_ifc_data(ifc_model)
 
         # Konvertieren
         converter = IFCX83Converter()
@@ -251,46 +248,3 @@ class ExportX83View(View):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
-    def _extract_ifc_data(self, ifc_model) -> dict:
-        """Extrahiert IFC-Daten aus der Datenbank."""
-        rooms_qs = list(
-            Room.objects.filter(ifc_model=ifc_model).values(
-                "name", "number", "area", "perimeter", "height", "volume"
-            )
-        )
-        # Feldname-Mapping: Django ORM 'area' → nl2cad 'area_m2'
-        rooms = [{**r, "area_m2": r["area"]} for r in rooms_qs]
-
-        walls = list(
-            Wall.objects.filter(ifc_model=ifc_model).values(
-                "name", "ifc_guid", "length", "height", "thickness"
-            )
-        )
-        # Wandfläche berechnen
-        for wall in walls:
-            wall["area"] = (wall.get("length", 0) or 0) * (wall.get("height", 0) or 0)
-
-        doors = list(
-            Door.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
-        )
-        # Türtyp aus Name extrahieren
-        for door in doors:
-            door["type"] = "Standard"
-            if "brand" in (door.get("name", "") or "").lower():
-                door["type"] = "Brandschutz"
-
-        windows = list(
-            Window.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "width", "height")
-        )
-
-        slabs = list(
-            Slab.objects.filter(ifc_model=ifc_model).values("name", "ifc_guid", "area", "thickness")
-        )
-
-        return {
-            "rooms": rooms,  # enthält sowohl 'area' als auch 'area_m2'
-            "walls": walls,
-            "doors": doors,
-            "windows": windows,
-            "slabs": slabs,
-        }
