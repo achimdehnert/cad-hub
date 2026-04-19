@@ -30,13 +30,12 @@
                 <!-- Drag & Drop Zone -->
                 <div id="drop-zone" 
                      class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 transition cursor-pointer"
-                     onclick="document.getElementById('datei').click()">
+                     data-action="trigger-file-input" data-target="datei">
                     <div class="text-4xl mb-2">📐</div>
                     <div class="text-white font-medium">CAD-Datei hierher ziehen</div>
                     <div class="text-slate-400 text-sm mt-1">oder klicken zum Auswählen</div>
                     <div class="text-xs text-slate-500 mt-2">Unterstützt: DXF, IFC</div>
-                    <input type="file" id="datei" name="datei" accept=".dxf,.ifc" class="hidden" 
-                           onchange="handleFileSelect(this)">
+                    <input type="file" id="datei" name="datei" accept=".dxf,.ifc" class="hidden">
                 </div>
                 
                 <div id="selected-file" class="hidden bg-slate-700 rounded-lg p-3 flex items-center justify-between">
@@ -45,7 +44,7 @@
                         <span id="file-name" class="text-white"></span>
                         <span id="file-size" class="text-slate-500 text-sm"></span>
                     </div>
-                    <button type="button" onclick="clearFile()" class="text-slate-400 hover:text-white">✕</button>
+                    <button type="button" data-action="clear-file" class="text-slate-400 hover:text-white">✕</button>
                 </div>
                 
                 {% if pruefung and pruefung.quelldatei %}
@@ -209,6 +208,21 @@
         document.getElementById('datei').value = '';
         document.getElementById('selected-file').classList.add('hidden');
     }
+
+    document.getElementById('datei').addEventListener('change', function() {
+        handleFileSelect(this);
+    });
+
+    document.addEventListener('click', function(e) {
+        const trigger = e.target.closest('[data-action="trigger-file-input"]');
+        if (trigger) {
+            document.getElementById(trigger.dataset.target).click();
+            return;
+        }
+        if (e.target.closest('[data-action="clear-file"]')) {
+            clearFile();
+        }
+    });
     
     function formatFileSize(bytes) {
         if (bytes < 1024) return bytes + ' B';

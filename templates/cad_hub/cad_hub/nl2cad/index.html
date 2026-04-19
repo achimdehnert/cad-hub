@@ -141,7 +141,7 @@
                 <div id="file-loaded" class="mt-3 alert alert-success" style="display: none;">
                     <i class="bi bi-check-circle"></i>
                     <span id="loaded-filename"></span>
-                    <button class="btn btn-sm btn-outline-danger float-end" onclick="clearFile()">
+                    <button class="btn btn-sm btn-outline-danger float-end" data-action="clear-file">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
@@ -159,10 +159,10 @@
                         <strong>NL2CAD</strong><br>
                         Laden Sie eine CAD-Datei und stellen Sie Fragen wie:
                         <div class="query-examples">
-                            <span class="query-example" onclick="askQuery(this)">Zeige alle Räume</span>
-                            <span class="query-example" onclick="askQuery(this)">Wie groß ist die Gesamtfläche?</span>
-                            <span class="query-example" onclick="askQuery(this)">Wie viele Türen gibt es?</span>
-                            <span class="query-example" onclick="askQuery(this)">Prüfe Qualität</span>
+                            <span class="query-example" data-action="ask-query">Zeige alle Räume</span>
+                            <span class="query-example" data-action="ask-query">Wie groß ist die Gesamtfläche?</span>
+                            <span class="query-example" data-action="ask-query">Wie viele Türen gibt es?</span>
+                            <span class="query-example" data-action="ask-query">Prüfe Qualität</span>
                         </div>
                     </div>
                 </div>
@@ -170,8 +170,8 @@
                 <div class="input-group mt-3">
                     <input type="text" class="form-control" id="query-input" 
                            placeholder="Frage eingeben..." 
-                           onkeypress="if(event.key==='Enter') sendQuery()">
-                    <button class="btn btn-primary" onclick="sendQuery()">
+                           data-action="query-keypress">
+                    <button class="btn btn-primary" data-action="send-query">
                         <i class="bi bi-send"></i>
                     </button>
                 </div>
@@ -255,7 +255,7 @@
                     <!-- GAEB -->
                     <div class="tab-pane fade" id="tab-gaeb">
                         <div id="gaeb-list"></div>
-                        <button class="btn btn-primary mt-3" onclick="exportGAEB()">
+                        <button class="btn btn-primary mt-3" data-action="export-gaeb">
                             <i class="bi bi-download"></i> GAEB Export
                         </button>
                     </div>
@@ -457,7 +457,7 @@ function sendQuery() {
             response += '<div class="query-examples mt-1">';
             const intents = data.available_intents || [];
             intents.slice(0, 6).forEach(intent => {
-                response += `<span class="query-example learn-btn" data-intent="${intent}" onclick="learnIntent('${intent}')">${formatIntent(intent)}</span>`;
+                response += `<span class="query-example learn-btn" data-intent="${intent}" data-action="learn-intent">${formatIntent(intent)}</span>`;
             });
             response += '</div></div>';
         }
@@ -467,7 +467,7 @@ function sendQuery() {
             response += '<div class="mt-2"><small class="text-muted">Ähnliche Anfragen:</small>';
             response += '<div class="query-examples mt-1">';
             data.suggestions.forEach(s => {
-                response += `<span class="query-example" onclick="askQuery(this)">${s}</span>`;
+                response += `<span class="query-example" data-action="ask-query">${s}</span>`;
             });
             response += '</div></div>';
         }
@@ -546,5 +546,22 @@ function exportGAEB() {
         }
     });
 }
+
+// Event delegation for all data-action elements
+document.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'clear-file': clearFile(); break;
+        case 'ask-query': askQuery(el); break;
+        case 'send-query': sendQuery(); break;
+        case 'export-gaeb': exportGAEB(); break;
+        case 'learn-intent': learnIntent(el.dataset.intent); break;
+    }
+});
+
+document.getElementById('query-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendQuery();
+});
 </script>
 {% endblock %}

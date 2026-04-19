@@ -14,7 +14,7 @@
         <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
             <!-- Filter -->
             <select name="floor" class="form-select form-select-sm" style="width: auto; min-width: 140px;"
-                    onchange="this.form.submit()" form="filter-form">
+                    data-action="auto-submit" form="filter-form">
                 <option value="">Alle Geschosse</option>
                 {% for floor in floors %}
                 <option value="{{ floor.id }}" {% if request.GET.floor == floor.id|stringformat:"s" %}selected{% endif %}>
@@ -34,6 +34,13 @@
 
 <!-- Hidden form for filter -->
 <form id="filter-form" method="get" class="d-none"></form>
+
+<script>
+document.addEventListener('change', function(e) {
+    const el = e.target.closest('[data-action="auto-submit"]');
+    if (el && el.form) el.form.submit();
+});
+</script>
 
 <!-- Tabelle -->
 <div id="window-table-container">

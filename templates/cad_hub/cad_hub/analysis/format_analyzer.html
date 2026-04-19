@@ -29,7 +29,7 @@
                     <i class="bi bi-cloud-arrow-up fs-1 text-muted d-block mb-3"></i>
                     <p class="mb-2">Datei hierher ziehen oder klicken zum Auswählen</p>
                     <input type="file" id="file-input" class="d-none" accept=".ifc,.dxf,.dwg,.igs,.iges,.fbx,.gltf,.glb,.3mf,.ply,.stp,.step">
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                    <button type="button" class="btn btn-primary" data-action="trigger-file-input" data-target="file-input">
                         <i class="bi bi-folder2-open"></i> Datei auswählen
                     </button>
                 </div>
@@ -200,6 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         });
     }
+});
+
+document.addEventListener('click', function(e) {
+    const trigger = e.target.closest('[data-action="trigger-file-input"]');
+    if (trigger) document.getElementById(trigger.dataset.target).click();
 });
 </script>
 {% endblock %}

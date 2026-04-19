@@ -39,7 +39,7 @@
                     </div>
                     <input type="file" id="file-input" class="d-none" accept=".dxf">
                     {% endif %}
-                    <button type="button" class="btn btn-warning" onclick="document.getElementById('file-input').click()">
+                    <button type="button" class="btn btn-warning" data-action="trigger-file-input" data-target="file-input">
                         <i class="bi bi-folder2-open"></i> Datei auswählen
                     </button>
                 </div>
@@ -310,6 +310,11 @@ document.addEventListener('DOMContentLoaded', function() {
             issuesList.innerHTML = '<p class="text-success p-3 mb-0"><i class="bi bi-check-circle me-2"></i>Keine Probleme gefunden!</p>';
         }
     }
+});
+
+document.addEventListener('click', function(e) {
+    const trigger = e.target.closest('[data-action="trigger-file-input"]');
+    if (trigger) document.getElementById(trigger.dataset.target).click();
 });
 </script>
 {% endblock %}

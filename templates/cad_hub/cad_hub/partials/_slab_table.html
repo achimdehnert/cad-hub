@@ -30,7 +30,7 @@
                 <td class="px-6 py-4 text-slate-400 text-sm">{{ slab.material|default:"-" }}</td>
                 <td class="px-6 py-4 text-center">
                     {% if slab.properties %}
-                        <button onclick="toggleProperties('slab-{{ slab.id }}')"
+                        <button data-action="toggle-properties" data-target="slab-{{ slab.id }}"
                                 class="text-blue-400 hover:text-blue-300 text-sm">
                             📋 Details
                         </button>
@@ -73,12 +73,12 @@
 </div>
 
 <script>
-function toggleProperties(id) {
-    const row = document.getElementById(id + '-props');
-    if (row) {
-        row.classList.toggle('hidden');
-    }
-}
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action="toggle-properties"]');
+    if (!btn) return;
+    const row = document.getElementById(btn.dataset.target + '-props');
+    if (row) row.classList.toggle('hidden');
+});
 </script>
 
 <!-- Pagination -->

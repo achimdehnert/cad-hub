@@ -141,7 +141,7 @@
                 <div id="file-info" class="mt-3" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center">
                         <span id="file-name" class="fw-bold"></span>
-                        <button class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                        <button class="btn btn-sm btn-outline-danger" data-action="clear-file">
                             <i class="bi bi-x"></i>
                         </button>
                     </div>
@@ -166,8 +166,8 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-layers"></i> Layer</span>
                 <div>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllLayers(true)">Alle an</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllLayers(false)">Alle aus</button>
+                    <button class="btn btn-sm btn-outline-secondary" data-action="toggle-layers" data-state="true">Alle an</button>
+                    <button class="btn btn-sm btn-outline-secondary" data-action="toggle-layers" data-state="false">Alle aus</button>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -194,16 +194,16 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-eye"></i> 3D Viewer</span>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" onclick="resetView()">
+                    <button class="btn btn-outline-secondary" data-action="reset-view">
                         <i class="bi bi-house"></i> Reset
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="toggleWireframe()">
+                    <button class="btn btn-outline-secondary" data-action="toggle-wireframe">
                         <i class="bi bi-grid-3x3"></i> Wireframe
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="toggleView('top')">
+                    <button class="btn btn-outline-secondary" data-action="toggle-view" data-view="top">
                         <i class="bi bi-arrow-down"></i> Oben
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="toggleView('front')">
+                    <button class="btn btn-outline-secondary" data-action="toggle-view" data-view="front">
                         <i class="bi bi-arrow-right"></i> Vorne
                     </button>
                 </div>
@@ -218,9 +218,9 @@
                         </div>
                     </div>
                     <div class="controls-overlay">
-                        <button onclick="zoomIn()" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
-                        <button onclick="zoomOut()" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
-                        <button onclick="resetView()" title="Reset"><i class="bi bi-arrows-fullscreen"></i></button>
+                        <button data-action="zoom-in" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
+                        <button data-action="zoom-out" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
+                        <button data-action="reset-view" title="Reset"><i class="bi bi-arrows-fullscreen"></i></button>
                     </div>
                 </div>
             </div>
@@ -506,7 +506,7 @@ function updateLayers(layers) {
         
         list.innerHTML += `
             <div class="layer-item">
-                <input type="checkbox" checked onchange="toggleLayer('${layer.name}', this.checked)" class="form-check-input me-2">
+                <input type="checkbox" checked data-action="toggle-layer" data-layer="${layer.name}" class="form-check-input me-2">
                 <div class="layer-color" style="background: ${colorHex}"></div>
                 <span>${layer.name}</span>
             </div>
@@ -664,6 +664,27 @@ function clearFile() {
     document.getElementById('thumbnail-card').style.display = 'none';
     fileInput.value = '';
 }
+
+// Event delegation for change events (layer toggles)
+document.addEventListener('change', function(e) {
+    const el = e.target.closest('[data-action="toggle-layer"]');
+    if (el) toggleLayer(el.dataset.layer, el.checked);
+});
+
+// Event delegation for all data-action elements
+document.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'clear-file': clearFile(); break;
+        case 'toggle-layers': toggleAllLayers(el.dataset.state === 'true'); break;
+        case 'reset-view': resetView(); break;
+        case 'toggle-wireframe': toggleWireframe(); break;
+        case 'toggle-view': toggleView(el.dataset.view); break;
+        case 'zoom-in': zoomIn(); break;
+        case 'zoom-out': zoomOut(); break;
+    }
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', initViewer);

@@ -8,13 +8,21 @@
             <p class="text-slate-400 text-sm">{{ room.long_name }}</p>
             {% endif %}
         </div>
-        <button onclick="this.closest('#room-detail-panel').innerHTML = ''"
+        <button data-action="close-panel" data-target="room-detail-panel"
                 class="text-slate-500 hover:text-white">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
         </button>
     </div>
+    <script>
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action="close-panel"]');
+        if (!btn) return;
+        const panel = document.getElementById(btn.dataset.target);
+        if (panel) panel.innerHTML = '';
+    });
+    </script>
 
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div class="bg-slate-900/50 rounded-lg p-3">

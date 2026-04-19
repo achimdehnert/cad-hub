@@ -98,9 +98,9 @@
         <canvas id="viewer-canvas"></canvas>
 
         <div class="viewer-controls">
-            <button class="viewer-btn" onclick="resetCamera()">🎯 Kamera zurücksetzen</button>
-            <button class="viewer-btn" onclick="toggleWireframe()">📐 Wireframe</button>
-            <button class="viewer-btn" onclick="fitToView()">🔍 Alles anzeigen</button>
+            <button class="viewer-btn" data-action="reset-camera">🎯 Kamera zurücksetzen</button>
+            <button class="viewer-btn" data-action="toggle-wireframe">📐 Wireframe</button>
+            <button class="viewer-btn" data-action="fit-to-view">🔍 Alles anzeigen</button>
         </div>
     </div>
 
@@ -278,6 +278,19 @@ function fitToView() {
     controls.target.copy(center);
     controls.update();
 }
+
+// Viewer control buttons via event delegation
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const actions = {
+        'reset-camera': resetCamera,
+        'toggle-wireframe': toggleWireframe,
+        'fit-to-view': fitToView,
+    };
+    const fn = actions[btn.dataset.action];
+    if (fn) fn();
+});
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', initViewer);
