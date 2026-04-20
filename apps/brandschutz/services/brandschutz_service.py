@@ -114,9 +114,7 @@ def create_symbole_from_analyse(pruefung: BrandschutzPruefung, sym_data: dict) -
     return created
 
 
-def update_pruefung_after_analyse(
-    pruefung: BrandschutzPruefung, analyse_data: dict
-) -> None:
+def update_pruefung_after_analyse(pruefung: BrandschutzPruefung, analyse_data: dict) -> None:
     """Update inspection status after analysis."""
     pruefung.analyse_ergebnis = analyse_data
     pruefung.status = PruefStatus.IN_PRUEFUNG

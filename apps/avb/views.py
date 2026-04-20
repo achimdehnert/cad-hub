@@ -574,4 +574,3 @@ class TenderStatsAPIView(LoginRequiredMixin, View):
                 "bids": stats,
             }
         )
-

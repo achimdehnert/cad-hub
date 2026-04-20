@@ -233,9 +233,7 @@ class BrandschutzAnalyseView(LoginRequiredMixin, View):
                     brandschutz_service.create_maengel_from_analyse(pruefung, result.data)
 
                     if sym_result.success:
-                        brandschutz_service.create_symbole_from_analyse(
-                            pruefung, sym_result.data
-                        )
+                        brandschutz_service.create_symbole_from_analyse(pruefung, sym_result.data)
 
                 return JsonResponse(
                     {

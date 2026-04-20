@@ -132,5 +132,3 @@ class RegistryConfigView(View):
                 "discount_percent": float(discount.discount_percent) if discount else 15,
             }
         )
-
-

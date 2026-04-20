@@ -247,4 +247,3 @@ class ExportX83View(View):
         response = HttpResponse(output.read(), content_type=content_type)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
-
