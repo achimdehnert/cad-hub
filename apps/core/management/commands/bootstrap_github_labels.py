@@ -19,7 +19,7 @@ Exit codes:
     1 — GitHub API nicht erreichbar / Token fehlt
 """
 
-import os
+from decouple import config
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -60,13 +60,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--repo",
             type=str,
-            default=os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub"),
+            default=config("GITHUB_REPOSITORY", default="achimdehnert/cad-hub"),
             help="GitHub Repo (default: GITHUB_REPOSITORY env oder achimdehnert/cad-hub)",
         )
         parser.add_argument(
             "--token",
             type=str,
-            default=os.environ.get("GITHUB_TOKEN", ""),
+            default=config("GITHUB_TOKEN", default=""),
             help="GitHub Token (default: GITHUB_TOKEN env)",
         )
 
