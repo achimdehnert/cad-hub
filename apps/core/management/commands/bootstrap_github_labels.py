@@ -20,7 +20,6 @@ Exit codes:
 """
 
 from decouple import config
-
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.core.services.issue_triage_service import (
