@@ -67,8 +67,6 @@ USER app
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/livez/')" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
