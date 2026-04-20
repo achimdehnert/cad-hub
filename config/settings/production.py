@@ -7,6 +7,8 @@ from .base import *  # noqa: F401, F403
 DEBUG = False
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+# ADR-021: Internal hosts for Docker/LB health probes — always present
+ALLOWED_HOSTS.extend(h for h in ("localhost", "127.0.0.1") if h not in ALLOWED_HOSTS)
 
 # Security
 SECURE_BROWSER_XSS_FILTER = True

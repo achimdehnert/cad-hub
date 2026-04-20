@@ -21,6 +21,8 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-only-change-in-pr
 DEBUG = False
 
 ALLOWED_HOSTS: list[str] = []
+# ADR-021: Internal hosts for Docker/LB health probes — always present
+ALLOWED_HOSTS.extend(h for h in ("localhost", "127.0.0.1") if h not in ALLOWED_HOSTS)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
