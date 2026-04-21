@@ -28,6 +28,7 @@ openpyxl>=3.1,<4.0
 # See: .windsurf/rules/iil-packages.md
 # ============================================================================
 aifw>=0.5.0,<1
+iil-platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
 iil-nl2cadfw>=0.1.0,<1
