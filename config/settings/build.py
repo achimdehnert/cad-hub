@@ -7,8 +7,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = "build-dummy-not-used-in-production"
-
+SECRET_KEY = "build-dummy-not-used-in-production"  # hardcoded-ok: cad-hub build settings
 DEBUG = False
 
 ALLOWED_HOSTS = ["localhost"]

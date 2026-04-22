@@ -16,8 +16,8 @@ from urllib import request as _req
 
 logger = logging.getLogger(__name__)
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")  # hardcoded-ok: standalone CI script
+GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub")  # hardcoded-ok: standalone CI script
 
 TYPE_LABELS: dict[str, str] = {
     "feature": "type:feature",
@@ -167,7 +167,7 @@ class IssueTriageService:
         return results
 
     def _http_decompose(self, use_case: str, context: str) -> dict:
-        mcp_url = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")
+        mcp_url = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")  # hardcoded-ok: standalone CI script
         try:
             payload = _json.dumps(
                 {
