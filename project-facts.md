@@ -1,7 +1,7 @@
 # Project Facts: cad-hub
 
 > Auto-generiert von `platform/.github/scripts/push_project_facts.py`
-> Letzte Aktualisierung: 2026-04-28 — bei Änderungen: `platform/gen-project-facts.yml` triggern
+> Letzte Aktualisierung: 2026-05-04 — bei Änderungen: `platform/gen-project-facts.yml` triggern
 
 ## Meta
 
@@ -35,22 +35,13 @@
 ## Apps
 
 - `accounts`
-- `accounts`
-- `areas`
 - `areas`
 - `avb`
-- `avb`
-- `brandschutz`
 - `brandschutz`
 - `core`
-- `core`
-- `dxf`
 - `dxf`
 - `export`
-- `export`
 - `ifc`
-- `ifc`
-- `registry`
 - `registry`
 
 ## Infrastruktur
