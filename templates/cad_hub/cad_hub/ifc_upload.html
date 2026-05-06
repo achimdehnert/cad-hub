@@ -1,0 +1,343 @@
+<!-- templates/cad_hub/ifc_upload.html -->
+{% extends "cad_hub/base.html" %}
+
+{% block title %}IFC Upload — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 700px;">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'ifc:project_list' %}">Projekte</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ifc:project_detail' project.pk %}">{{ project.name }}</a></li>
+            <li class="breadcrumb-item active">IFC Upload</li>
+        </ol>
+    </nav>
+
+    <h2 class="h4 mb-4">
+        <i class="bi bi-cloud-arrow-up"></i> IFC-Datei hochladen
+    </h2>
+
+    <!-- Drop Zone -->
+    <div id="drop-zone"
+         class="border border-2 border-dashed rounded-3 p-5 text-center mb-4 position-relative"
+         style="border-color: #dee2e6; transition: all 0.2s;"
+         data-testid="ifc-drop-zone">
+
+        <div id="drop-zone-content">
+            <i class="bi bi-file-earmark-arrow-up display-3 text-muted mb-3 d-block"></i>
+            <h5 class="text-muted">IFC-Datei hier ablegen</h5>
+            <p class="text-muted mb-3">oder klicken um eine Datei auszuwählen</p>
+            <p class="text-muted small mb-0">
+                Unterstützt: <strong>.ifc</strong> (IFC2x3, IFC4) — Max. 500 MB
+            </p>
+        </div>
+
+        <input type="file"
+               id="file-input"
+               accept=".ifc"
+               class="position-absolute top-0 start-0 w-100 h-100 opacity-0"
+               style="cursor: pointer;"
+               data-testid="ifc-file-input">
+    </div>
+
+    <!-- File Info (hidden until file selected) -->
+    <div id="file-info" class="card mb-4 d-none" data-testid="file-info">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-code fs-2 text-warning"></i>
+                    <div>
+                        <strong id="file-name" class="d-block"></strong>
+                        <span id="file-size" class="text-muted small"></span>
+                    </div>
+                </div>
+                <button id="remove-file" class="btn btn-sm btn-outline-danger" data-testid="remove-file-btn">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar (hidden until upload starts) -->
+    <div id="progress-section" class="mb-4 d-none" data-testid="upload-progress">
+        <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted small" id="progress-label">Hochladen...</span>
+            <span class="text-muted small" id="progress-percent">0%</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div id="progress-bar"
+                 class="progress-bar bg-warning"
+                 role="progressbar"
+                 style="width: 0%;"
+                 aria-valuenow="0"
+                 aria-valuemin="0"
+                 aria-valuemax="100"></div>
+        </div>
+    </div>
+
+    <!-- Processing Status (hidden until upload done) -->
+    <div id="processing-section" class="mb-4 d-none" data-testid="processing-status">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="spinner-border text-warning mb-2" role="status">
+                    <span class="visually-hidden">Verarbeitung...</span>
+                </div>
+                <p class="mb-0" id="processing-label">IFC-Datei wird verarbeitet...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message (hidden) -->
+    <div id="error-section" class="alert alert-danger d-none" role="alert" data-testid="upload-error">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span id="error-message"></span>
+    </div>
+
+    <!-- Success Message (hidden) -->
+    <div id="success-section" class="alert alert-success d-none" role="alert" data-testid="upload-success">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span id="success-message"></span>
+    </div>
+
+    <!-- Upload Button -->
+    <button id="upload-btn"
+            class="btn btn-warning btn-lg w-100 d-none"
+            disabled
+            data-testid="upload-submit-btn">
+        <i class="bi bi-cloud-arrow-up me-2"></i> Hochladen & Verarbeiten
+    </button>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'ifc:project_detail' project.pk %}" class="text-muted">
+            <i class="bi bi-arrow-left"></i> Zurück zum Projekt
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const removeBtn = document.getElementById('remove-file');
+    const uploadBtn = document.getElementById('upload-btn');
+    const progressSection = document.getElementById('progress-section');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressLabel = document.getElementById('progress-label');
+    const processingSection = document.getElementById('processing-section');
+    const processingLabel = document.getElementById('processing-label');
+    const errorSection = document.getElementById('error-section');
+    const errorMessage = document.getElementById('error-message');
+    const successSection = document.getElementById('success-section');
+    const successMessage = document.getElementById('success-message');
+
+    const projectId = '{{ project.pk }}';
+    const csrfToken = '{{ csrf_token }}';
+    const MAX_SIZE = 500 * 1024 * 1024;
+
+    let selectedFile = null;
+    let pollInterval = null;
+
+    // --- Drag & Drop ---
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#f59e0b';
+            dropZone.style.backgroundColor = '#fffbeb';
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderColor = '#dee2e6';
+            dropZone.style.backgroundColor = '';
+        });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelection(e.target.files[0]);
+        }
+    });
+
+    removeBtn.addEventListener('click', resetForm);
+    uploadBtn.addEventListener('click', startUpload);
+
+    // --- File Selection ---
+    function handleFileSelection(file) {
+        resetMessages();
+
+        // Client-side validation
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'ifc') {
+            showError(`Ungültiges Format: .${ext}. Nur .ifc Dateien werden unterstützt.`);
+            return;
+        }
+
+        if (file.size > MAX_SIZE) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            showError(`Datei zu groß: ${sizeMB} MB. Maximum: 500 MB.`);
+            return;
+        }
+
+        if (file.size === 0) {
+            showError('Datei ist leer.');
+            return;
+        }
+
+        selectedFile = file;
+        fileName.textContent = file.name;
+        fileSize.textContent = formatSize(file.size);
+        fileInfo.classList.remove('d-none');
+        uploadBtn.classList.remove('d-none');
+        uploadBtn.disabled = false;
+        dropZone.classList.add('d-none');
+    }
+
+    // --- Upload ---
+    function startUpload() {
+        if (!selectedFile) return;
+
+        uploadBtn.disabled = true;
+        progressSection.classList.remove('d-none');
+        errorSection.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('ifc_file', selectedFile);
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = pct + '%';
+                progressPercent.textContent = pct + '%';
+                progressBar.setAttribute('aria-valuenow', pct);
+
+                if (pct < 100) {
+                    progressLabel.textContent = `Hochladen... (${formatSize(e.loaded)} / ${formatSize(e.total)})`;
+                } else {
+                    progressLabel.textContent = 'Upload abgeschlossen, Verarbeitung startet...';
+                }
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            progressSection.classList.add('d-none');
+
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    fileInfo.classList.add('d-none');
+                    uploadBtn.classList.add('d-none');
+                    processingSection.classList.remove('d-none');
+                    startPolling(data.model_id);
+                } else {
+                    showError(data.error || 'Unbekannter Fehler.');
+                    uploadBtn.disabled = false;
+                }
+            } else {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    showError(data.error || `Fehler (HTTP ${xhr.status})`);
+                } catch {
+                    showError(`Server-Fehler (HTTP ${xhr.status})`);
+                }
+                uploadBtn.disabled = false;
+            }
+        });
+
+        xhr.addEventListener('error', () => {
+            progressSection.classList.add('d-none');
+            showError('Netzwerkfehler. Bitte Verbindung prüfen.');
+            uploadBtn.disabled = false;
+        });
+
+        xhr.open('POST', `/ifc/project/${projectId}/upload/api/`);
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.send(formData);
+    }
+
+    // --- Status Polling ---
+    function startPolling(modelId) {
+        pollInterval = setInterval(() => {
+            fetch(`/ifc/model/${modelId}/status/`, {
+                headers: {'X-CSRFToken': csrfToken}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ready') {
+                    clearInterval(pollInterval);
+                    processingSection.classList.add('d-none');
+                    const stats = data.stats || {};
+                    successMessage.textContent =
+                        `Verarbeitung abgeschlossen! ${stats.floors || 0} Geschosse, ${stats.rooms || 0} Räume erkannt.`;
+                    successSection.classList.remove('d-none');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 1500);
+                } else if (data.status === 'error') {
+                    clearInterval(pollInterval);
+                    processingSection.classList.add('d-none');
+                    showError(data.error_message || 'Verarbeitung fehlgeschlagen.');
+                    resetForm();
+                } else {
+                    processingLabel.textContent = `${data.status_display}...`;
+                }
+            })
+            .catch(() => {
+                // Ignore transient errors, keep polling
+            });
+        }, 2000);
+    }
+
+    // --- Helpers ---
+    function resetForm() {
+        selectedFile = null;
+        fileInput.value = '';
+        fileInfo.classList.add('d-none');
+        uploadBtn.classList.add('d-none');
+        uploadBtn.disabled = true;
+        dropZone.classList.remove('d-none');
+        progressSection.classList.add('d-none');
+        progressBar.style.width = '0%';
+        processingSection.classList.add('d-none');
+        if (pollInterval) clearInterval(pollInterval);
+    }
+
+    function resetMessages() {
+        errorSection.classList.add('d-none');
+        successSection.classList.add('d-none');
+    }
+
+    function showError(msg) {
+        errorMessage.textContent = msg;
+        errorSection.classList.remove('d-none');
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+})();
+</script>
+{% endblock %}

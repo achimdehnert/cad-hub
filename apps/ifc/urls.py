@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import views, views_analysis, views_chat, views_components, views_export, views_nl2cad
+from . import views, views_analysis, views_chat, views_components, views_export, views_nl2cad, views_upload
 
 app_name = "ifc"
 
@@ -65,6 +65,22 @@ urlpatterns = [
         "project/<uuid:project_id>/cad-upload/",
         views.CADUploadView.as_view(),
         name="cad_upload",
+    ),
+    # Drag-and-drop IFC Upload (Issue #1)
+    path(
+        "project/<uuid:project_id>/ifc-upload/",
+        views_upload.IFCUploadView.as_view(),
+        name="ifc_upload",
+    ),
+    path(
+        "project/<uuid:project_id>/upload/api/",
+        views_upload.IFCUploadAPIView.as_view(),
+        name="ifc_upload_api",
+    ),
+    path(
+        "model/<uuid:pk>/status/",
+        views_upload.IFCUploadStatusAPIView.as_view(),
+        name="model_status",
     ),
     # Räume
     path(

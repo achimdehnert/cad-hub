@@ -21,7 +21,7 @@
         {% endif %}
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'ifc:model_upload' project.pk %}" class="btn btn-warning">
+        <a href="{% url 'ifc:ifc_upload' project.pk %}" class="btn btn-warning">
             <i class="bi bi-cloud-upload"></i> IFC hochladen
         </a>
         <a href="{% url 'ifc:cad_upload' project.pk %}" class="btn btn-primary">
@@ -67,7 +67,7 @@
         {% empty %}
         <div class="list-group-item text-center py-5">
             <p class="text-muted mb-2">Noch keine Modelle hochgeladen</p>
-            <a href="{% url 'ifc:model_upload' project.pk %}" class="btn btn-warning">
+            <a href="{% url 'ifc:ifc_upload' project.pk %}" class="btn btn-warning">
                 <i class="bi bi-cloud-upload"></i> Erste IFC-Datei hochladen
             </a>
         </div>
