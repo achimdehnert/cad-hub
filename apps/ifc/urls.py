@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import views, views_analysis, views_chat, views_components, views_export, views_nl2cad, views_upload
+from . import views, views_analysis, views_chat, views_components, views_dxf_export, views_export, views_nl2cad, views_upload
 
 app_name = "ifc"
 
@@ -124,6 +124,17 @@ urlpatterns = [
         "model/<uuid:model_id>/woflv/",
         views.WoFlVSummaryView.as_view(),
         name="woflv_summary",
+    ),
+    # DXF Export (Issue #2)
+    path(
+        "model/<uuid:model_id>/export/dxf/",
+        views_dxf_export.DXFExportView.as_view(),
+        name="dxf_export",
+    ),
+    path(
+        "model/<uuid:model_id>/export/dxf/download/",
+        views_dxf_export.DXFExportDownloadView.as_view(),
+        name="dxf_export_download",
     ),
     # Export
     path(

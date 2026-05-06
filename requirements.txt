@@ -22,6 +22,9 @@ requests>=2.32,<3.0
 # Excel / Export
 openpyxl>=3.1,<4.0
 
+# DXF (Issue #2: DXF export with layer selection)
+ezdxf>=0.18,<1.0
+
 # ============================================================================
 # iil-ecosystem packages (PRIMARY LLM/AI integration — ADR-089)
 # All LLM calls go through aifw. Do NOT use openai/anthropic/litellm directly.

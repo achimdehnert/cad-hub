@@ -39,6 +39,12 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
+                    <a class="dropdown-item" href="{% url 'ifc:dxf_export' model.id %}">
+                        <i class="bi bi-file-earmark-code"></i> DXF mit Layer-Auswahl
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
                     <a class="dropdown-item" href="{% url 'ifc:export_gaeb' model.id %}?format=xml">
                         <i class="bi bi-file-code"></i> GAEB X84 XML
                     </a>
