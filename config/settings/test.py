@@ -1,5 +1,5 @@
 """
-CAD Hub - Test Settings (ADR-141: PostgreSQL-Only Testing)
+CAD Hub - Test Settings (ADR-179: PostgreSQL-Only Testing)
 
 USE_POSTGRES=0 in CI falls back to SQLite for unit tests without DB service.
 Integration/contract tests should always use PostgreSQL.
