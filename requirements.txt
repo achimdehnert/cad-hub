@@ -23,7 +23,10 @@ requests>=2.32,<3.0
 openpyxl>=3.1,<4.0
 
 # DXF (Issue #2: DXF export with layer selection)
-ezdxf>=0.18,<1.0
+# >=1.3.0 required by nl2cad-core (hard core dep, all versions); cad-hub
+# only uses ezdxf's stable high-level API (new/readfile/recover/modelspace/
+# add_*/layers/math/addons), unchanged across the 0.18→1.x transition.
+ezdxf>=1.3.0,<2.0
 
 # ============================================================================
 # iil-ecosystem packages (PRIMARY LLM/AI integration — ADR-089)
