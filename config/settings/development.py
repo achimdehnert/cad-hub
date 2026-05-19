@@ -3,7 +3,7 @@
 from .base import *  # noqa: F401, F403
 
 DEBUG = True
-TEMPLATES[0]["OPTIONS"]["debug"] = True  # dev: reload templates from disk
+TEMPLATES[0]["OPTIONS"]["debug"] = True  # noqa: F405  # dev: reload templates
 
 ALLOWED_HOSTS = ["*"]
 

@@ -160,14 +160,22 @@ def export_ifc_to_dxf(
     # --- Export Walls ---
     if "walls_external" in selected_layers:
         _export_walls(
-            msp, ifc_model, floor_filter, floor_offsets,
-            is_external=True, layer_name="A-WALL-EXT",
+            msp,
+            ifc_model,
+            floor_filter,
+            floor_offsets,
+            is_external=True,
+            layer_name="A-WALL-EXT",
         )
 
     if "walls_internal" in selected_layers:
         _export_walls(
-            msp, ifc_model, floor_filter, floor_offsets,
-            is_external=False, layer_name="A-WALL-INT",
+            msp,
+            ifc_model,
+            floor_filter,
+            floor_offsets,
+            is_external=False,
+            layer_name="A-WALL-INT",
         )
 
     # --- Export Rooms ---
@@ -201,7 +209,9 @@ def export_ifc_to_dxf(
 
     logger.info(
         "DXF export: model=%s, layers=%s, floor=%s",
-        ifc_model.pk, selected_layers, floor_id,
+        ifc_model.pk,
+        selected_layers,
+        floor_id,
     )
 
     return output
@@ -240,9 +250,7 @@ def _export_walls(msp, ifc_model, floor_filter, floor_offsets, is_external, laye
 
 def _export_rooms(msp, ifc_model, floor_filter, floor_offsets):
     """Export rooms as rectangles with area label."""
-    rooms = Room.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    rooms = Room.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for room in rooms:
@@ -263,9 +271,7 @@ def _export_rooms(msp, ifc_model, floor_filter, floor_offsets):
 
 def _export_doors(msp, ifc_model, floor_filter, floor_offsets):
     """Export doors as arc symbols."""
-    doors = Door.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    doors = Door.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for door in doors:
@@ -273,7 +279,8 @@ def _export_doors(msp, ifc_model, floor_filter, floor_offsets):
         width = float(door.width or 0.9)
         # Door symbol: line + arc
         msp.add_line(
-            (x_offset, y_off), (x_offset, y_off + width),
+            (x_offset, y_off),
+            (x_offset, y_off + width),
             dxfattribs={"layer": "A-DOOR"},
         )
         msp.add_arc(
@@ -288,9 +295,7 @@ def _export_doors(msp, ifc_model, floor_filter, floor_offsets):
 
 def _export_windows(msp, ifc_model, floor_filter, floor_offsets):
     """Export windows as triple-line symbols."""
-    windows = Window.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    windows = Window.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for window in windows:
@@ -300,7 +305,8 @@ def _export_windows(msp, ifc_model, floor_filter, floor_offsets):
         for i in range(3):
             offset_y = y_off + i * 0.05
             msp.add_line(
-                (x_offset, offset_y), (x_offset + width, offset_y),
+                (x_offset, offset_y),
+                (x_offset + width, offset_y),
                 dxfattribs={"layer": "A-WINDOW"},
             )
         x_offset += width + 0.5
@@ -308,9 +314,7 @@ def _export_windows(msp, ifc_model, floor_filter, floor_offsets):
 
 def _export_slabs(msp, ifc_model, floor_filter, floor_offsets):
     """Export slabs as hatched rectangles."""
-    slabs = Slab.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    slabs = Slab.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for slab in slabs:
@@ -330,9 +334,7 @@ def _export_slabs(msp, ifc_model, floor_filter, floor_offsets):
 
 def _export_dimensions(msp, ifc_model, floor_filter, floor_offsets):
     """Export wall length dimensions."""
-    walls = Wall.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    walls = Wall.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for wall in walls:
@@ -353,9 +355,7 @@ def _export_dimensions(msp, ifc_model, floor_filter, floor_offsets):
 
 def _export_text(msp, ifc_model, floor_filter, floor_offsets):
     """Export room numbers and names as text."""
-    rooms = Room.objects.filter(
-        ifc_model=ifc_model, **floor_filter
-    ).select_related("floor")
+    rooms = Room.objects.filter(ifc_model=ifc_model, **floor_filter).select_related("floor")
 
     x_offset = 0.0
     for room in rooms:
