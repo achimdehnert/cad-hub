@@ -33,9 +33,7 @@ class IFCUploadView(TenantMixin, LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         tid = self._tenant_id()
-        ctx["project"] = get_object_or_404(
-            IFCProject, pk=self.kwargs["project_id"], tenant_id=tid
-        )
+        ctx["project"] = get_object_or_404(IFCProject, pk=self.kwargs["project_id"], tenant_id=tid)
         return ctx
 
 

@@ -33,7 +33,9 @@ def main() -> int:
 
     service = IssueTriageService(
         github_token=os.environ.get("GITHUB_TOKEN", ""),  # hardcoded-ok: standalone CI script
-        github_repo=os.environ.get("GITHUB_REPOSITORY", "achimdehnert/cad-hub"),  # hardcoded-ok: standalone CI script
+        github_repo=os.environ.get(
+            "GITHUB_REPOSITORY", "achimdehnert/cad-hub"
+        ),  # hardcoded-ok: standalone CI script
         tier=args.tier,
         dry_run=args.dry_run,
     )

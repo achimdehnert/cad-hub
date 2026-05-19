@@ -27,7 +27,9 @@ class TestValidateIFCFile:
         assert exc_info.value.code == "no_file"
 
     def test_should_reject_wrong_extension(self):
-        file = SimpleUploadedFile("model.dwg", b"some content", content_type="application/octet-stream")
+        file = SimpleUploadedFile(
+            "model.dwg", b"some content", content_type="application/octet-stream"
+        )
         with pytest.raises(UploadValidationError) as exc_info:
             validate_ifc_file(file)
         assert exc_info.value.code == "invalid_extension"
