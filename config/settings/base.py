@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Platform packages
+    "mozilla_django_oidc",  # ADR-142: authentik OIDC
     "django_tenancy",
     # CAD Hub apps
     "apps.core",
@@ -90,10 +91,20 @@ DATABASES = {
 }
 
 
-AUTHENTICATION_BACKENDS = [
-    "apps.accounts.auth.IILOIDCAuthenticationBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
+# --- authentik OIDC (ADR-142) ---
+# Set OIDC_ENABLED=false to disable SSO (e.g. local dev without Authentik).
+_OIDC_ENABLED = config("OIDC_ENABLED", default="true").lower() in ("true", "1", "yes")
+
+AUTHENTICATION_BACKENDS = (
+    [
+        "apps.accounts.auth.IILOIDCAuthenticationBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+    if _OIDC_ENABLED
+    else [
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -164,15 +175,18 @@ LOGGING = {
     },
 }
 
-# --- authentik OIDC (ADR-142) ---
+# OIDC client + per-app endpoints (authentik issues one Application per hub).
+# Production: OIDC_IDP_BASE_URL unset → https://id.iil.pet
+# Staging:    same Authentik, app slug "cad-hub-staging"
 OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
 OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
 _OIDC_APP_SLUG = config("OIDC_APP_SLUG", default="cad-hub")
-_IDP = "https://id.iil.pet/application/o"
+_OIDC_IDP_BASE_URL = config("OIDC_IDP_BASE_URL", default="https://id.iil.pet")
+_IDP = f"{_OIDC_IDP_BASE_URL}/application/o/{_OIDC_APP_SLUG}"
 OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
 OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"
 OIDC_OP_USER_ENDPOINT = f"{_IDP}/userinfo/"
-OIDC_OP_JWKS_ENDPOINT = f"{_IDP}/{_OIDC_APP_SLUG}/jwks/"
+OIDC_OP_JWKS_ENDPOINT = f"{_IDP}/jwks/"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid email profile"
 LOGOUT_REDIRECT_URL = "/"
