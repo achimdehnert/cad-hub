@@ -175,18 +175,21 @@ LOGGING = {
     },
 }
 
-# OIDC client + per-app endpoints (authentik issues one Application per hub).
+# OIDC client + endpoints. Verified against authentik's own discovery doc
+# (.../application/o/cad-hub/.well-known/openid-configuration):
+# authorize/token/userinfo are GLOBAL; only jwks (+ end-session) are per-app.
+# (The platform settings_oidc.py template's all-per-app form 404s here.)
 # Production: OIDC_IDP_BASE_URL unset → https://id.iil.pet
-# Staging:    same Authentik, app slug "cad-hub-staging"
+# Staging:    same authentik, app slug "cad-hub-staging"
 OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
 OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
 _OIDC_APP_SLUG = config("OIDC_APP_SLUG", default="cad-hub")
 _OIDC_IDP_BASE_URL = config("OIDC_IDP_BASE_URL", default="https://id.iil.pet")
-_IDP = f"{_OIDC_IDP_BASE_URL}/application/o/{_OIDC_APP_SLUG}"
-OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
-OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"
-OIDC_OP_USER_ENDPOINT = f"{_IDP}/userinfo/"
-OIDC_OP_JWKS_ENDPOINT = f"{_IDP}/jwks/"
+_OIDC_BASE = f"{_OIDC_IDP_BASE_URL}/application/o"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_OIDC_BASE}/authorize/"
+OIDC_OP_TOKEN_ENDPOINT = f"{_OIDC_BASE}/token/"
+OIDC_OP_USER_ENDPOINT = f"{_OIDC_BASE}/userinfo/"
+OIDC_OP_JWKS_ENDPOINT = f"{_OIDC_BASE}/{_OIDC_APP_SLUG}/jwks/"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid email profile"
 LOGOUT_REDIRECT_URL = "/"
