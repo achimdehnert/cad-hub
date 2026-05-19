@@ -34,6 +34,16 @@
                 Anmelden
             </button>
         </form>
+
+        {% if oidc_enabled %}
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            <p class="text-center text-sm text-gray-500 mb-4">oder anmelden mit</p>
+            <a href="{% url 'oidc_authentication_init' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}"
+               class="flex w-full items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                IIL Single Sign-On
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
