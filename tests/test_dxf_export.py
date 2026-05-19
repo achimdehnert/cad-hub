@@ -26,8 +26,14 @@ class TestGetAvailableLayers:
 
     def test_should_have_correct_layer_keys(self):
         expected_keys = {
-            "walls_external", "walls_internal", "rooms",
-            "doors", "windows", "slabs", "dimensions", "text",
+            "walls_external",
+            "walls_internal",
+            "rooms",
+            "doors",
+            "windows",
+            "slabs",
+            "dimensions",
+            "text",
         }
         assert set(EXPORT_LAYERS.keys()) == expected_keys
 
