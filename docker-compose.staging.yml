@@ -1,5 +1,6 @@
 # cad-hub — Staging Docker Compose
-# Domain: staging.nl2cad.de | Port: 8194
+# Domain: staging-cadhub.iil.pet (ADR-212 Klausel 3, Traefik-Ingress)
+# Routing: Cloudflare bf-staging Tunnel → Traefik (178.104.184.168) → container:8000
 
 services:
   migrate:
@@ -24,8 +25,8 @@ services:
     container_name: cad_hub_staging_web
     command: ["web"]
     env_file: .env.staging
-    ports:
-      - "127.0.0.1:8194:8000"
+    expose:
+      - "8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -33,6 +34,14 @@ services:
         condition: service_healthy
     networks:
       - cad_hub_staging_network
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
+      - "traefik.http.routers.cadhub-staging.rule=Host(`staging-cadhub.iil.pet`)"
+      - "traefik.http.routers.cadhub-staging.entrypoints=websecure"
+      - "traefik.http.routers.cadhub-staging.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cadhub-staging.loadbalancer.server.port=8000"
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"]
@@ -72,3 +81,5 @@ volumes:
 networks:
   cad_hub_staging_network:
     driver: bridge
+  traefik_public:
+    external: true
