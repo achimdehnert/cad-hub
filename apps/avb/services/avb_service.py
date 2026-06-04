@@ -358,8 +358,8 @@ class AVBService:
         Returns:
             BytesIO mit GAEB XML
         """
-        from nl2cad_gaeb.generator import GAEBGenerator
-        from nl2cad_gaeb.models import (
+        from nl2cad.gaeb.generator import GAEBGenerator
+        from nl2cad.gaeb.models import (
             GAEBPhase,
             Leistungsverzeichnis,
             LosGruppe,
