@@ -51,7 +51,7 @@ class ExportWoFlVView(View):
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
 
         # WoFlV berechnen
-        from nl2cad_areas.woflv import WoFlVCalculator
+        from nl2cad.areas.woflv import WoFlVCalculator
 
         ifc_data = extract_ifc_data(ifc_model)
         rooms = ifc_data["rooms"]
@@ -136,10 +136,10 @@ class ExportGAEBView(View):
     def get(self, request, model_id):
         from decimal import Decimal
 
-        from nl2cad_gaeb.generator import GAEBGenerator
+        from nl2cad.gaeb.generator import GAEBGenerator
 
         ifc_model = get_object_or_404(IFCModel, pk=model_id)
-        from nl2cad_gaeb.models import Leistungsverzeichnis, LosGruppe, Position
+        from nl2cad.gaeb.models import Leistungsverzeichnis, LosGruppe, Position
 
         format_type = request.GET.get("format", "excel")  # excel oder xml
 
@@ -217,7 +217,7 @@ class ExportX83View(View):
         format_type = request.GET.get("format", "xml")
         include_prices = request.GET.get("prices", "1") == "1"
 
-        from nl2cad_gaeb.converter import IFCX83Converter
+        from nl2cad.gaeb.converter import IFCX83Converter
 
         # IFC-Daten aus Datenbank laden
         ifc_data = extract_ifc_data(ifc_model)

@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 
 try:
-    from nl2cad_brandschutz.models import (
+    from nl2cad.brandschutz.models import (
         Brandabschnitt,
         BrandschutzAnalyse,
         Brandschutzeinrichtung,

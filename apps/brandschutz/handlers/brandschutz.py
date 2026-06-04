@@ -17,8 +17,8 @@ from __future__ import annotations
 import logging
 
 try:
-    from nl2cad_brandschutz.analyzer import BrandschutzAnalyzer
-    from nl2cad_brandschutz.models import BrandschutzAnalyse
+    from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
+    from nl2cad.brandschutz.models import BrandschutzAnalyse
 except ImportError:
     BrandschutzAnalyzer = None  # nl2cad-brandschutz deprecated
     BrandschutzAnalyse = None
