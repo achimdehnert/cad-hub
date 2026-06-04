@@ -43,6 +43,10 @@ jobs:
     with:
       app_name: "cad-hub"
       app_path: "/opt/cad-hub"
+      # Pin deploy job to the prod host's unique runner label (platform #461).
+      # Generic 'self-hosted' matched BOTH prod-server and dev-hetzner → deploy
+      # landed on wrong host → cp: Permission denied on /opt/cad-hub (#21).
+      deploy_runs_on: "prod-server"
       dockerfile_path: "docker/app/Dockerfile"
       health_check_url: "https://nl2cad.de/livez/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
