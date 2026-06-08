@@ -1,7 +1,7 @@
 # Project Facts: cad-hub
 
 > Auto-generiert von `platform/.github/scripts/push_project_facts.py`
-> Letzte Aktualisierung: 2026-06-01 — bei Änderungen: `platform/gen-project-facts.yml` triggern
+> Letzte Aktualisierung: 2026-06-08 — bei Änderungen: `platform/gen-project-facts.yml` triggern
 
 ## Meta
 
