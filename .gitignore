@@ -40,3 +40,7 @@ env_loader.py
 
 # IDE agent workflows (symlinked, not repo-specific)
 .windsurf/
+
+# Generated/editor cruft (ADR-230, platform convention)
+NEXT.md
+.windsurfignore
