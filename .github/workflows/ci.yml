@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.0.4
+    uses: achimdehnert/platform/.github/workflows/_ci-python.yml@session/2026-06-12/achim-dehnert/sharedci-ephemeral-pg-port
     with:
       skip_tests: false
       django_settings_module: "config.settings.test"
