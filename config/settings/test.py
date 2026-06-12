@@ -12,8 +12,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         # Defaults match the platform reusable CI workflow's postgres
-        # service (_ci-python.yml: test_user/test_pass/test_db@5432, only
-        # POSTGRES_HOST exported). TEST_DB_* still override for local dev.
+        # service (_ci-python.yml: test_user/test_pass/test_db; exports
+        # POSTGRES_HOST + POSTGRES_PORT — Port ist seit shared-ci#8
+        # ephemer). TEST_DB_* still override for local dev.
         "NAME": decouple_config("TEST_DB_NAME", default="test_db"),
         "USER": decouple_config("TEST_DB_USER", default="test_user"),
         "PASSWORD": decouple_config("TEST_DB_PASSWORD", default="test_pass"),
@@ -21,7 +22,10 @@ DATABASES = {
             "TEST_DB_HOST",
             default=decouple_config("POSTGRES_HOST", default="localhost"),
         ),
-        "PORT": decouple_config("TEST_DB_PORT", default="5432"),
+        "PORT": decouple_config(
+            "TEST_DB_PORT",
+            default=decouple_config("POSTGRES_PORT", default="5432"),
+        ),
         "TEST": {"NAME": "test_cad_hub"},
     }
 }
