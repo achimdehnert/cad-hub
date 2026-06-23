@@ -61,7 +61,9 @@ def test_should_reject_subdomain_for_non_member(org, outsider):
 
 @pytest.mark.django_db
 def test_should_reject_header_for_non_member(org, outsider):
-    request = RequestFactory().get("/", HTTP_HOST="example.com", HTTP_X_TENANT_ID=str(org.tenant_id))
+    request = RequestFactory().get(
+        "/", HTTP_HOST="example.com", HTTP_X_TENANT_ID=str(org.tenant_id)
+    )
     request.user = outsider
     _run(request)
     assert request.tenant_id is None
