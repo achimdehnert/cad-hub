@@ -9,7 +9,7 @@ celery>=5.4,<6.0
 redis>=5.0,<6.0
 
 # nl2cad-* Packages (published on PyPI)
-nl2cad-core[ifc]>=0.1.0,<1.0
+nl2cad-core[ifc]>=0.4.0,<1.0
 nl2cad-areas>=0.1.0,<1.0
 nl2cad-brandschutz>=0.1.0,<1.0
 nl2cad-gaeb>=0.1.0,<1.0
@@ -37,7 +37,7 @@ aifw>=0.5.0,<1
 iil-platform-context>=0.7.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
-iil-nl2cadfw>=0.1.0,<1
+iil-nl2cadfw>=0.2.1,<1
 
 # openai kept as transitive dep for aifw
 # DO NOT use openai directly — use aifw instead.
