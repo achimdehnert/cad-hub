@@ -15,6 +15,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   ifcopenshell usage, 5 files / ~2100 lines) — unreferenced outside its own
   folder. Active path stays `nl2cad.core.parsers.IFCParser` via
   `apps/ifc/services/ifc_parser.py`.
+- Dead duplicate `apps/ifc/services/cad_loader.py` — broken relative imports
+  (`.dxf_analyzer`/`.dxf_renderer` don't exist under `apps/ifc/services/`),
+  0 active references anywhere in the repo.
+- `nl2cad-nlp` and `iil-nl2cadfw` from `requirements.txt` — verified 0 imports
+  of either in the codebase; `iil-nl2cadfw` was a redundant umbrella pin on
+  top of the already-pinned individual `nl2cad-*` packages.
 
 ### Added
 - authentik Single Sign-On on the nl2cad.de login page (ADR-142):
