@@ -270,7 +270,8 @@ class MassenHandler(BaseCADHandler):
             try:
                 room_areas = loader.get_room_areas()
                 for i, ra in enumerate(room_areas[:20]):
-                    area_m2 = ra.get("area", 0) / 1_000_000
+                    # area ist bereits in echten m² (nl2cad-core DXFParser, ADR-012 T2)
+                    area_m2 = ra.get("area", 0)
                     if area_m2 > 1.0:
                         item = MassItem(
                             description=f"Fläche {i + 1}",

@@ -466,7 +466,7 @@ function displayAnalysis(data) {
         ? fp.room_areas.slice(0, 10).map(a => `
             <div class="room-card d-flex justify-content-between">
                 <span>Layer: ${a.layer}</span>
-                <strong>${(a.area/1000000).toFixed(2)} m²</strong>
+                <strong>${a.area.toFixed(2)} m²</strong>
             </div>
         `).join('')
         : '<p class="text-muted">Keine geschlossenen Flächen gefunden</p>';

@@ -307,29 +307,10 @@ Antwort als JSON:
             elif parsed.intent == QueryIntent.TOTAL_AREA:
                 areas = loader.get_room_areas()
                 if areas:
-                    # Get units from analysis to determine conversion factor
-                    try:
-                        analysis = loader.get_analysis()
-                        units = getattr(analysis, "units", "Unknown")
-                    except Exception:
-                        units = "Unknown"
-
-                    total_raw = sum(a.get("area", 0) for a in areas)
-
-                    # Smart unit conversion based on detected units and magnitude
-                    if units and "mm" in str(units).lower():
-                        total = total_raw / 1_000_000  # mm² to m²
-                    elif units and "cm" in str(units).lower():
-                        total = total_raw / 10_000  # cm² to m²
-                    elif total_raw > 100_000:  # Likely mm²
-                        total = total_raw / 1_000_000
-                    elif total_raw > 100:  # Likely cm² or raw m²
-                        total = total_raw if total_raw < 10000 else total_raw / 10_000
-                    else:  # Already in m² or very small
-                        total = total_raw
-
-                    return f"Geschätzte Gesamtfläche: {total:.1f} m² ({len(areas)} Flächen)"
-                return "Keine geschlossenen Flächen gefunden (LWPOLYLINE)"
+                    # area ist bereits in echten m² (nl2cad-core DXFParser, ADR-012 T2)
+                    total = sum(a.get("area", 0) for a in areas)
+                    return f"Gesamtfläche: {total:.1f} m² ({len(areas)} Flächen)"
+                return "Keine Flächen erkannt"
 
             elif parsed.intent == QueryIntent.LAYER_INFO:
                 layers = loader.get_layers()

@@ -24,6 +24,33 @@ from .analyzer.specialized_analyzers import FloorPlanAnalyzer, TechnicalDrawingA
 
 logger = logging.getLogger(__name__)
 
+# Layer-Keywords, die cad-hub bisher zusätzlich zu nl2cads
+# DXFParserConfig.excluded_layer_keywords-Default ausschloss (Bauteil-Layer wie
+# Wand/Dach/Treppe, die nl2cads AEC-neutraler Default nicht kennt). Union statt
+# Ersetzen, sonst gehen nl2cads eigene Defaults (u.a. "sanitary", "scale",
+# "note") verloren — Parität geprüft bei der ADR-012-T2-Migration.
+_CADHUB_EXTRA_EXCLUDED_LAYER_KEYWORDS = frozenset(
+    {
+        "decken",
+        "ceiling",
+        "deckenkonstruktion",
+        "fußbodenaufbau",
+        "wand",
+        "wände",
+        "wall",
+        "konstruktion",
+        "tragwerk",
+        "fundament",
+        "dach",
+        "roof",
+        "fassade",
+        "treppe",
+        "stair",
+        "aufzug",
+        "elevator",
+    }
+)
+
 
 class CADLoaderService:
     """
@@ -143,7 +170,12 @@ class CADLoaderService:
     def dxf_model(self) -> DXFModel:
         """Get or create nl2cad DXFModel (lazy loading, cached per instance)."""
         if self._dxf_model is None:
-            config = DXFParserConfig(read_all_entities=False)
+            default_config = DXFParserConfig()
+            config = DXFParserConfig(
+                read_all_entities=False,
+                excluded_layer_keywords=default_config.excluded_layer_keywords
+                | _CADHUB_EXTRA_EXCLUDED_LAYER_KEYWORDS,
+            )
             self._dxf_model = DXFParser(config=config).parse(self._resolve_dxf_path())
         return self._dxf_model
 
@@ -236,15 +268,34 @@ class CADLoaderService:
         """
         Identify rooms in floor plan.
 
-        Uses text-based room identification.
+        Sourced from nl2cad-core DXFParser (ADR-012 T2) — polygon-based
+        extraction + text-label matching, not the old pure text-keyword scan.
+        Same order as get_room_areas(): both read self.dxf_model.rooms, so
+        index i in one corresponds to index i in the other.
         """
-        return self.floor_analyzer.identify_rooms()
+        return [
+            {
+                "name": room.name,
+                "position": {"x": room.position.x, "y": room.position.y},
+                "layer": room.layer,
+            }
+            for room in self.dxf_model.rooms
+        ]
 
     def get_room_areas(self) -> list[dict]:
         """
-        Calculate room areas from closed polylines.
+        Room areas in real m²/m (unit-corrected by nl2cad-core), not raw DXF units.
         """
-        return self.floor_analyzer.calculate_room_areas()
+        return [
+            {
+                "handle": "",
+                "layer": room.layer,
+                "area": room.area_m2,
+                "perimeter": room.perimeter_m,
+                "vertex_count": len(room.vertices),
+            }
+            for room in self.dxf_model.rooms
+        ]
 
     def get_doors(self) -> list[dict]:
         """Find door blocks."""
