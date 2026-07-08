@@ -12,6 +12,10 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
+from nl2cad.core.config import DXFParserConfig
+from nl2cad.core.models.dxf import DXFModel
+from nl2cad.core.parsers.dxf_parser import DXFParser
+
 from .analyzer.analyzer_models import AnalysisReport
 from .analyzer.dwg_converter import DWGConverterService as DWGConverter
 from .analyzer.dxf_analyzer import DXFAnalyzer
@@ -58,6 +62,8 @@ class CADLoaderService:
         self._renderer: DXFRendererService | None = None
         self._floor_analyzer: FloorPlanAnalyzer | None = None
         self._tech_analyzer: TechnicalDrawingAnalyzer | None = None
+        self._dxf_model: DXFModel | None = None
+        self._resolved_dxf_path: Path | None = None
 
     @classmethod
     def from_file(cls, filepath: str | Path) -> "CADLoaderService":
@@ -112,6 +118,34 @@ class CADLoaderService:
         if self._tech_analyzer is None:
             self._tech_analyzer = TechnicalDrawingAnalyzer(self.filepath)
         return self._tech_analyzer
+
+    def _resolve_dxf_path(self) -> Path:
+        """
+        Resolve self.filepath to a real .dxf file, converting DWG if needed.
+
+        DXFParser.parse() only reads .dxf files. DWG conversion here is
+        independent of DXFAnalyzer's own conversion (self.analyzer) — this
+        causes a second ODA pass for DWG uploads; acceptable for now, a
+        shared conversion cache is a separate fast-follow.
+        """
+        if self.filepath.suffix.lower() == ".dxf":
+            return self.filepath
+        if self._resolved_dxf_path is None:
+            result = DWGConverter().convert_to_dxf(self.filepath)
+            if not result.success or not result.dxf_path:
+                raise RuntimeError(
+                    f"DWG→DXF Konvertierung fehlgeschlagen: {self.filepath} ({result.error})"
+                )
+            self._resolved_dxf_path = result.dxf_path
+        return self._resolved_dxf_path
+
+    @property
+    def dxf_model(self) -> DXFModel:
+        """Get or create nl2cad DXFModel (lazy loading, cached per instance)."""
+        if self._dxf_model is None:
+            config = DXFParserConfig(read_all_entities=False)
+            self._dxf_model = DXFParser(config=config).parse(self._resolve_dxf_path())
+        return self._dxf_model
 
     # -------------------------------------------------------------------------
     # VIEWER DATA
