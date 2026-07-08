@@ -12,6 +12,10 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
+from nl2cad.core.config import DXFParserConfig
+from nl2cad.core.models.dxf import DXFModel
+from nl2cad.core.parsers.dxf_parser import DXFParser
+
 from .analyzer.analyzer_models import AnalysisReport
 from .analyzer.dwg_converter import DWGConverterService as DWGConverter
 from .analyzer.dxf_analyzer import DXFAnalyzer
@@ -19,6 +23,33 @@ from .analyzer.dxf_renderer import DXFRendererService
 from .analyzer.specialized_analyzers import FloorPlanAnalyzer, TechnicalDrawingAnalyzer
 
 logger = logging.getLogger(__name__)
+
+# Layer-Keywords, die cad-hub bisher zusätzlich zu nl2cads
+# DXFParserConfig.excluded_layer_keywords-Default ausschloss (Bauteil-Layer wie
+# Wand/Dach/Treppe, die nl2cads AEC-neutraler Default nicht kennt). Union statt
+# Ersetzen, sonst gehen nl2cads eigene Defaults (u.a. "sanitary", "scale",
+# "note") verloren — Parität geprüft bei der ADR-012-T2-Migration.
+_CADHUB_EXTRA_EXCLUDED_LAYER_KEYWORDS = frozenset(
+    {
+        "decken",
+        "ceiling",
+        "deckenkonstruktion",
+        "fußbodenaufbau",
+        "wand",
+        "wände",
+        "wall",
+        "konstruktion",
+        "tragwerk",
+        "fundament",
+        "dach",
+        "roof",
+        "fassade",
+        "treppe",
+        "stair",
+        "aufzug",
+        "elevator",
+    }
+)
 
 
 class CADLoaderService:
@@ -58,6 +89,8 @@ class CADLoaderService:
         self._renderer: DXFRendererService | None = None
         self._floor_analyzer: FloorPlanAnalyzer | None = None
         self._tech_analyzer: TechnicalDrawingAnalyzer | None = None
+        self._dxf_model: DXFModel | None = None
+        self._resolved_dxf_path: Path | None = None
 
     @classmethod
     def from_file(cls, filepath: str | Path) -> "CADLoaderService":
@@ -112,6 +145,39 @@ class CADLoaderService:
         if self._tech_analyzer is None:
             self._tech_analyzer = TechnicalDrawingAnalyzer(self.filepath)
         return self._tech_analyzer
+
+    def _resolve_dxf_path(self) -> Path:
+        """
+        Resolve self.filepath to a real .dxf file, converting DWG if needed.
+
+        DXFParser.parse() only reads .dxf files. DWG conversion here is
+        independent of DXFAnalyzer's own conversion (self.analyzer) — this
+        causes a second ODA pass for DWG uploads; acceptable for now, a
+        shared conversion cache is a separate fast-follow.
+        """
+        if self.filepath.suffix.lower() == ".dxf":
+            return self.filepath
+        if self._resolved_dxf_path is None:
+            result = DWGConverter().convert_to_dxf(self.filepath)
+            if not result.success or not result.dxf_path:
+                raise RuntimeError(
+                    f"DWG→DXF Konvertierung fehlgeschlagen: {self.filepath} ({result.error})"
+                )
+            self._resolved_dxf_path = result.dxf_path
+        return self._resolved_dxf_path
+
+    @property
+    def dxf_model(self) -> DXFModel:
+        """Get or create nl2cad DXFModel (lazy loading, cached per instance)."""
+        if self._dxf_model is None:
+            default_config = DXFParserConfig()
+            config = DXFParserConfig(
+                read_all_entities=False,
+                excluded_layer_keywords=default_config.excluded_layer_keywords
+                | _CADHUB_EXTRA_EXCLUDED_LAYER_KEYWORDS,
+            )
+            self._dxf_model = DXFParser(config=config).parse(self._resolve_dxf_path())
+        return self._dxf_model
 
     # -------------------------------------------------------------------------
     # VIEWER DATA
@@ -202,15 +268,34 @@ class CADLoaderService:
         """
         Identify rooms in floor plan.
 
-        Uses text-based room identification.
+        Sourced from nl2cad-core DXFParser (ADR-012 T2) — polygon-based
+        extraction + text-label matching, not the old pure text-keyword scan.
+        Same order as get_room_areas(): both read self.dxf_model.rooms, so
+        index i in one corresponds to index i in the other.
         """
-        return self.floor_analyzer.identify_rooms()
+        return [
+            {
+                "name": room.name,
+                "position": {"x": room.position.x, "y": room.position.y},
+                "layer": room.layer,
+            }
+            for room in self.dxf_model.rooms
+        ]
 
     def get_room_areas(self) -> list[dict]:
         """
-        Calculate room areas from closed polylines.
+        Room areas in real m²/m (unit-corrected by nl2cad-core), not raw DXF units.
         """
-        return self.floor_analyzer.calculate_room_areas()
+        return [
+            {
+                "handle": "",
+                "layer": room.layer,
+                "area": room.area_m2,
+                "perimeter": room.perimeter_m,
+                "vertex_count": len(room.vertices),
+            }
+            for room in self.dxf_model.rooms
+        ]
 
     def get_doors(self) -> list[dict]:
         """Find door blocks."""

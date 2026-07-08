@@ -20,123 +20,12 @@ from apps.core.handlers.base import (
 
 logger = logging.getLogger(__name__)
 
-
-# Layer-Keywords für DXF-Raumerkennung
-_EXCLUDED_LAYER_KEYWORDS = [
-    "symbol",
-    "schraffur",
-    "hatch",
-    "text",
-    "beschriftung",
-    "annotation",
-    "bemaßung",
-    "dimension",
-    "dim",
-    "achse",
-    "axis",
-    "grid",
-    "hilfslin",
-    "construction",
-    "möbel",
-    "furniture",
-    "einrichtung",
-    "elektro",
-    "sanitär",
-    "heizung",
-    "lüftung",
-    "hvac",
-    "legende",
-    "rahmen",
-    "frame",
-    "border",
-    "logo",
-    "titel",
-    "viewport",
-    "defpoints",
-    "decken",
-    "ceiling",
-    "deckenkonstruktion",
-    "fußbodenaufbau",
-    "wand",
-    "wände",
-    "wall",
-    "konstruktion",
-    "tragwerk",
-    "fundament",
-    "dach",
-    "roof",
-    "fassade",
-    "treppe",
-    "stair",
-    "aufzug",
-    "elevator",
-]
-
-_VALID_FLOOR_KEYWORDS = [
-    "raum",
-    "räume",
-    "room",
-    "nutzfläche",
-    "nutzflaeche",
-    "nuf",
-    "bodenplatte",
-    "grundriss",
-    "wohnfläche",
-    "büro",
-    "buero",
-    "office",
-    "flur",
-    "corridor",
-    "küche",
-    "kueche",
-    "kitchen",
-    "bad",
-    "wc",
-    "schlaf",
-    "wohn",
-    "lager",
-    "storage",
-    "keller",
-    "basement",
-    "garage",
-]
-
-
-def _is_excluded_layer(layer_name: str) -> bool:
-    layer_lower = layer_name.lower()
-    if layer_name.startswith("\\") or "{\\p" in layer_name or "\\f" in layer_name:
-        return True
-    return any(kw in layer_lower for kw in _EXCLUDED_LAYER_KEYWORDS)
-
-
-def _is_valid_floor_layer(layer_name: str) -> bool:
-    layer_lower = layer_name.lower()
-    return any(kw in layer_lower for kw in _VALID_FLOOR_KEYWORDS)
-
-
-def _get_unit_factor(loader, room_areas: list) -> float:
-    """Ermittelt Umrechnungsfaktor für Flächen zu m²."""
-    try:
-        analysis = loader.get_analysis()
-        units = getattr(analysis, "units", None)
-        if units:
-            units_lower = str(units).lower()
-            if "mm" in units_lower:
-                return 1 / 1_000_000
-            if "cm" in units_lower:
-                return 1 / 10_000
-            if "m" in units_lower:
-                return 1.0
-    except Exception:
-        pass
-    if not room_areas:
-        return 1.0
-    max_area = max(a.get("area", 0) for a in room_areas)
-    if max_area > 1_000_000:
-        return 1 / 1_000_000
-    if max_area > 10_000:
-        return 1 / 10_000
-    return 1.0
+# Sanity-Grenzen für DXF-Raumflächen — Sicherheitsnetz gegen Fehlerkennungen
+# (z. B. Gebäudeumriss/Grundstücksgrenze als "Raum"), unabhängig vom
+# Extraktions-Algorithmus. Untergrenze überschneidet sich mit nl2cads eigenem
+# DXFParserConfig.min_area_m2 (0.5), bleibt hier zusätzlich als lokaler Guard.
+_MIN_ROOM_AREA_M2 = 1.0
+_MAX_ROOM_AREA_M2 = 10_000.0
 
 
 class RoomAnalysisHandler(BaseCADHandler):
@@ -234,72 +123,42 @@ class RoomAnalysisHandler(BaseCADHandler):
         return result
 
     def _extract_dxf_rooms(self, loader, result: CADHandlerResult) -> list[IFCRoom]:
-        """Extrahiert Räume aus DXF-Loader als IFCRoom-Liste."""
-        rooms: list[IFCRoom] = []
+        """
+        Extrahiert Räume aus DXF-Loader als IFCRoom-Liste.
 
-        # 1. Text-basierte Raumerkennung
+        get_rooms()/get_room_areas() lesen beide aus derselben
+        nl2cad-DXFModel.rooms-Liste (loader.dxf_model) in derselben
+        Reihenfolge (ADR-012 T2) — Name und Fläche sind damit per Index
+        bereits demselben erkannten Raum zugeordnet, kein Layer-Name-Matching
+        mehr nötig. Layer-Ausschluss (Wand/Symbol/Bemaßung/...) passiert
+        bereits in nl2cads DXFParserConfig beim Parsen (siehe cad_loader.py).
+        """
+        rooms: list[IFCRoom] = []
+        skipped = 0
+
         try:
-            for tr in loader.get_rooms():
+            names = loader.get_rooms()
+            areas = loader.get_room_areas()
+            for name_info, area_info in zip(names, areas, strict=True):
+                area_m2 = area_info.get("area", 0)
+                if area_m2 < _MIN_ROOM_AREA_M2 or area_m2 > _MAX_ROOM_AREA_M2:
+                    skipped += 1
+                    continue
                 rooms.append(
                     IFCRoom(
-                        name=tr.get("name", "Unbekannt"),
-                        floor_name=tr.get("layer", ""),
+                        name=name_info.get("name") or "Unbekannt",
+                        area_m2=area_m2,
+                        perimeter_m=area_info.get("perimeter", 0),
+                        floor_name=name_info.get("layer", ""),
                     )
                 )
+            if skipped:
+                result.add_warning(f"{skipped} Räume außerhalb Flächen-Sanity-Grenzen übersprungen")
+            logger.info("[%s] %d Räume aus DXF extrahiert", self.name, len(rooms))
         except Exception as e:
-            result.add_warning(f"Text-Raumerkennung fehlgeschlagen: {e}")
+            result.add_warning(f"DXF-Raumerkennung fehlgeschlagen: {e}")
 
-        # 2. Geometrie-basierte Flächenberechnung
-        try:
-            room_areas = loader.get_room_areas()
-            if room_areas:
-                unit_factor = _get_unit_factor(loader, room_areas)
-                valid_count = 0
-                excluded_count = 0
-
-                for area_info in room_areas:
-                    layer = area_info.get("layer", "")
-
-                    if _is_excluded_layer(layer):
-                        excluded_count += 1
-                        continue
-                    if not _is_valid_floor_layer(layer):
-                        excluded_count += 1
-                        continue
-
-                    area_m2 = area_info.get("area", 0) * unit_factor
-                    perimeter_m = area_info.get("perimeter", 0) * (unit_factor**0.5)
-
-                    if area_m2 < 1.0 or area_m2 > 10_000:
-                        continue
-
-                    matched = False
-                    for room in rooms:
-                        if room.floor_name == layer and room.area_m2 == 0:
-                            room.area_m2 = area_m2
-                            room.perimeter_m = perimeter_m
-                            matched = True
-                            break
-
-                    if not matched:
-                        rooms.append(
-                            IFCRoom(
-                                name=f"Fläche_{layer}" if layer else "Unbenannt",
-                                area_m2=area_m2,
-                                perimeter_m=perimeter_m,
-                                floor_name=layer,
-                            )
-                        )
-                        valid_count += 1
-
-                if excluded_count > 0:
-                    result.add_warning(f"{excluded_count} Layer übersprungen")
-                logger.info("[%s] %d gültige Nutzflächen", self.name, valid_count)
-
-        except Exception as e:
-            result.add_warning(f"Flächen-Berechnung fehlgeschlagen: {e}")
-
-        # 3. Fallback: Bounding Box
+        # Fallback: Bounding Box
         if not any(r.area_m2 > 0 for r in rooms):
             try:
                 stats = loader.get_statistics()
