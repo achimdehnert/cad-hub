@@ -39,7 +39,7 @@ jobs:
   deploy:
     needs: [ci]
     if: always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped')
-    uses: iilgmbh/shared-ci/.github/workflows/_deploy-unified.yml@v1.0.5
+    uses: iilgmbh/shared-ci/.github/workflows/_deploy-unified.yml@v1.0.10
     with:
       app_name: "cad-hub"
       app_path: "/opt/cad-hub"
