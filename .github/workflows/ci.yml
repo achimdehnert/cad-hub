@@ -11,4 +11,8 @@ jobs:
     with:
       skip_tests: false
       django_settings_module: "config.settings.test"
+      # xdist 'auto' spawnt 1 Worker/Core (12 auf dem Shared-Runner-Host) und
+      # crasht dort reproduzierbar ('node down: Not properly terminated') bei
+      # 19/22GB Speicherlast — selbes Muster wie weltenhub (9326e49, Host-OOM).
+      pytest_workers: "4"
     secrets: inherit
