@@ -34,6 +34,10 @@ jobs:
     with:
       skip_tests: false
       django_settings_module: "config.settings.test"
+      # Gleicher Host-OOM-Schutz wie in ci.yml (PR #39): v1.0.5 defaultet noch
+      # auf 'auto' = 12 xdist-Worker -> memcg-Crash auf dem geteilten Runner-Host
+      # (Deploy-Run 29183210419). Ab shared-ci v1.0.11 (Default '4') entbehrlich.
+      pytest_workers: "4"
     secrets: inherit
 
   deploy:
