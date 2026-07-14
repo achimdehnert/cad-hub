@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cad-hub · Projekt & IFC-Upload — Klick-Dummy v0.1 (Draft)</title>
+<!--
+  spec-demo (class: spec-demo) — Klickdummy zu cad-hub:ADR-035, Spec
+  klickdummy/projekt-ifc-upload/screens-spec.yaml. Brownfield-Extraktion aus
+  apps/ifc (CORE-Modul).
+  ADR-048/049: --pui-*-Tokens statt Hex, addEventListener statt onclick,
+  data-testid an jedem interaktiven Element (Parity-Anker der Spec).
+-->
+<style>
+  :root {
+    --pui-primary:    #b5480c;
+    --pui-surface:    #fbf7f4;
+    --pui-surface-2:  #ffffff;
+    --pui-border:     #ecdcd0;
+    --pui-muted:      #6d5f56;
+    --pui-success:    #1f7a3d;
+    --pui-success-bg: #e3f5e9;
+    --pui-warning:    #8a5a00;
+    --pui-warning-bg: #fdf0d6;
+    --pui-danger:     #a3231f;
+    --pui-danger-bg:  #fbe3e2;
+    --pui-neutral:    #6d5f56;
+    --pui-neutral-bg: #f1e7e0;
+    --pui-space-1: 4px;
+    --pui-space-2: 8px;
+    --pui-space-3: 12px;
+    --pui-space-4: 16px;
+    --pui-space-6: 24px;
+    --pui-radius:    6px;
+    --pui-radius-lg: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; color: #251d17; background: var(--pui-surface); }
+  header { background: var(--pui-primary); color: #fff; padding: var(--pui-space-3) var(--pui-space-6); display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .badge-demo { font-size: 11px; background: rgba(255,255,255,.18); padding: 2px 8px; border-radius: 10px; }
+  nav { display: flex; gap: var(--pui-space-2); background: var(--pui-surface-2); padding: var(--pui-space-2) var(--pui-space-6); border-bottom: 1px solid var(--pui-border); flex-wrap: wrap; }
+  nav button { font: inherit; font-size: 13px; padding: var(--pui-space-2) var(--pui-space-3); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); color: var(--pui-muted); cursor: pointer; }
+  nav button[aria-current="true"] { background: var(--pui-primary); border-color: var(--pui-primary); color: #fff; font-weight: 600; }
+  main { max-width: 960px; margin: 0 auto; padding: var(--pui-space-6); }
+  section[data-screen] { display: none; }
+  section[data-screen].active { display: block; }
+  h2 { font-size: 20px; margin: 0 0 var(--pui-space-1); color: var(--pui-primary); }
+  .purpose { color: var(--pui-muted); font-size: 13px; margin: 0 0 var(--pui-space-4); }
+  .panel { background: var(--pui-surface-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius-lg); padding: var(--pui-space-4); margin-bottom: var(--pui-space-4); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: var(--pui-space-2) var(--pui-space-3); border-bottom: 1px solid var(--pui-border); }
+  th { color: var(--pui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  tr[data-row]:hover { background: var(--pui-surface); cursor: pointer; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge.uploading { background: var(--pui-neutral-bg); color: var(--pui-neutral); }
+  .badge.processing { background: var(--pui-warning-bg); color: var(--pui-warning); }
+  .badge.ready { background: var(--pui-success-bg); color: var(--pui-success); }
+  .badge.error { background: var(--pui-danger-bg); color: var(--pui-danger); }
+  label { display: block; font-size: 12px; color: var(--pui-muted); margin: var(--pui-space-3) 0 var(--pui-space-1); font-weight: 600; }
+  input { width: 100%; font: inherit; font-size: 13px; padding: var(--pui-space-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); }
+  button.primary { font: inherit; font-size: 13px; font-weight: 600; padding: var(--pui-space-2) var(--pui-space-4); border: none; border-radius: var(--pui-radius); background: var(--pui-primary); color: #fff; cursor: pointer; margin-top: var(--pui-space-4); }
+  button.primary:disabled { opacity: .45; cursor: not-allowed; }
+  .dropzone { border: 2px dashed var(--pui-border); border-radius: var(--pui-radius-lg); padding: var(--pui-space-6); text-align: center; color: var(--pui-muted); font-size: 13px; cursor: pointer; }
+  .dropzone.dragover { border-color: var(--pui-primary); background: var(--pui-surface); color: var(--pui-primary); }
+  .kv dt { font-size: 11px; color: var(--pui-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: var(--pui-space-3); }
+  .kv dd { margin: 2px 0 0; font-size: 14px; }
+  .note { color: var(--pui-muted); font-size: 11px; margin-top: var(--pui-space-4); }
+  .error-msg { background: var(--pui-danger-bg); color: var(--pui-danger); border-radius: var(--pui-radius); padding: var(--pui-space-3); font-size: 13px; margin-top: var(--pui-space-3); }
+</style>
+</head>
+<body data-persona="planer">
+
+<header>
+  <h1>cad-hub · Projekt & IFC-Upload</h1>
+  <span class="badge-demo">spec-demo · Planer</span>
+</header>
+
+<nav>
+  <button type="button" data-nav="projekt-uebersicht" data-testid="nav-projekt-uebersicht" aria-current="true">Projekte</button>
+  <button type="button" data-nav="projekt-anlegen" data-testid="nav-projekt-anlegen">+ Projekt anlegen</button>
+</nav>
+
+<main>
+
+  <!-- ============================ PROJEKT-ÜBERSICHT ============================ -->
+  <section data-screen="projekt-uebersicht" class="active">
+    <h2>Projekt-Übersicht</h2>
+    <p class="purpose">Alle eigenen IFC-Projekte mit Anzahl hochgeladener Modelle.</p>
+
+    <div class="panel">
+      <table data-testid="projekte-tabelle">
+        <thead><tr><th>Name</th><th>Angelegt</th><th>Modelle</th></tr></thead>
+        <tbody id="projekte-tbody">
+          <tr data-row data-testid="projekt-row-wohnhaus" data-projekt="wohnhaus">
+            <td>Wohnhaus Musterstraße 12</td><td>2026-06-02</td>
+            <td><span data-testid="model-count">3</span></td>
+          </tr>
+          <tr data-row data-testid="projekt-row-buerokomplex" data-projekt="buerokomplex">
+            <td>Bürokomplex Nordring</td><td>2026-07-01</td>
+            <td><span data-testid="model-count">1</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.ifc.views.ProjectListView (/projects/) — model_count berechnet aus count(IFCModel mit project_id=X).</p>
+  </section>
+
+  <!-- ============================ PROJEKT ANLEGEN ============================ -->
+  <section data-screen="projekt-anlegen">
+    <h2>Projekt anlegen</h2>
+    <p class="purpose">Ein neues IFC-Projekt anlegen, bevor Modelle hochgeladen werden können.</p>
+
+    <div class="panel">
+      <label for="pa-name">Projektname *</label>
+      <input id="pa-name" data-testid="projekt-anlegen-name" required>
+      <button type="button" class="primary" id="pa-submit" data-testid="projekt-anlegen-speichern" disabled>Projekt anlegen</button>
+      <div id="pa-result" style="margin-top:12px"></div>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.ifc.views.ProjectCreateView (/project/create/) — Pflichtfeld name blockiert Absenden.</p>
+  </section>
+
+  <!-- ============================ IFC-UPLOAD & VERARBEITUNG ============================ -->
+  <section data-screen="ifc-upload-verarbeitung">
+    <h2>IFC-Upload & Verarbeitung</h2>
+    <p class="purpose">IFC-Datei hochladen und Verarbeitungsstatus verfolgen: uploading → processing → ready (oder error).</p>
+
+    <div class="panel">
+      <div class="dropzone" id="upload-dropzone" data-testid="ifc-upload-dropzone">
+        📐 IFC-Datei hierher ziehen oder klicken zum Auswählen
+      </div>
+
+      <div id="upload-status-panel" hidden style="margin-top:16px">
+        <dl class="kv">
+          <dt>Status</dt><dd><span class="badge uploading" id="upload-status-badge" data-testid="upload-status-badge">Wird hochgeladen</span></dd>
+          <dt>IFC-Schema</dt><dd id="upload-schema">—</dd>
+          <dt>Erstellungs-Software</dt><dd id="upload-application">—</dd>
+        </dl>
+        <div class="error-msg" id="upload-error" hidden data-testid="upload-error-message"></div>
+      </div>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.ifc.views_upload.IFCUploadView (/project/&lt;id&gt;/ifc-upload/) — Status-Pipeline serverseitig getrieben, kein clientseitiger Rückschritt möglich.</p>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  function activateScreen(id) {
+    document.querySelectorAll("section[data-screen]").forEach(function (s) {
+      s.classList.toggle("active", s.dataset.screen === id);
+    });
+    document.querySelectorAll("nav button[data-nav]").forEach(function (b) {
+      b.setAttribute("aria-current", String(b.dataset.nav === id));
+    });
+  }
+
+  document.querySelectorAll("nav button[data-nav]").forEach(function (btn) {
+    btn.addEventListener("click", function () { activateScreen(btn.dataset.nav); });
+  });
+
+  // ---- Projekt-Übersicht → Upload-Screen ----
+  document.querySelectorAll('#projekte-tbody tr[data-row]').forEach(function (row) {
+    row.addEventListener("click", function () { activateScreen("ifc-upload-verarbeitung"); });
+  });
+
+  // ---- Projekt anlegen: Pflichtfeld-Gate ----
+  var name = document.getElementById("pa-name");
+  var submit = document.getElementById("pa-submit");
+  name.addEventListener("input", function () {
+    submit.disabled = !name.value.trim();
+  });
+  submit.addEventListener("click", function () {
+    document.getElementById("pa-result").innerHTML =
+      '<span class="badge ready">✓ Projekt „' + name.value + '“ angelegt (Mock)</span>';
+  });
+
+  // ---- IFC-Upload: Status-Pipeline uploading → processing → ready/error ----
+  var STAGES = [
+    { status: "uploading", label: "Wird hochgeladen", delay: 0 },
+    { status: "processing", label: "Wird verarbeitet", delay: 900 },
+    { status: "ready", label: "Bereit", delay: 1800 },
+  ];
+
+  function runPipeline(willError) {
+    var panel = document.getElementById("upload-status-panel");
+    var badge = document.getElementById("upload-status-badge");
+    var errorBox = document.getElementById("upload-error");
+    panel.hidden = false;
+    errorBox.hidden = true;
+
+    STAGES.forEach(function (stage, i) {
+      setTimeout(function () {
+        if (willError && stage.status === "ready") {
+          badge.textContent = "Fehler";
+          badge.className = "badge error";
+          errorBox.hidden = false;
+          errorBox.textContent = "IFC-Schema nicht unterstützt (Mock-Fehler zur Demonstration).";
+          return;
+        }
+        badge.textContent = stage.label;
+        badge.className = "badge " + stage.status;
+        if (stage.status === "ready") {
+          document.getElementById("upload-schema").textContent = "IFC4";
+          document.getElementById("upload-application").textContent = "Revit 2025";
+        }
+      }, stage.delay);
+    });
+  }
+
+  var dz = document.getElementById("upload-dropzone");
+  var fileCount = 0;
+  function handleUpload() {
+    fileCount += 1;
+    runPipeline(fileCount % 2 === 0); // jede 2. Datei demonstriert den Fehlerfall
+  }
+  dz.addEventListener("click", handleUpload);
+  dz.addEventListener("dragover", function (e) { e.preventDefault(); dz.classList.add("dragover"); });
+  dz.addEventListener("dragleave", function () { dz.classList.remove("dragover"); });
+  dz.addEventListener("drop", function (e) { e.preventDefault(); dz.classList.remove("dragover"); handleUpload(); });
+})();
+</script>
+
+</body>
+</html>

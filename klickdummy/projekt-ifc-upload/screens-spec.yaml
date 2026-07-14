@@ -1,0 +1,99 @@
+# =============================================================================
+# I1 Spec-first artifact — Klickdummy Projekt & IFC-Upload (cad-hub CORE)
+# Brownfield-Extraktion aus apps/ifc (kein separates Konzept-Dokument).
+# =============================================================================
+
+$schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
+spec_id: cad-hub:klickdummy-spec-projekt-ifc-upload
+spec_version: "0.1"
+spec_schema_version: "1.1"
+spec_date: "2026-07-14"
+title: "Projekt & IFC-Upload — Klickdummy (CORE-Modul)"
+
+adr:
+  local: cad-hub:ADR-035
+  conforms_to: platform:ADR-211
+  sister_of: []
+
+class: spec-demo
+class_evidence:
+  demo_query_param: "?demo=on"
+  prod_guard_env_flag: "KLICKDUMMY_DEMO_ENABLED"
+  prod_guard_rule: >-
+    Demo-Render nur aktiv wenn KLICKDUMMY_DEMO_ENABLED=True UND settings.DEBUG=True.
+    config/settings/production.py setzt DEBUG hart auf False (Zeile 7) — zusätzliche
+    Absicherung selbst falls KLICKDUMMY_DEMO_ENABLED versehentlich in Prod gesetzt würde.
+  systemgrenzen:
+    - "IFC-Projekt-Datenquelle"
+    - "IFC-Verarbeitungs-Pipeline-Adapter"
+
+off_ramp:
+  policy: platform:ADR-211 Static→Echt-Migrationspfad
+  unit: per-screen
+  rule: "Parity-grün pro Screen ⇒ Screen aus statischer Quelle entfernen"
+  doppelquell_grenze: prod-release
+  parity_runner: make klickdummy-i3
+
+grounding:
+  konzept: "apps/ifc/models.py, apps/ifc/views.py, apps/ifc/views_upload.py — Brownfield-Extraktion, kein separates Konzept-Dokument"
+  pilot: "Onboarding-Einstieg — ohne Projekt/Modell ist keine andere cad-hub-Journey (NL2CAD-Abfrage, Raum-Analyse, Export) nutzbar. /kd-scout cad-hub Kandidat A, 2026-07-14"
+
+auth:
+  required: true
+  # Alle Project-Views tragen LoginRequiredMixin + TenantMixin (apps/ifc/views.py:52,93,106,121).
+
+personas:
+  planer:
+    label: "Planer/in"
+    rolle: "planer"
+    sieht:
+      - projekt-uebersicht
+      - projekt-anlegen
+      - ifc-upload-verarbeitung
+
+screens:
+  - id: projekt-uebersicht
+    title: "Projekt-Übersicht"
+    personas: [planer]
+    purpose: "Planer sieht alle eigenen IFC-Projekte auf einen Blick."
+    datafields:
+      - { name: name, type: string, source: "apps.ifc.IFCProject.name" }
+      - { name: created_at, type: datetime, source: "apps.ifc.IFCProject.created_at" }
+      - { name: model_count, type: integer, source: "apps.ifc.views.ProjectListView", semantic: "Anzahl IFCModel je Projekt, berechnet" }
+    target_mocks:
+      - "IFC-Projekt-Datenquelle"
+    parity_acceptance:
+      - id: projekt-uebersicht.model-count-berechnet
+        check: "model_count je Projekt entspricht count(IFCModel mit project_id=X), berechnet, nicht literal"
+    off_ramp_status: static
+
+  - id: projekt-anlegen
+    title: "Projekt anlegen"
+    personas: [planer]
+    purpose: "Planer legt ein neues IFC-Projekt an, bevor Modelle hochgeladen werden können."
+    datafields:
+      - { name: name, type: string, source: "apps.ifc.IFCProject.name", semantic: "Pflichtfeld" }
+    target_mocks:
+      - "IFC-Projekt-Datenquelle"
+    parity_acceptance:
+      - id: projekt-anlegen.pflichtfeld
+        check: "name ist Pflichtfeld, Formular blockiert Absenden ohne Wert"
+    off_ramp_status: static
+
+  - id: ifc-upload-verarbeitung
+    title: "IFC-Upload & Verarbeitung"
+    personas: [planer]
+    purpose: "Planer lädt eine IFC-Datei in ein Projekt hoch und verfolgt den Verarbeitungsstatus bis zur Fertigstellung."
+    datafields:
+      - { name: status, type: enum, source: "apps.ifc.IFCModel.status", semantic: "uploading | processing | ready | error" }
+      - { name: ifc_schema, type: string, source: "apps.ifc.IFCModel.ifc_schema" }
+      - { name: application, type: string, source: "apps.ifc.IFCModel.application" }
+      - { name: error_message, type: string, source: "apps.ifc.IFCModel.error_message" }
+    target_mocks:
+      - "IFC-Verarbeitungs-Pipeline-Adapter"
+    parity_acceptance:
+      - id: ifc-upload-verarbeitung.status-progression
+        check: "Status durchläuft uploading → processing → ready (oder error), niemals ein Rückschritt oder Sprung uploading → ready ohne processing"
+      - id: ifc-upload-verarbeitung.fehler-zeigt-nachricht
+        check: "Bei status=error wird error_message angezeigt, bei allen anderen Status nicht"
+    off_ramp_status: static

@@ -1,6 +1,6 @@
 # cad-hub — Developer Makefile
 
-.PHONY: install test test-v lint clean help dev
+.PHONY: install test test-v lint clean help dev klickdummy klickdummy-install klickdummy-i1 klickdummy-i2 klickdummy-i3
 
 PYTHON := python3
 PIP    := pip
@@ -57,4 +57,26 @@ clean:
 
 dev:
 	bash $(HOME)/github/platform/scripts/dev.sh $(notdir $(CURDIR))
+
+# =============================================================================
+# KLICKDUMMY (platform:ADR-211) — ZENTRAL via iil-klickdummy
+# =============================================================================
+KLICKDUMMY_VENV := .venv-klickdummy
+KLICKDUMMIES    := klickdummy/projekt-ifc-upload/screens-spec.yaml:klickdummy/projekt-ifc-upload/screens-spec.schema.json
+
+klickdummy-install: ## Einmalig: venv + zentrales iil-klickdummy
+	@$(PYTHON) -m venv $(KLICKDUMMY_VENV) --clear 2>/dev/null || $(PYTHON) -m venv $(KLICKDUMMY_VENV)
+	@$(KLICKDUMMY_VENV)/bin/pip install --quiet "iil-klickdummy @ git+https://github.com/iilgmbh/iil-klickdummy.git@main"
+	@echo "✓ iil-klickdummy installiert"
+
+klickdummy: klickdummy-i1 klickdummy-i2 klickdummy-i3 ## ADR-211 I1–I3 (zentrale Checks)
+
+klickdummy-i1: ## I1 Spec-first — Spec gegen JSON-Schema (zentral)
+	@$(KLICKDUMMY_VENV)/bin/klickdummy-i1 $(KLICKDUMMIES)
+
+klickdummy-i2: ## I2 Prod-Sicherheit — genau eine class deklariert (zentral)
+	@$(KLICKDUMMY_VENV)/bin/klickdummy-i2 $(KLICKDUMMIES)
+
+klickdummy-i3: ## I3 Off-Ramp — sunset/Status (zentral)
+	@$(KLICKDUMMY_VENV)/bin/klickdummy-i3 $(KLICKDUMMIES)
 

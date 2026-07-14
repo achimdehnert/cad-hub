@@ -16,3 +16,15 @@ jobs:
       # 19/22GB Speicherlast — selbes Muster wie weltenhub (9326e49, Host-OOM).
       pytest_workers: "4"
     secrets: inherit
+
+  klickdummy:
+    # I1-I4-Invarianten (platform:ADR-211) — Erzwingt den Gate bei jeder PR,
+    # analog frist-hub/.github/workflows/ci.yml, trading-hub PR #143, tax-hub PR #64.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make klickdummy-install
+      - run: make klickdummy

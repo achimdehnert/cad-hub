@@ -1,0 +1,215 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "meiki:klickdummy-spec-fristenmanagement.schema",
+  "title": "Klickdummy Screens-Spec (App-Deep-Dive)",
+  "description": "I1 Spec-Schema. Konformität wird via `make klickdummy-i1` geprüft (platform:ADR-211).",
+  "type": "object",
+  "required": ["spec_id", "spec_version", "spec_date", "adr", "class", "grounding", "off_ramp", "personas", "screens"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema":       { "type": "string" },
+    "spec_id":       { "type": "string", "pattern": "^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$", "description": "Eindeutige Spec-ID, Konvention `<repo>:klickdummy-spec-<name>` (z. B. `meiki:klickdummy-spec-fristenmanagement`). Referenzpunkt für Cross-Repo-Tools (registry.py, sync_to_orchestrator.py, gen_e2e)." },
+    "spec_version":  { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$", "description": "SemVer-artige Spec-Version (nicht das Paket `iil-klickdummy`, nicht `spec_schema_version`). Erhöhen bei inhaltlichen Änderungen — Basis für `klickdummy-manage versions`/`diff`." },
+    "spec_schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$", "description": "Optional: Version der `assert`-Semantik/dieses Schemas, gegen die die Spec geschrieben wurde (M28-1). Erlaubt Generator-Kompatibilitätsmatrix. Generationen: 1.0 = Baseline; 1.1 = + `screen.use_cases[]` (Spec-Layer/X-Ray)." },
+    "spec_date":     { "type": "string", "format": "date", "description": "Erstellungs-/Rev-Datum der Spec (`YYYY-MM-DD`), von Autoren gepflegt — nicht zu verwechseln mit dem generator-internen `build-date`-Determinismus-Marker in gerenderten HTML-Artefakten." },
+    "title":         { "type": "string", "pattern": "^(?!.*[\\n\\r])[^\\n\\r]*$", "description": "Kein Zeilenumbruch (AD-3): das bare `^[^\\n\\r]*$` ließ in re-basierten Validatoren ein *trailing* \\n durch (`$` matcht vor End-\\n); die Negative-Lookahead-Form lehnt es symmetrisch zu \\r ab. Runtime-`_comment_safe`/`_doc_safe` bleibt die eigentliche Barriere." },
+
+    "adr": {
+      "type": "object",
+      "description": "ADR-Verankerung dieses Klickdummies (I4 Namensraum-Pflicht: Cross-Repo-Refs nur als `repo:ADR-NNN`).",
+      "required": ["local", "conforms_to"],
+      "properties": {
+        "local":       { "type": "string", "pattern": "^[a-z][a-z0-9_-]*:ADR-[0-9]{3}$", "description": "Die lokale, repo-eigene ADR, die diesen Klickdummy trägt (z. B. `meiki:ADR-021`). Muss `sunset_after` im Frontmatter tragen (Rev-11-Pflicht)." },
+        "conforms_to": { "type": "string", "pattern": "^platform:ADR-[0-9]{3}$", "description": "Die org-weite Rahmen-ADR, der dieser Klickdummy folgt — für dieses Schema faktisch immer `platform:ADR-211`." },
+        "sister_of": {
+          "type": "array",
+          "description": "Optional: Schwester-Implementierungen desselben Fachthemas in anderen Repos/Modulen (z. B. Modul-Dummy im selben Repo, oder dieselbe Fachlichkeit in einem anderen Produkt-Repo). Referenz entweder auf eine ADR (`<repo>:ADR-NNN`) oder direkt auf eine andere Klickdummy-Spec (`<repo>:klickdummy-spec-<slug>`, analog `spec_id` — Issue #165: risk-hub/explosionsschutz referenziert Schwester-Specs ohne eigene ADR).",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*:(ADR-[0-9]{3}|[a-z][a-z0-9_-]*)$" }
+        }
+      }
+    },
+
+    "class": {
+      "type": "string",
+      "enum": ["mock", "stub-demo", "story", "spec-demo"],
+      "description": "I2 Prod-Sicherheit (platform:ADR-211 Rev 11, 4-Pattern). Genau eine Klasse — kein vacuous pass."
+    },
+    "class_evidence": { "type": "object" },
+
+    "grounding": {
+      "type": "object",
+      "description": "Inhaltliche Erdung (Schicht D): woher die fachliche Anforderung stammt — verhindert einen Klickdummy ohne belegbare Quelle.",
+      "required": ["konzept", "pilot"],
+      "properties": {
+        "konzept":  { "type": "string", "description": "Pfad zum fachlichen Quelldokument im Repo (z. B. Prozesshandbuch-Kapitel), das diesen Klickdummy begründet." },
+        "konzept_id":     { "type": "string", "description": "Optionale externe Konzept-ID (z. B. `KZ-FRIST-LRA-GZ-2026-001`) für Cross-Referenzierung außerhalb des Repos." },
+        "konzept_version":{ "type": "string", "description": "Optionale Versionsangabe des Quelldokuments (z. B. `v0.2 (2026-05-11)`) — Drift-Erkennung, wenn sich das Konzept weiterentwickelt." },
+        "pilot":          { "type": "string", "description": "Konkreter Pilot-Kontext (z. B. Behörde/Fachbereich/Region), auf den der Klickdummy zugeschnitten ist — grenzt generische von fallspezifischer Aussage ab." },
+        "rechtsrahmen_kernnormen": { "type": "object", "description": "Optional: Kern-Rechtsnormen je Fachfunktion (Schlüssel = Funktion, Wert = Normzitat), relevant für Public-Sector-Klickdummies (ttz-lif/meiki-lra)." }
+      }
+    },
+
+    "off_ramp": {
+      "type": "object",
+      "description": "I3 Off-Ramp-Vertrag: der Migrationspfad vom statischen Klickdummy zur echten Implementierung (platform:ADR-211 §Static→Echt-Migrationspfad).",
+      "required": ["policy", "unit", "rule", "doppelquell_grenze", "parity_runner"],
+      "properties": {
+        "policy":              { "type": "string", "description": "Referenz auf die Migrations-Policy, i. d. R. wörtlich `platform:ADR-211 Static→Echt-Migrationspfad`." },
+        "unit":                { "type": "string", "enum": ["per-screen", "per-feature"], "description": "Granularität, auf der der Off-Ramp bewertet wird — meist `per-screen` (jeder Screen einzeln migrierbar)." },
+        "rule":                { "type": "string", "description": "Die konkrete Off-Ramp-Regel in Prosa, z. B. \"Parity-grün pro Screen ⇒ Screen aus statischer Quelle entfernen\"." },
+        "doppelquell_grenze":  { "type": "string", "enum": ["prod-release"], "description": "Ab wann eine Doppel-Quelle (Klickdummy UND echte App parallel) nicht mehr toleriert wird — aktuell einziger erlaubter Wert `prod-release`." },
+        "staging_doppelquell": { "type": "string", "enum": ["allowed"], "description": "Optional: ob eine Doppel-Quelle auf Staging (vor Prod) explizit erlaubt ist." },
+        "parity_runner":       { "type": "string", "description": "Der Befehl, der die Parity-Prüfung ausführt (i. d. R. `make klickdummy-i3`)." },
+        "product_repo_planned":{ "type": "string", "description": "Optional: das geplante/künftige Produkt-Repo, in dem die echte Implementierung landen soll, falls es noch nicht existiert." },
+        "status_overall":      { "type": "string", "description": "Freitext-Statuszusammenfassung über alle Screens (z. B. \"alle_screens=static\") — Kurzform zu den einzelnen `off_ramp_status`-Werten je Screen." }
+      }
+    },
+
+    "personas": {
+      "type": "object",
+      "description": "Schicht D: die Rollen/Akteure, die diesen Klickdummy nutzen — Schlüssel ist ein freier Persona-Slug (z. B. `sachbearbeiter`), referenziert von `screens[].personas`.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label", "rolle", "sieht"],
+        "properties": {
+          "label": { "type": "string", "description": "Anzeigename der Persona (z. B. \"Sachbearbeiter:in (FB 20)\")." },
+          "rolle": { "type": "string", "description": "Kurzer Rollen-Slug, meist identisch mit dem Persona-Schlüssel." },
+          "sieht": { "type": "array", "items": { "type": "string" }, "description": "Screen-IDs, die diese Persona uneingeschränkt sieht." },
+          "sieht_eingeschraenkt": { "type": "array", "items": { "type": "string" }, "description": "Optional: Screen-IDs, die diese Persona nur eingeschränkt sieht (z. B. aggregiert, ohne Personenbezug)." },
+          "freigaben": { "type": "array", "items": { "type": "string" }, "description": "Optional: Aktionen/Screens, für die diese Persona eine Freigabe-Berechtigung hat (z. B. Mehraugenprinzip)." }
+        }
+      }
+    },
+
+    "auth": {
+      "type": "object",
+      "description": "Optionaler Auth-Block für gen_e2e. Mindestens eines der Felder erforderlich.",
+      "properties": {
+        "storage_state": { "type": "string", "description": "Pfad zur Playwright-storage_state.json (enthält Cookies/LocalStorage einer eingeloggten Session)." },
+        "login_fixture":  { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "description": "Name eines pytest-Fixtures, das den Login übernimmt (wird als autouse-Fixture-Parametername in die Suite emittiert). Muss ein gültiger Python-Bezeichner sein — fail-closed (AD-5): ein Wert, den `ident()` erst zu einem sicheren Namen coercen müsste, wird schon hier abgelehnt (zwei Werte könnten sonst auf denselben Ident kollabieren → falsche Fixture/False-Green-Auth). `ident()` in gen_suite bleibt die zweite Linie." },
+        "required":       { "type": "boolean", "description": "True = alle Screens dieser Spec brauchen Auth (Shortcut zu login_required pro Screen)." }
+      }
+    },
+
+    "strict_selectors": {
+      "type": "boolean",
+      "default": false,
+      "description": "Optional (REC-1/AD-1, ADR-211 Rev 22 Follow-up): True = Off-Ramp-Gate spec-seitig aktiv — `klickdummy-gen-e2e` behandelt fragile Selektoren (bare CSS ohne data-*-Anker, text=) als Fehler (Exit-Code 3), auch ohne `--strict-selectors`-CLI-Flag. Enforcement steht damit in der Spec statt in CI-Configs/Makefiles."
+    },
+
+    "screens": {
+      "type": "array",
+      "description": "Der eigentliche Vertrag dieses Klickdummies: eine Liste von Screens/Flow-Knoten (siehe `items.description` für die zwei Screen-Klassen).",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Zwei Screen-Klassen (KONZ-008): ein Assertions-Screen (braucht purpose+parity_acceptance+off_ramp_status) ODER ein Flow-Knoten (Navigations-Graph-Knoten mit next_screens, ohne die Assertions-Pflichtfelder). Der Flow-Knoten entschaerft die fatale Validierung fuer Multi-Screen-Flow-KDs (M28-2): ein Screen, der nur den Mermaid-Flow abbildet, muss keine parity_acceptance tragen.",
+        "anyOf": [
+          {
+            "title": "Assertions-Screen",
+            "required": ["id", "title", "personas", "purpose", "parity_acceptance", "off_ramp_status"]
+          },
+          {
+            "title": "Flow-Knoten (weiterfuehrend)",
+            "required": ["id", "title", "next_screens"],
+            "not": {"required": ["parity_acceptance"]}
+          },
+          {
+            "title": "Flow-Knoten (terminal)",
+            "required": ["id", "title", "back_screen"],
+            "not": {"required": ["parity_acceptance"]}
+          }
+        ],
+        "properties": {
+          "id":        { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$", "description": "Eindeutiger, URL-/dateinamen-sicherer Screen-Slug innerhalb der Spec (z. B. `cockpit`). Referenziert von `personas[].sieht`, `next_screens`, `use_cases`-Zuordnungen etc." },
+          "title":     { "type": "string", "pattern": "^(?!.*[\\n\\r])[^\\n\\r]*$", "description": "Anzeigename des Screens (Menschen-lesbar, z. B. \"Fristen-Cockpit\") — erscheint in Navigation, Genesor-Übersicht und generierten Reports." },
+          "route":         { "type": "string", "pattern": "^/", "description": "Optionale Render-Route; Default-Konvention `/<id>`. Kann Django-Parameter enthalten (<uuid:pk>). Ziel von `klickdummy-gen-e2e`." },
+          "route_example": { "type": "string", "pattern": "^/", "description": "Konkrete Beispiel-URL mit echten IDs/Werten (z.B. /outlines/3f2a1b.../). Wird von `klickdummy-gen-e2e` bevorzugt; löst parametrisierte `route`-Platzhalter auf." },
+          "login_required": { "type": "boolean", "description": "True wenn der Screen LoginRequired ist. gen_e2e erzeugt skip mit klarem Grund wenn kein `auth`-Block gesetzt." },
+          "personas":  { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Persona-Slugs (Schlüssel aus dem Top-Level `personas`-Objekt), die diesen Screen sehen dürfen." },
+          "purpose":   { "type": "string", "description": "Kurzer Zweck des Screens in einem Satz — Grundlage für `parity_acceptance`-Formulierung, kein UI-Text." },
+          "konzept_ref": { "type": "array", "items": { "type": "string" }, "description": "Optional: Verweise ins fachliche Quelldokument (`grounding.konzept`), die speziell diesen Screen begründen (z. B. Kapitel-Anker)." },
+          "use_cases": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Betroffene Use Cases dieses Screens (Spec-Layer/X-Ray-Strip, ab spec_schema_version 1.1). Strukturierte First-Class-Form; ohne dieses Feld fällt der Renderer auf `konzept_ref[]` bzw. `akte_next.uc` zurück."
+          },
+          "datafields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": true,
+              "properties": {
+                "name":     { "type": "string" },
+                "type":     { "type": "string" },
+                "source":   { "type": "string" },
+                "semantic": { "type": "string" }
+              }
+            }
+          },
+          "content": {
+            "type": "array",
+            "description": "Content-/Marketing-Bloecke fuer route-lose Screens (Landing/Pricing). Wird gerendert, wenn der Screen keine datafields/Entities hat. Bloecke bewusst auf 5 Typen begrenzt (kein Marketing-Builder). Ratifiziert: platform:ADR-211 Rev 23 (KONZ-009).",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "additionalProperties": true,
+              "properties": {
+                "type":     { "type": "string", "enum": ["hero", "prose", "cta", "media", "plan_table"] },
+                "headline": { "type": "string" },
+                "sub":      { "type": "string" },
+                "text":     { "type": "string" },
+                "label":    { "type": "string" },
+                "items":    { "type": "array" }
+              }
+            }
+          },
+          "off_route": {
+            "type": "boolean",
+            "description": "Screen hat bewusst keine App-Route (Content-Screen). Vorwaerts-Marker; heute kein Code-Gate konsumiert ihn (check_i1 ist schema-only). Ratifiziert: platform:ADR-211 Rev 23 (KONZ-009)."
+          },
+          "target_mocks": { "type": "array", "items": { "type": "string" } },
+          "parity_acceptance": {
+            "type": "array",
+            "description": "Pflicht-Vertrag des Assertions-Screens (I3): die einzelnen prüfbaren Behauptungen, die den Off-Ramp begründen. Migrations-Grundlage für `klickdummy-gen-e2e`.",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "check"],
+              "additionalProperties": true,
+              "properties": {
+                "id":    { "type": "string", "pattern": "^[a-z][a-z0-9_.-]*$", "description": "Eindeutige ID dieser Acceptance-Behauptung innerhalb des Screens (z. B. `example.first-check`)." },
+                "check": { "type": "string", "minLength": 8, "description": "Menschenlesbare Behauptung, was geprüft wird (mind. 8 Zeichen — verhindert Alibi-Einträge)." },
+                "kind": {
+                  "type": "string",
+                  "enum": ["executable", "behavioral-manual", "nfr-out-of-band"],
+                  "default": "executable",
+                  "description": "Klassifiziert, was das Parity-Gate (KONZ-008 C) fordert. executable (Default): MUSS in Phase A einen ausführbaren assert haben, sonst Gate rot — verhindert erschlichenes Schein-Gruen. behavioral-manual: State-/Interaktions-Aussage, die das assert-DSL (heute visible/text/clickable/url/count) NICHT ausdruecken kann (z.B. Gate blockiert bis Vorbedingung) — vom Gate ausgenommen, aber SICHTBAR getaggt, nicht still uebersprungen. nfr-out-of-band: NFR/Security/A11y/Performance, separat gefuehrt (Requirements-Bridge-Asymmetrie). B (Roadmap): ein State-DSL schrumpft die behavioral-manual-Menge."
+                },
+                "assert": {
+                  "type": "object",
+                  "description": "Optional, ausführbare Form (platform:ADR-211 §Parity-Off-Ramp). `klickdummy-gen-e2e` macht hieraus einen Playwright-Testfall, der Klickdummy UND echte App validiert. Fehlt der Block, bleibt der Check als skip sichtbar (kein vacuous pass).",
+                  "required": ["action"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "action":   { "type": "string", "enum": ["visible", "text", "clickable", "url", "count"], "description": "Die Playwright-Aktion, die `klickdummy-gen-e2e` aus diesem Assert generiert (Sichtbarkeit, Text-Inhalt, Klickbarkeit, URL-Wechsel, Element-Anzahl)." },
+                    "selector": { "type": "string", "description": "Playwright-Ziel. Präfix-Dispatch (F23/D2, Parser mit definiertem Fehlerverhalten — REC-2/AD-2): `testid=<id>` → get_by_test_id (stabil) · `role=<rolle>` oder `role=<rolle>[name=<text>]` → get_by_role (stabil; Leerzeichen/Sonderzeichen im name-Wert erlaubt) · `label=<text>` → get_by_label (stabil) · `text=<text>` → get_by_text (fragil, i18n). Ohne Präfix: CSS via page.locator (fragil ohne data-*-Anker). Fehlerverhalten: unbekanntes Präfix (z.B. Tippfehler `rol=`) oder ungültige role=-Syntax (fehlende schließende `]`, leerer Wert) → Fallthrough auf CSS + Manifest-Warnung, nie Exception." },
+                    "expect":   { "type": ["string", "number"] }
+                  }
+                }
+              }
+            }
+          },
+          "off_ramp_status": {
+            "type": "string",
+            "enum": ["static", "parity-staging", "parity-green", "removed"],
+            "description": "Migrationsstand dieses einzelnen Screens (I3 Off-Ramp, `off_ramp.unit: per-screen`): `static` = nur Klickdummy, `parity-staging` = Doppel-Quelle auf Staging, `parity-green` = Parity-Suite grün gegen die echte App, `removed` = Screen aus der statischen Quelle entfernt (Migration abgeschlossen)."
+          }
+        }
+      }
+    }
+  }
+}
