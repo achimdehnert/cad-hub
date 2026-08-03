@@ -17,6 +17,7 @@ media/
 .env.prod
 .env.local
 .venv/
+.venv-klickdummy/
 venv/
 
 # IDE
