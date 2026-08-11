@@ -33,9 +33,9 @@ ezdxf>=1.3.0,<2.0
 # All LLM calls go through aifw. Do NOT use openai/anthropic/litellm directly.
 # See: .windsurf/rules/iil-packages.md
 # ============================================================================
-iil-aifw>=0.5.0,<1  # Distribution umbenannt, Import-Name bleibt `aifw` (altes PyPI-`aifw` komplett yanked, #46)
+iil-aifw>=0.11.7,<1  # Distribution umbenannt, Import-Name bleibt `aifw` (altes PyPI-`aifw` komplett yanked, #46)
 iil-platform-context>=0.7.0,<1
-iil-authoringfw>=0.3.0,<1
+iil-authoringfw>=0.11.6,<1
 # iil-nl2cadfw entfernt: reine Umbrella-Distribution (ADR-011), 0 Imports in
 # cad-hub — die 4 nl2cad-*-Pakete oben sind bereits direkt gepinnt.
 
