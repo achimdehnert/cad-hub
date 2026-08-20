@@ -50,7 +50,10 @@ jobs:
       # Pin deploy job to the prod host's unique runner label (platform #461).
       # Generic 'self-hosted' matched BOTH prod-server and dev-hetzner → deploy
       # landed on wrong host → cp: Permission denied on /opt/cad-hub (#21).
-      deploy_runs_on: "prod-server"
+      # 2026-08-20: Runner nach prod-b umgezogen (platform#2122) — cad-hub laeuft dort.
+      # Label ist host-spezifisch, damit ein spaeter wieder auftauchender prod-a-Runner
+      # den Deploy nicht zurueckziehen kann.
+      deploy_runs_on: "89-167-43-30-cad-hub"
       dockerfile_path: "docker/app/Dockerfile"
       health_check_url: "https://nl2cad.de/livez/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
