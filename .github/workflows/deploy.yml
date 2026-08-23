@@ -5,8 +5,17 @@ permissions:
   packages: write
 
 concurrency:
-  group: deploy-cad-hub-${{ github.ref_name }}
-  cancel-in-progress: true
+  # Je ZIEL-UMGEBUNG, nicht je Branch (platform#2229): ein Staging-Push darf
+  # einen laufenden Produktions-Deploy nicht abraeumen. Realfall 2026-08-23
+  # bei risk-hub — der Prod-Lauf endete als `cancelled`, also weder gruen noch
+  # rot, und fiel damit durch jeden Melder.
+  #
+  # `inputs.target_environment` ist bei `push` leer und faellt auf `staging`:
+  # zwei Staging-Laeufe kuerzen sich weiterhin gegenseitig ab. Prod bekommt eine
+  # eigene Gruppe und wird nicht abgebrochen — dieselbe Wahl, die
+  # `_deploy-unified.yml` fuer ihren Produktions-Job trifft.
+  group: deploy-cad-hub-${{ github.ref_name }}-${{ inputs.target_environment || 'staging' }}
+  cancel-in-progress: ${{ (inputs.target_environment || 'staging') != 'production' }}
 
 on:
   push:
