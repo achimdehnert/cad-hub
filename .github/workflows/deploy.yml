@@ -10,12 +10,12 @@ concurrency:
   # bei risk-hub — der Prod-Lauf endete als `cancelled`, also weder gruen noch
   # rot, und fiel damit durch jeden Melder.
   #
-  # `inputs.target_environment` ist bei `push` leer und faellt auf `staging`:
+  # `inputs.target_environment` ist bei `push` leer — dieses Repo deployt bei push nach PRODUCTION (Default unten im deploy-Job, dev-hub#288):
   # zwei Staging-Laeufe kuerzen sich weiterhin gegenseitig ab. Prod bekommt eine
   # eigene Gruppe und wird nicht abgebrochen — dieselbe Wahl, die
   # `_deploy-unified.yml` fuer ihren Produktions-Job trifft.
-  group: deploy-cad-hub-${{ github.ref_name }}-${{ inputs.target_environment || 'staging' }}
-  cancel-in-progress: ${{ (inputs.target_environment || 'staging') != 'production' }}
+  group: deploy-cad-hub-${{ github.ref_name }}-${{ inputs.target_environment || 'production' }}
+  cancel-in-progress: ${{ (inputs.target_environment || 'production') != 'production' }}
 
 on:
   push:
