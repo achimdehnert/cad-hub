@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.1.10
+    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.1.12
     with:
       skip_tests: false
       django_settings_module: "config.settings.test"
