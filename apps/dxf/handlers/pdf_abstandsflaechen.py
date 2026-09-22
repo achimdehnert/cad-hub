@@ -222,16 +222,16 @@ class PDFAbstandsflaechenHandler(BaseCADHandler):
 
         # PDF laden
         try:
-            import fitz  # PyMuPDF
+            import pymupdf
         except ImportError:
             result.add_error("PyMuPDF nicht installiert: pip install pymupdf")
             return result
 
         try:
             if pdf_path:
-                doc = fitz.open(pdf_path)
+                doc = pymupdf.open(pdf_path)
             else:
-                doc = fitz.open(stream=pdf_content, filetype="pdf")
+                doc = pymupdf.open(stream=pdf_content, filetype="pdf")
 
             # Text aus allen Seiten extrahieren
             full_text = ""

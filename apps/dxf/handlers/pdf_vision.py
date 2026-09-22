@@ -12,6 +12,23 @@ Extrahiert:
 - Fluchtweg-Verläufe
 - Beschriftungen und Maße
 - Raumzuordnungen
+
+NICHT FREIGEGEBEN (Issue #68, 2026-09-22)
+-----------------------------------------
+Dieser Handler ruft `openai` und `anthropic` **direkt** auf
+(`_analyze_with_openai`, `_analyze_with_anthropic`). Das widerspricht der
+Repo-Regel aus ADR-089 und `requirements.txt`: „All LLM calls go through aifw.
+Do NOT use openai/anthropic/litellm directly."
+
+Die beiden Schwesterhandler (`pdf_lageplan`, `pdf_abstandsflaechen`) gehen über
+`apps.core.services.llm_client.generate_text` und sind damit regelkonform; dieser
+hier nicht. `llm_client` kann heute nur Text, keine Bilder — ein regelkonformer
+Vision-Pfad braucht erst eine Bild-Fähigkeit dort.
+
+Deshalb wird dieser Handler **nicht verdrahtet**: es gibt bewusst keine View und
+keinen Endpunkt für ihn. Er bleibt importierbar und lauffähig für den
+Entwicklungsgebrauch, sobald ein Schlüssel gesetzt ist. Vor einer Freigabe ist
+die Bild-Fähigkeit in `llm_client` zu ergänzen und dieser Abschnitt zu streichen.
 """
 
 import base64
@@ -287,16 +304,16 @@ Antworte als JSON.""",
     ) -> str | None:
         """Extrahiert erste Seite als Bild aus PDF."""
         try:
-            import fitz  # PyMuPDF
+            import pymupdf
 
             if pdf_path:
-                doc = fitz.open(pdf_path)
+                doc = pymupdf.open(pdf_path)
             else:
-                doc = fitz.open(stream=pdf_content, filetype="pdf")
+                doc = pymupdf.open(stream=pdf_content, filetype="pdf")
 
             # Erste Seite als Bild rendern
             page = doc[0]
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x Zoom für bessere Qualität
+            pix = page.get_pixmap(matrix=pymupdf.Matrix(2, 2))  # 2x Zoom für bessere Qualität
 
             # Als PNG-Bytes
             image_bytes = pix.tobytes("png")

@@ -88,4 +88,17 @@ urlpatterns = [
         views.DWGStatusView.as_view(),
         name="dwg_status",
     ),
+    # PDF-Handler (Issue #68). PDFVisionHandler bekommt bewusst keinen
+    # Endpunkt — er ruft OpenAI/Anthropic direkt und verletzt damit ADR-089;
+    # Begruendung im Modul-Docstring von handlers/pdf_vision.py.
+    path(
+        "pdf/lageplan/",
+        views.PDFLageplanAnalyzeView.as_view(),
+        name="pdf_lageplan",
+    ),
+    path(
+        "pdf/abstandsflaechen/",
+        views.PDFAbstandsflaechenAnalyzeView.as_view(),
+        name="pdf_abstandsflaechen",
+    ),
 ]

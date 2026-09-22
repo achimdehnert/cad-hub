@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.views.generic import TemplateView
 
+from .handlers import PDFAbstandsflaechenHandler, PDFLageplanHandler
 from .services import (
     CADLoaderService,
     DWGConverterService,
@@ -440,3 +441,61 @@ class DWGStatusView(View):
 
     def get(self, request):
         return JsonResponse(get_dwg_converter_status())
+
+
+class _PDFHandlerViewBase(View):
+    """Gemeinsamer Ablauf für die PDF-Handler-Endpunkte (Issue #68).
+
+    Die Handler lagen ohne Aufrufer im Repo und waren damit nicht erreichbar.
+    Der Ablauf ist derselbe wie bei ``DXFAnalyzeUploadView``: Datei aus dem
+    Upload, Handler ausführen, Ergebnis als JSON.
+
+    ``use_llm`` ist hier **aus**, sofern es nicht ausdrücklich angefordert wird —
+    der Handler-Default ist ``True``, und ein LLM-Aufruf pro Upload ohne
+    Zutun des Aufrufers wäre eine stille Kostenstelle.
+    """
+
+    handler_class = None
+    result_key = ""
+
+    def post(self, request):
+        if "file" not in request.FILES:
+            return JsonResponse({"error": "No file uploaded"}, status=400)
+
+        uploaded_file = request.FILES["file"]
+        if not uploaded_file.name.lower().endswith(".pdf"):
+            return JsonResponse({"error": "Only PDF files allowed"}, status=400)
+
+        use_llm = request.POST.get("use_llm", "").lower() in ("1", "true", "yes")
+
+        result = self.handler_class().execute(
+            {"pdf_content": uploaded_file.read(), "use_llm": use_llm}
+        )
+
+        if not result.success:
+            logger.warning("[%s] %s", result.handler_name, "; ".join(result.errors))
+            return JsonResponse({"success": False, "errors": result.errors}, status=422)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "filename": uploaded_file.name,
+                "use_llm": use_llm,
+                self.result_key: result.data.get(self.result_key, {}),
+                "handler": result.to_dict(),
+            }
+        )
+
+
+class PDFLageplanAnalyzeView(_PDFHandlerViewBase):
+    """Lageplan-PDF auswerten: Flurstück, Maßstab, Nordrichtung, GRZ/GFZ."""
+
+    handler_class = PDFLageplanHandler
+    result_key = "lageplan"
+
+
+class PDFAbstandsflaechenAnalyzeView(_PDFHandlerViewBase):
+    """Abstandsflächenplan-PDF auswerten: Wandhöhen, Tiefen, Überschreitungen."""
+
+    handler_class = PDFAbstandsflaechenHandler
+    result_key = "abstandsflaechen"
