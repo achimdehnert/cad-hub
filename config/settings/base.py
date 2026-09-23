@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.avb",
     "apps.export",
     "apps.registry",
+    "apps.vorgang",
 ]
 
 MIDDLEWARE = [

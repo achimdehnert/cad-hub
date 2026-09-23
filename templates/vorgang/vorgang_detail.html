@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ vorgang.titel }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">{{ vorgang.titel }}</h1>
+  <p class="text-gray-500">
+    {{ vorgang.get_art_display }} · {{ vorgang.get_eingereicht_von_rolle_display }} ·
+    {{ vorgang.get_status_display }}
+  </p>
+  {% if vorgang.loeschfrist_am %}
+  <p class="text-sm text-gray-500">Löschfrist: {{ vorgang.loeschfrist_am }}</p>
+  {% endif %}
+</div>
+
+<div class="bg-white shadow-sm rounded-md p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-4">Dokument hochladen</h2>
+  <form
+    method="post"
+    enctype="multipart/form-data"
+    action="{% url 'vorgang:dokument_upload' vorgang.pk %}"
+    hx-post="{% url 'vorgang:dokument_upload' vorgang.pk %}"
+    hx-target="#vorgang-befunde"
+    hx-encoding="multipart/form-data"
+  >
+    {% csrf_token %}
+    <input type="file" name="datei" accept="application/pdf" required class="block mb-3">
+    <select name="vorlagenart" class="block mb-3 border-gray-300 rounded-md">
+      <option value="unbekannt">Unbekannt</option>
+      <option value="lageplan">Lageplan</option>
+      <option value="grundriss">Grundriss</option>
+      <option value="schnitt">Schnitt</option>
+      <option value="ansicht">Ansicht</option>
+      <option value="baubeschreibung">Baubeschreibung</option>
+      <option value="berechnung">Berechnung</option>
+      <option value="nachweis">Nachweis</option>
+      <option value="formular">Formular</option>
+    </select>
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+      Hochladen
+    </button>
+  </form>
+</div>
+
+<div id="vorgang-befunde">
+  {% include "vorgang/_befunde.html" %}
+</div>
+{% endblock %}
