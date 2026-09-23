@@ -6,6 +6,7 @@ import json
 import logging
 from pathlib import Path
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.views.generic import TemplateView
@@ -443,7 +444,7 @@ class DWGStatusView(View):
         return JsonResponse(get_dwg_converter_status())
 
 
-class _PDFHandlerViewBase(View):
+class _PDFHandlerViewBase(LoginRequiredMixin, View):
     """Gemeinsamer Ablauf für die PDF-Handler-Endpunkte (Issue #68).
 
     Die Handler lagen ohne Aufrufer im Repo und waren damit nicht erreichbar.
@@ -453,6 +454,11 @@ class _PDFHandlerViewBase(View):
     ``use_llm`` ist hier **aus**, sofern es nicht ausdrücklich angefordert wird —
     der Handler-Default ist ``True``, und ein LLM-Aufruf pro Upload ohne
     Zutun des Aufrufers wäre eine stille Kostenstelle.
+
+    ``LoginRequiredMixin`` seit #72 K4 (Retro 2026-09-23, Sitzung 4a0457):
+    anonymer Zugriff auf einen Prüf-Endpunkt ohne Mandantenbezug war ein
+    offener Prod-Pfad. Die JSON-API selbst bleibt unverändert (CSRF gilt
+    weiter, siehe Tests unten).
     """
 
     handler_class = None
@@ -501,7 +507,7 @@ class PDFAbstandsflaechenAnalyzeView(_PDFHandlerViewBase):
     result_key = "abstandsflaechen"
 
 
-class PDFAuswertungView(TemplateView):
+class PDFAuswertungView(LoginRequiredMixin, TemplateView):
     """Die Seite, die die beiden PDF-Endpunkte aufruft (Issue #68).
 
     Ohne sie waren die Endpunkte geroutet, getestet — und unerreichbar: ein

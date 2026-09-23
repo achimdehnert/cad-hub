@@ -147,13 +147,13 @@ def test_should_not_call_cloud_when_vision_handler_has_no_key(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_should_analyze_lageplan_via_endpoint(client):
+def test_should_analyze_lageplan_via_endpoint(auth_client):
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     upload = SimpleUploadedFile(
         "lageplan.pdf", _pdf_bytes(LAGEPLAN_TEXT), content_type="application/pdf"
     )
-    response = client.post(reverse("dxf:pdf_lageplan"), {"file": upload})
+    response = auth_client.post(reverse("dxf:pdf_lageplan"), {"file": upload})
 
     assert response.status_code == 200
     payload = response.json()
@@ -163,18 +163,27 @@ def test_should_analyze_lageplan_via_endpoint(client):
 
 
 @pytest.mark.django_db
-def test_should_reject_endpoint_call_without_file(client):
+def test_should_reject_anonymous_call_to_pdf_endpoint(client):
+    """#72 K4: der Endpunkt hängt jetzt hinter Login (Retro 2026-09-23, Sitzung 4a0457)."""
     response = client.post(reverse("dxf:pdf_lageplan"), {})
+
+    assert response.status_code == 302
+    assert "/login/" in response.url
+
+
+@pytest.mark.django_db
+def test_should_reject_endpoint_call_without_file(auth_client):
+    response = auth_client.post(reverse("dxf:pdf_lageplan"), {})
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-def test_should_reject_endpoint_call_with_non_pdf(client):
+def test_should_reject_endpoint_call_with_non_pdf(auth_client):
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     upload = SimpleUploadedFile("plan.dxf", b"0\nSECTION\n", content_type="text/plain")
-    response = client.post(reverse("dxf:pdf_lageplan"), {"file": upload})
+    response = auth_client.post(reverse("dxf:pdf_lageplan"), {"file": upload})
 
     assert response.status_code == 400
 
@@ -200,7 +209,7 @@ def test_should_not_expose_vision_handler_as_endpoint():
 
 
 @pytest.mark.django_db
-def test_should_analyze_abstandsflaechen_via_endpoint(client):
+def test_should_analyze_abstandsflaechen_via_endpoint(auth_client):
     """Fehlte bisher: nur der Lageplan-Endpunkt war ueber HTTP geprueft."""
     from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -209,7 +218,7 @@ def test_should_analyze_abstandsflaechen_via_endpoint(client):
         _pdf_bytes(ABSTANDSFLAECHEN_TEXT),
         content_type="application/pdf",
     )
-    response = client.post(reverse("dxf:pdf_abstandsflaechen"), {"file": upload})
+    response = auth_client.post(reverse("dxf:pdf_abstandsflaechen"), {"file": upload})
 
     assert response.status_code == 200
     payload = response.json()
@@ -218,9 +227,9 @@ def test_should_analyze_abstandsflaechen_via_endpoint(client):
 
 
 @pytest.mark.django_db
-def test_should_serve_a_page_that_calls_both_endpoints(client):
+def test_should_serve_a_page_that_calls_both_endpoints(auth_client):
     """Ohne Aufrufer sind die Endpunkte tot — das war der Befund aus #68."""
-    response = client.get(reverse("dxf:pdf_auswertung"))
+    response = auth_client.get(reverse("dxf:pdf_auswertung"))
 
     assert response.status_code == 200
     seite = response.content.decode()
@@ -235,12 +244,16 @@ def test_should_accept_the_upload_when_csrf_is_enforced():
 
     `enforce_csrf_checks=True` schaltet die Pruefung ein, die der normale
     Test-Client umgeht. Der Token kommt aus der Seite — genau der Weg, den ein
-    Browser nimmt.
+    Browser nimmt. Seit #72 K4 hängt die Seite hinter Login, also erst
+    einloggen (force_login umgeht die Login-View selbst, nicht die CSRF-Prüfung).
     """
+    from django.contrib.auth import get_user_model
     from django.core.files.uploadedfile import SimpleUploadedFile
     from django.test import Client
 
+    user = get_user_model().objects.create_user(username="pdf-tester", password="p")
     streng = Client(enforce_csrf_checks=True)
+    streng.force_login(user)
     seite = streng.get(reverse("dxf:pdf_auswertung"))
     token = seite.cookies["csrftoken"].value
 
