@@ -27,6 +27,21 @@ from apps.core.handlers.base import (
 logger = logging.getLogger(__name__)
 
 
+def _massstab_normieren(fund: str) -> str:
+    """„500" und „1:500" ergeben beide ``1:500`` (Issue #73).
+
+    Die Erkennungsmuster fangen beide Formen: „Maßstab 1:500" liefert in der
+    Gruppe bereits ``1:500``, „M. 500" nur ``500``. Die Zuweisung stellte
+    frueher unbedingt ``1:`` voran und machte aus dem ersten Fall ``1:1:500``.
+    In Produktion gemessen am 2026-09-23, bevor dieser Fix entstand.
+    """
+    wert = re.sub(r"\s+", "", fund or "")
+    if ":" in wert:
+        zaehler, _, nenner = wert.partition(":")
+        return f"{zaehler or '1'}:{nenner}"
+    return f"1:{wert}"
+
+
 @dataclass
 class Grundstueck:
     """Grundstücksdaten."""
@@ -261,7 +276,7 @@ class PDFLageplanHandler(BaseCADHandler):
         for pattern in self.PATTERNS["massstab"]:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                lageplan.massstab = f"1:{match.group(1)}"
+                lageplan.massstab = _massstab_normieren(match.group(1))
                 break
 
         # Stellplätze
