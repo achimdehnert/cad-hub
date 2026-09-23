@@ -80,8 +80,28 @@ def test_should_extract_lageplan_fields_from_pdf():
     assert lageplan["grundstueck"]["gemarkung"].startswith("Musterhausen")
     assert lageplan["kennzahlen"]["grz"] == pytest.approx(0.35)
     assert lageplan["kennzahlen"]["gfz"] == pytest.approx(0.70)
-    assert lageplan["massstab"]
+    # Der WERT, nicht nur seine Anwesenheit: `assert lageplan["massstab"]` hat
+    # den Fehler aus Issue #73 (`1:1:500`) monatelang durchgelassen.
+    assert lageplan["massstab"] == "1:500"
     assert lageplan["stellplaetze"] == 4
+
+
+@pytest.mark.parametrize(
+    "fund, erwartet",
+    [
+        ("500", "1:500"),  # „M. 500" — Gruppe ohne Doppelpunkt
+        ("1:500", "1:500"),  # „Maßstab 1:500" — Gruppe MIT Doppelpunkt
+        ("1 : 500", "1:500"),  # mit Leerzeichen gesetzt
+        ("1:1000", "1:1000"),
+        ("2:500", "2:500"),  # kein stilles Ueberschreiben des Zaehlers
+    ],
+)
+def test_should_normalise_the_scale_without_doubling_the_prefix(fund, erwartet):
+    """Issue #73: die Zuweisung stellte `1:` unbedingt voran und erzeugte
+    aus einer Fundstelle mit Doppelpunkt `1:1:500`."""
+    from apps.dxf.handlers.pdf_lageplan import _massstab_normieren
+
+    assert _massstab_normieren(fund) == erwartet
 
 
 def test_should_extract_abstandsflaechen_from_pdf():
