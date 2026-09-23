@@ -1,0 +1,189 @@
+# =============================================================================
+# I1 Spec-first artifact — Klickdummy Bauantrag-Vorprüfung für Einreicher (cad-hub)
+# Modus A, class=mock. Grundlage: cad-hub#72 (K4), cad-hub#77 (Scope-Erweiterung
+# Einreicher-Vorprüfung); fachlich BauVorlV §§ 3, 7, 8, 9 (bedingter Pflichtkatalog).
+# Dieses Repo ist ÖFFENTLICH — keine Haus-, Personen- oder Herstellernamen.
+# =============================================================================
+
+$schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
+spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
+spec_version: "0.1"
+spec_schema_version: "1.1"
+spec_date: "2026-09-23"
+title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77)"
+
+adr:
+  local: cad-hub:ADR-036
+  conforms_to: platform:ADR-211
+  sister_of: [cad-hub:ADR-035]
+
+class: mock
+class_evidence:
+  no_backend: true
+  no_demo_param: true
+  target_mocks_visible: true
+  systemgrenzen:
+    - "Landes-Antragsassistent"
+    - "Fachverfahren-Adapter"
+    - "Prüfkern"
+
+off_ramp:
+  policy: platform:ADR-211 Static→Echt-Migrationspfad
+  unit: per-screen
+  rule: "Parity-grün pro Screen ⇒ Screen aus statischer Quelle entfernen"
+  doppelquell_grenze: prod-release
+  parity_runner: make klickdummy-i3
+
+grounding:
+  konzept: >-
+    cad-hub#72 (K4 Vorgangsmodell) und cad-hub#77 (Scope-Erweiterung: Vorprüfung
+    vor Einreichung durch den Entwurfsverfasser statt durch die Sachbearbeitung).
+    Fachliche Grundlage: Bayerische Bauvorlagenverordnung (BauVorlV) §§ 3, 7, 8, 9
+    — der Pflichtkatalog ist an Verfahrensart, Bebauungsplan-Gebiet, Erschließung
+    und Abstandsflächenübernahme gebunden, keine feste Liste.
+  pilot: >-
+    Freiwilliger Vorab-Dienst für Entwurfsverfasser/Bauherr vor der verbindlichen
+    Einreichung im landesweiten Online-Antragsassistenten; schreibt nichts in ein
+    Fachverfahren und ersetzt den Landes-Assistenten nicht. Pilot-Kontext (Behörde)
+    nicht-öffentlich, siehe #77.
+
+personas:
+  entwurfsverfasser:
+    label: "Entwurfsverfasser/in (Einreicher)"
+    rolle: einreicher
+    sieht: [upload, sortierung, fehlliste, formpruefung, bericht]
+  sachbearbeitung:
+    label: "Sachbearbeitung"
+    rolle: sachbearbeitung
+    sieht: [bericht]
+
+screens:
+  - id: upload
+    title: "PDF-Satz hochladen"
+    personas: [entwurfsverfasser]
+    purpose: >-
+      Der Einreicher lädt den PDF-Satz hoch, wählt die Verfahrensart und kreuzt
+      die Bedingungen an, die den Pflichtkatalog steuern — vor jeder verbindlichen
+      Einreichung, mit sichtbarer Löschfrist.
+    datafields:
+      - { name: dateien, type: array, source: mock-demo, semantic: "Liste hochgeladener Einzel-PDF-Dateinamen, keine Sammeldatei-Anhänge" }
+      - { name: verfahrensart, type: enum, source: mock-demo, semantic: "genehmigungsfreistellung | vereinfachtes_verfahren | sonderbau" }
+      - { name: bedingungen, type: object, source: mock-demo, semantic: "im_bplan_gebiet, oeffentlich_erschlossen, abstandsflaechenuebernahme_noetig — je bool" }
+      - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "Anzahl Tage bis zur automatischen Löschung der Unterlagen" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: upload.nur_pdf
+        check: "Nur einzelne PDF-Dateien werden akzeptiert; andere Formate oder Dateianlagen innerhalb der PDF lösen eine Fehlermeldung aus"
+        kind: behavioral-manual
+      - id: upload.keine_einreichung
+        check: "Der Screen weist sichtbar aus, dass hier keine verbindliche Einreichung erfolgt, sondern nur eine freiwillige Vorprüfung"
+        kind: behavioral-manual
+      - id: upload.loeschfrist_sichtbar
+        check: "Die Löschfrist (in Tagen) ist sichtbar angezeigt, bevor der Nutzer fortfährt"
+        kind: behavioral-manual
+      - id: upload.bedingungen_erfassbar
+        check: "Verfahrensart und alle drei Bedingungs-Checkboxen sind vor dem Weiter auswählbar bzw. ankreuzbar"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: sortierung
+    title: "Dokumente sortieren"
+    personas: [entwurfsverfasser]
+    purpose: >-
+      Je hochgeladener Datei wird die erkannte Vorlagenart mit Konfidenz gezeigt;
+      Sammeldateien lassen sich aufteilen, Fehlerkennungen lassen sich korrigieren.
+    datafields:
+      - { name: dokumente, type: array, source: mock-demo, semantic: "je Eintrag: dateiname, vorlagenart, konfidenz, seiten" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: sortierung.vorlagenart_konfidenz
+        check: "Jede Datei zeigt eine erkannte Vorlagenart mit Konfidenz-Wert"
+        kind: behavioral-manual
+      - id: sortierung.korrektur_moeglich
+        check: "Der Nutzer kann die erkannte Vorlagenart je Datei manuell korrigieren"
+        kind: behavioral-manual
+      - id: sortierung.sammeldatei_aufteilung
+        check: "Eine als Sammeldatei erkannte Datei (mehrere Vorlagen in einer PDF) bietet eine Aufteilen-Aktion an"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: fehlliste
+    title: "Fehlliste gegen Soll-Katalog"
+    personas: [entwurfsverfasser]
+    purpose: >-
+      Die Soll-Liste ergibt sich aus Verfahrensart und Bedingungen (bedingter
+      Katalog nach BauVorlV §3) und wird gegen die sortierten Dokumente geprüft;
+      je Zeile ein Status mit Begründung, die Summe ist aus den Zeilen berechnet.
+    datafields:
+      - { name: katalogpunkte, type: array, source: mock-demo, semantic: "je Zeile: bezeichnung, bedingung, status (vorhanden|fehlt|unklar), begruendung" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: fehlliste.bedingter_katalog
+        check: "Die Soll-Liste zeigt nur die laut Verfahrensart und Bedingungen tatsächlich zutreffenden Katalogpunkte (z. B. Standsicherheitsnachweis nur bei Sonderbau)"
+        kind: behavioral-manual
+      - id: fehlliste.status_je_zeile
+        check: "Jede Zeile trägt genau einen Status (vorhanden, fehlt oder unklar) mit Begründung, nie eine pauschale Unvollständigkeits-Wertung"
+        kind: behavioral-manual
+      - id: fehlliste.aggregat_berechnet
+        check: "Die Kennzahl 'n fehlt von m' wird zur Laufzeit aus den angezeigten Zeilen ermittelt (CSS-Zähler über data-status), steht nicht als fester Text im Markup"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: formpruefung
+    title: "Formprüfung je Vorlagenart"
+    personas: [entwurfsverfasser]
+    purpose: >-
+      Je Vorlagenart werden die formalen Pflichtmerkmale mit Vorhandensein,
+      Konfidenz und Fundort geprüft, dazu die Konsistenz von Bauherr, Flurstück
+      und Adresse über alle Dokumente — ausdrücklich ohne Zulässigkeitsprüfung.
+    datafields:
+      - { name: merkmale, type: array, source: mock-demo, semantic: "je Merkmal: vorlagenart, merkmal, vorhanden, konfidenz, fundort_seite" }
+      - { name: konsistenz, type: object, source: mock-demo, semantic: "bauherr, flurstueck, adresse — Übereinstimmung über alle Dokumente" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: formpruefung.merkmal_konfidenz_fundort
+        check: "Jedes geprüfte Merkmal zeigt Vorhandensein, Konfidenz und Fundort (Seite)"
+        kind: behavioral-manual
+      - id: formpruefung.hausregel_gekennzeichnet
+        check: "Die Maßstabsleiste ist ausdrücklich als Anforderung der Behörde gekennzeichnet, nicht als BauVorlV-Pflicht"
+        kind: behavioral-manual
+      - id: formpruefung.keine_zulaessigkeit
+        check: "Der Screen weist sichtbar aus, dass nur Vorhandensein und Übereinstimmung geprüft werden, nie Zulässigkeit (kein Abstandsflächen-Urteil)"
+        kind: behavioral-manual
+      - id: formpruefung.konsistenz_ueber_dokumente
+        check: "Bauherr, Flurstück und Adresse werden über alle Dokumente hinweg auf Übereinstimmung geprüft, nicht nur je Einzeldokument"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: bericht
+    title: "Ergebnisbericht"
+    personas: [entwurfsverfasser, sachbearbeitung]
+    purpose: >-
+      Zusammenfassender Hinweisbericht mit Konfidenzen, Download als PDF-Attrappe,
+      Weiterleitung zum echten Landes-Antragsassistenten als reine Link-Attrappe,
+      Hinweis auf Löschung nach Frist und optionale Weitergabe an die Sachbearbeitung.
+    datafields:
+      - { name: hinweise, type: array, source: mock-demo, semantic: "aggregiert aus fehlliste + formpruefung, je Hinweis mit Konfidenz" }
+      - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "aus Screen upload übernommen" }
+      - { name: weitergabe_an_sachbearbeitung, type: boolean, source: mock-demo, semantic: "optionale Aktion, Default aus" }
+    target_mocks:
+      - "Prüfkern"
+      - "Landes-Antragsassistent"
+    parity_acceptance:
+      - id: bericht.hinweisliste_mit_konfidenz
+        check: "Der Bericht listet alle Hinweise mit Konfidenz, aggregiert aus Fehlliste und Formprüfung"
+        kind: behavioral-manual
+      - id: bericht.weiter_ist_attrappe
+        check: "Der Button 'Weiter zum Antragsassistenten des Landes' ist erkennbar eine Attrappe ohne echtes Ziel und schreibt nichts in ein Fachverfahren"
+        kind: behavioral-manual
+      - id: bericht.loeschung_nach_frist
+        check: "Der Hinweis auf Löschung nach Ablauf der Frist zeigt die in Screen 'upload' gewählte Frist"
+        kind: behavioral-manual
+      - id: bericht.weitergabe_optional
+        check: "Die Weitergabe des Berichts an die Sachbearbeitung ist als optionale, nicht automatische Aktion erkennbar"
+        kind: behavioral-manual
+    off_ramp_status: static

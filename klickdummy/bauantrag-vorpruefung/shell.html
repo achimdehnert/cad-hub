@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.1 (Draft)</title>
+<!--
+  class: mock — Klickdummy zu cad-hub:ADR-036, Spec
+  klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
+  cad-hub#77 (Scope-Erweiterung Einreicher-Vorprüfung), BauVorlV §§ 3, 7, 8, 9.
+
+  Kein Backend, keine echte Netzwerk-Anfrage, kein Custom-JS außer dem
+  Feedback-Widget-Include am Ende. Screen-Wechsel läuft über CSS `:target`
+  (Nav-Links sind Anker `#<screen-id>`), die Kennzahl auf dem Fehlliste-Screen
+  über CSS-Zähler auf `data-status="fehlt"` — beides ohne JavaScript berechnet,
+  nicht als Literal im Markup.
+
+  Alle Namen, Adressen und Flurstücke auf dieser Seite sind erfunden
+  (Repo ist öffentlich, keine Haus- oder Personendaten, siehe CLAUDE.md).
+-->
+<style>
+  :root {
+    --pui-primary:    #0b5f6b;
+    --pui-primary-dk: #083f47;
+    --pui-surface:    #f5f9f9;
+    --pui-surface-2:  #ffffff;
+    --pui-border:     #d9e6e6;
+    --pui-muted:      #52696b;
+    --pui-success:    #1f7a3d;
+    --pui-success-bg: #e3f5e9;
+    --pui-warning:    #8a5a00;
+    --pui-warning-bg: #fdf0d6;
+    --pui-danger:     #a3231f;
+    --pui-danger-bg:  #fbe3e2;
+    --pui-neutral:    #52696b;
+    --pui-neutral-bg: #e8eeee;
+    --pui-space-1: 4px;
+    --pui-space-2: 8px;
+    --pui-space-3: 12px;
+    --pui-space-4: 16px;
+    --pui-space-6: 24px;
+    --pui-radius:    6px;
+    --pui-radius-lg: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; color: #1b2a2b; background: var(--pui-surface); }
+  header { background: var(--pui-primary); color: #fff; padding: var(--pui-space-3) var(--pui-space-6); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--pui-space-2); }
+  header h1 { font-size: 16px; margin: 0; }
+  header .badge-demo { font-size: 11px; background: rgba(255,255,255,.18); padding: 2px 8px; border-radius: 10px; }
+  nav { display: flex; gap: var(--pui-space-2); background: var(--pui-surface-2); padding: var(--pui-space-2) var(--pui-space-6); border-bottom: 1px solid var(--pui-border); flex-wrap: wrap; }
+  nav a { font-size: 13px; padding: var(--pui-space-2) var(--pui-space-3); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); color: var(--pui-muted); text-decoration: none; }
+  nav a:hover { border-color: var(--pui-primary); color: var(--pui-primary); }
+  main { max-width: 960px; margin: 0 auto; padding: var(--pui-space-6); }
+
+  /* Screen-Wechsel ohne JS: CSS :target, Default-Screen sichtbar solange
+     kein anderer Screen als Fragment aktiv ist. */
+  section[data-screen] { display: none; }
+  section[data-screen]:target { display: block; }
+  body:not(:has(section[data-screen]:target)) section[data-screen="upload"] { display: block; }
+
+  h2 { font-size: 20px; margin: 0 0 var(--pui-space-1); color: var(--pui-primary-dk); }
+  h3 { font-size: 14px; margin: var(--pui-space-4) 0 var(--pui-space-2); color: var(--pui-primary-dk); }
+  .purpose { color: var(--pui-muted); font-size: 13px; margin: 0 0 var(--pui-space-4); }
+  .panel { background: var(--pui-surface-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius-lg); padding: var(--pui-space-4); margin-bottom: var(--pui-space-4); }
+  .banner { border-radius: var(--pui-radius); padding: var(--pui-space-3) var(--pui-space-4); font-size: 13px; margin-bottom: var(--pui-space-4); }
+  .banner.info { background: var(--pui-neutral-bg); color: var(--pui-muted); }
+  .banner.warn { background: var(--pui-warning-bg); color: var(--pui-warning); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: var(--pui-space-2) var(--pui-space-3); border-bottom: 1px solid var(--pui-border); vertical-align: top; }
+  th { color: var(--pui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge.vorhanden, .badge.ok { background: var(--pui-success-bg); color: var(--pui-success); }
+  .badge.fehlt { background: var(--pui-danger-bg); color: var(--pui-danger); }
+  .badge.unklar, .badge.nicht-pruefbar { background: var(--pui-warning-bg); color: var(--pui-warning); }
+  .badge.hausregel { background: var(--pui-neutral-bg); color: var(--pui-muted); border: 1px dashed var(--pui-muted); }
+  label { display: block; font-size: 12px; color: var(--pui-muted); margin: var(--pui-space-3) 0 var(--pui-space-1); font-weight: 600; }
+  select, input[type="file"] { width: 100%; font: inherit; font-size: 13px; padding: var(--pui-space-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); }
+  .checkline { display: flex; align-items: center; gap: var(--pui-space-2); font-size: 13px; margin: var(--pui-space-2) 0; }
+  .checkline label { margin: 0; font-weight: 400; color: #1b2a2b; }
+  .btn { display: inline-block; font: inherit; font-size: 13px; font-weight: 600; padding: var(--pui-space-2) var(--pui-space-4); border-radius: var(--pui-radius); text-decoration: none; margin-top: var(--pui-space-2); }
+  .btn.primary { background: var(--pui-primary); color: #fff; }
+  .btn.ghost { background: var(--pui-surface-2); color: var(--pui-primary); border: 1px solid var(--pui-primary); }
+  .btn.disabled { opacity: .55; cursor: not-allowed; }
+  .note { color: var(--pui-muted); font-size: 11px; margin-top: var(--pui-space-3); }
+  .file-list { list-style: none; margin: var(--pui-space-2) 0; padding: 0; font-size: 13px; }
+  .file-list li { padding: var(--pui-space-1) 0; border-bottom: 1px solid var(--pui-border); }
+
+  /* Fehlliste-Aggregat: CSS-Zähler über data-status, kein Literal, kein JS. */
+  .fehlliste-block { counter-reset: kat-gesamt 0 kat-fehlt 0; }
+  .fehlliste-tabelle tbody tr { counter-increment: kat-gesamt; }
+  .fehlliste-tabelle tbody tr[data-status="fehlt"] { counter-increment: kat-fehlt; }
+  .fehlliste-summary::before {
+    content: "→ " counter(kat-fehlt) " von " counter(kat-gesamt) " Unterlagen fehlen.";
+    font-weight: 600;
+    color: var(--pui-danger);
+  }
+  .fehlliste-summary { background: var(--pui-danger-bg); border-radius: var(--pui-radius); padding: var(--pui-space-3) var(--pui-space-4); font-size: 13px; margin-top: 0; }
+</style>
+</head>
+<body data-persona="entwurfsverfasser">
+
+<header>
+  <h1>Bauantrag-Vorprüfung für Einreicher</h1>
+  <span class="badge-demo">mock · Entwurfsverfasser/in</span>
+</header>
+
+<nav>
+  <a href="#upload" data-testid="nav-upload">1. Upload</a>
+  <a href="#sortierung" data-testid="nav-sortierung">2. Sortierung</a>
+  <a href="#fehlliste" data-testid="nav-fehlliste">3. Fehlliste</a>
+  <a href="#formpruefung" data-testid="nav-formpruefung">4. Formprüfung</a>
+  <a href="#bericht" data-testid="nav-bericht">5. Bericht</a>
+</nav>
+
+<main>
+
+  <!-- ============================ 1 · UPLOAD ============================ -->
+  <section data-screen="upload" id="upload">
+    <h2>PDF-Satz hochladen</h2>
+    <p class="purpose">Laden Sie Ihren PDF-Satz hoch, wählen Sie die Verfahrensart und beantworten
+      Sie die drei Bedingungen — daraus ergibt sich, welche Unterlagen Pflicht sind.</p>
+
+    <div class="banner info" data-testid="upload-keine-einreichung-hinweis">
+      ℹ️ Diese Vorprüfung ist freiwillig und <strong>ersetzt keine Einreichung</strong>. Sie
+      reichen Ihre Unterlagen weiterhin selbst über den Antragsassistenten des Landes ein — hier
+      wird nichts an ein Fachverfahren übergeben oder verbindlich eingereicht.
+    </div>
+
+    <div class="panel">
+      <label for="up-dateien">PDF-Satz (nur einzelne PDF-Dateien, keine Anhänge innerhalb der PDF)</label>
+      <input type="file" id="up-dateien" data-testid="upload-dateiauswahl" accept="application/pdf" multiple>
+      <ul class="file-list" data-testid="upload-datei-liste">
+        <li>📄 lageplan-musterhausen.pdf</li>
+        <li>📄 grundriss-eg.pdf</li>
+        <li>📄 schnitt-a-a.pdf</li>
+        <li>📄 berechnung-grz-gfz.pdf</li>
+        <li>📄 abstandsflaechen-uebernahme.pdf</li>
+        <li>📄 sammelmappe-brandschutz-teil.pdf</li>
+      </ul>
+      <p class="note">Demo-Auswahl (Mock) — real würden hier die tatsächlich ausgewählten Dateien
+        erscheinen. Andere Formate als PDF werden abgewiesen.</p>
+
+      <label for="up-verfahrensart">Verfahrensart</label>
+      <select id="up-verfahrensart" data-testid="upload-verfahrensart">
+        <option value="genehmigungsfreistellung">Genehmigungsfreistellung</option>
+        <option value="vereinfachtes_verfahren">Vereinfachtes Verfahren</option>
+        <option value="sonderbau" selected>Sonderbau</option>
+      </select>
+
+      <label>Bedingungen</label>
+      <div class="checkline">
+        <input type="checkbox" id="up-bplan" data-testid="upload-bedingung-bplan" checked>
+        <label for="up-bplan">Vorhaben liegt im Geltungsbereich eines Bebauungsplans</label>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="up-erschlossen" data-testid="upload-bedingung-erschlossen">
+        <label for="up-erschlossen">Grundstück ist bereits öffentlich erschlossen</label>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="up-abstandsflaeche" data-testid="upload-bedingung-abstandsflaeche" checked>
+        <label for="up-abstandsflaeche">Abstandsflächenübernahme von einem Nachbargrundstück ist nötig</label>
+      </div>
+
+      <div class="banner info" data-testid="upload-loeschfrist-hinweis" style="margin-top:16px">
+        🗑️ Ihre hochgeladenen Unterlagen werden <strong>14 Tage</strong> nach dem Upload
+        automatisch gelöscht — unabhängig davon, ob Sie die Prüfung abschließen.
+      </div>
+
+      <a href="#sortierung" class="btn primary" data-testid="upload-weiter">Weiter zur Sortierung →</a>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Erkennung + Formprüfung).</p>
+  </section>
+
+  <!-- ============================ 2 · SORTIERUNG ============================ -->
+  <section data-screen="sortierung" id="sortierung">
+    <h2>Dokumente sortieren</h2>
+    <p class="purpose">Je Datei die erkannte Vorlagenart mit Konfidenz — korrigierbar, Sammeldateien
+      lassen sich in mehrere Vorlagen aufteilen.</p>
+
+    <div class="panel">
+      <table data-testid="sortierung-tabelle">
+        <thead>
+          <tr><th>Dateiname</th><th>Erkannte Vorlagenart</th><th>Konfidenz</th><th>Seiten</th><th>Korrektur</th></tr>
+        </thead>
+        <tbody>
+          <tr data-testid="sortierung-row-lageplan">
+            <td>lageplan-musterhausen.pdf</td>
+            <td><span class="badge ok">Lageplan</span></td>
+            <td>94&nbsp;%</td>
+            <td>1</td>
+            <td>
+              <select data-testid="sortierung-korrektur-lageplan">
+                <option selected>Lageplan</option>
+                <option>Grundriss</option>
+                <option>Unbekannt</option>
+              </select>
+            </td>
+          </tr>
+          <tr data-testid="sortierung-row-grundriss">
+            <td>grundriss-eg.pdf</td>
+            <td><span class="badge ok">Grundriss</span></td>
+            <td>88&nbsp;%</td>
+            <td>2</td>
+            <td>
+              <select data-testid="sortierung-korrektur-grundriss">
+                <option selected>Grundriss</option>
+                <option>Schnitt</option>
+                <option>Ansicht</option>
+              </select>
+            </td>
+          </tr>
+          <tr data-testid="sortierung-row-schnitt">
+            <td>schnitt-a-a.pdf</td>
+            <td><span class="badge ok">Schnitt</span></td>
+            <td>81&nbsp;%</td>
+            <td>1</td>
+            <td>
+              <select data-testid="sortierung-korrektur-schnitt">
+                <option selected>Schnitt</option>
+                <option>Ansicht</option>
+                <option>Grundriss</option>
+              </select>
+            </td>
+          </tr>
+          <tr data-testid="sortierung-row-berechnung">
+            <td>berechnung-grz-gfz.pdf</td>
+            <td><span class="badge ok">Berechnung</span></td>
+            <td>76&nbsp;%</td>
+            <td>1</td>
+            <td>
+              <select data-testid="sortierung-korrektur-berechnung">
+                <option selected>Berechnung</option>
+                <option>Nachweis</option>
+                <option>Unbekannt</option>
+              </select>
+            </td>
+          </tr>
+          <tr data-testid="sortierung-row-abstandsflaechen">
+            <td>abstandsflaechen-uebernahme.pdf</td>
+            <td><span class="badge unklar">Nachweis</span></td>
+            <td>69&nbsp;%</td>
+            <td>1</td>
+            <td>
+              <select data-testid="sortierung-korrektur-abstandsflaechen">
+                <option selected>Nachweis</option>
+                <option>Formular</option>
+                <option>Unbekannt</option>
+              </select>
+            </td>
+          </tr>
+          <tr data-testid="sortierung-row-sammelmappe">
+            <td>sammelmappe-brandschutz-teil.pdf<br>
+              <span class="note" style="margin:0">3 Seiten, mehrere Vorlagen erkannt</span></td>
+            <td><span class="badge unklar">Unbekannt (Sammeldatei)</span></td>
+            <td>42&nbsp;%</td>
+            <td>3</td>
+            <td>
+              <a href="#" class="btn ghost" data-testid="sortierung-aufteilen" aria-disabled="true">✂️ Aufteilen (Mock)</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#fehlliste" class="btn primary" data-testid="sortierung-weiter">Weiter zur Fehlliste →</a>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Klassifikation).</p>
+  </section>
+
+  <!-- ============================ 3 · FEHLLISTE ============================ -->
+  <section data-screen="fehlliste" id="fehlliste">
+    <h2>Fehlliste gegen Soll-Katalog</h2>
+    <p class="purpose">Die Soll-Liste ergibt sich aus Verfahrensart (Sonderbau) und den angekreuzten
+      Bedingungen — kein fester Katalog. „Fehlt" heißt nur „nicht vorhanden", keine rechtliche
+      Wertung.</p>
+
+    <div class="panel fehlliste-block">
+      <table class="fehlliste-tabelle" data-testid="fehlliste-tabelle">
+        <thead>
+          <tr><th>Unterlage</th><th>Bedingung</th><th>Status</th><th>Begründung</th></tr>
+        </thead>
+        <tbody>
+          <tr data-status="vorhanden" data-testid="fehlliste-row-katasterauszug">
+            <td>Katasterauszug + Lageplan</td>
+            <td>immer (§ 7 BauVorlV)</td>
+            <td><span class="badge vorhanden">vorhanden</span></td>
+            <td>lageplan-musterhausen.pdf erkannt, Flurstück 123/4</td>
+          </tr>
+          <tr data-status="vorhanden" data-testid="fehlliste-row-bauzeichnungen">
+            <td>Bauzeichnungen (Grundriss, Schnitt, Ansicht)</td>
+            <td>immer (§ 8 BauVorlV)</td>
+            <td><span class="badge vorhanden">vorhanden</span></td>
+            <td>grundriss-eg.pdf, schnitt-a-a.pdf erkannt — Ansicht fehlt im Satz</td>
+          </tr>
+          <tr data-status="fehlt" data-testid="fehlliste-row-baubeschreibung">
+            <td>Baubeschreibung</td>
+            <td>immer (§ 9 BauVorlV)</td>
+            <td><span class="badge fehlt">fehlt</span></td>
+            <td>keine Datei mit dieser Vorlagenart erkannt</td>
+          </tr>
+          <tr data-status="fehlt" data-testid="fehlliste-row-standsicherheit">
+            <td>Standsicherheitsnachweis (oder Erklärung Tragwerksplaner)</td>
+            <td>nur bei Sonderbau (§ 3, § 10 BauVorlV)</td>
+            <td><span class="badge fehlt">fehlt</span></td>
+            <td>Verfahrensart Sonderbau gewählt, keine Datei erkannt</td>
+          </tr>
+          <tr data-status="unklar" data-testid="fehlliste-row-brandschutz">
+            <td>Brandschutznachweis, soweit geprüft</td>
+            <td>nur bei Sonderbau (§ 11 BauVorlV)</td>
+            <td><span class="badge unklar">unklar</span></td>
+            <td>sammelmappe-brandschutz-teil.pdf enthält vermutlich einen Teil — noch nicht aufgeteilt (Screen 2)</td>
+          </tr>
+          <tr data-status="fehlt" data-testid="fehlliste-row-erschliessung">
+            <td>Erschließungsangaben</td>
+            <td>nur wenn nicht öffentlich erschlossen</td>
+            <td><span class="badge fehlt">fehlt</span></td>
+            <td>„öffentlich erschlossen" wurde verneint, keine Angaben hochgeladen</td>
+          </tr>
+          <tr data-status="vorhanden" data-testid="fehlliste-row-mass-der-nutzung">
+            <td>Berechnung Maß der baulichen Nutzung (GRZ/GFZ)</td>
+            <td>nur im Bebauungsplan-Gebiet</td>
+            <td><span class="badge vorhanden">vorhanden</span></td>
+            <td>berechnung-grz-gfz.pdf erkannt</td>
+          </tr>
+          <tr data-status="vorhanden" data-testid="fehlliste-row-abstandsflaeche">
+            <td>Abstandsflächenübernahme</td>
+            <td>nur wenn nötig</td>
+            <td><span class="badge vorhanden">vorhanden</span></td>
+            <td>abstandsflaechen-uebernahme.pdf erkannt</td>
+          </tr>
+          <tr data-status="unklar" data-testid="fehlliste-row-abweichung">
+            <td>Abweichungsantrag</td>
+            <td>nur wenn eine Abweichung beantragt wird</td>
+            <td><span class="badge unklar">unklar</span></td>
+            <td>keine Angabe, ob eine Abweichung beantragt wird — bitte manuell prüfen</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="fehlliste-summary" data-testid="fehlliste-summary"></p>
+    </div>
+    <a href="#formpruefung" class="btn primary" data-testid="fehlliste-weiter">Weiter zur Formprüfung →</a>
+    <p class="note">Mock-Daten, kein Backend. Die Kennzahl oben wird per CSS-Zähler aus den
+      Zeilen-Status berechnet, steht nicht als Text im Markup.</p>
+  </section>
+
+  <!-- ============================ 4 · FORMPRÜFUNG ============================ -->
+  <section data-screen="formpruefung" id="formpruefung">
+    <h2>Formprüfung je Vorlagenart</h2>
+    <p class="purpose">Merkmale je Vorlagenart mit Vorhandensein, Konfidenz und Fundort.</p>
+
+    <div class="banner warn" data-testid="formpruefung-keine-zulaessigkeit-hinweis">
+      ⚠️ Geprüft werden <strong>Vorhandensein und Übereinstimmung</strong> — nie Zulässigkeit.
+      Diese Seite trifft <strong>kein Abstandsflächen-Urteil</strong> und keine Aussage, ob das
+      Vorhaben genehmigungsfähig ist.
+    </div>
+
+    <div class="panel">
+      <h3>Lageplan</h3>
+      <table data-testid="formpruefung-tabelle-lageplan">
+        <thead><tr><th>Merkmal</th><th>Vorhanden</th><th>Konfidenz</th><th>Fundort</th></tr></thead>
+        <tbody>
+          <tr><td>Maßstab (Soll nicht kleiner 1:1000)</td><td><span class="badge ok">1:500 — ok</span></td><td>91&nbsp;%</td><td>S. 1</td></tr>
+          <tr><td>Nordrichtung</td><td><span class="badge vorhanden">vorhanden</span></td><td>85&nbsp;%</td><td>S. 1</td></tr>
+          <tr><td>Flurstücksnummern</td><td><span class="badge vorhanden">123/4</span></td><td>93&nbsp;%</td><td>S. 1</td></tr>
+          <tr><td>Bauherr/Vorhaben-Beschriftung</td><td><span class="badge vorhanden">vorhanden</span></td><td>80&nbsp;%</td><td>S. 1</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Bauzeichnungen</h3>
+      <table data-testid="formpruefung-tabelle-bauzeichnungen">
+        <thead><tr><th>Merkmal</th><th>Vorhanden</th><th>Konfidenz</th><th>Fundort</th></tr></thead>
+        <tbody>
+          <tr><td>Maßstab (Soll 1:100)</td><td><span class="badge ok">1:100 — ok</span></td><td>88&nbsp;%</td><td>Grundriss S. 1</td></tr>
+          <tr>
+            <td>Maßstabsleiste <span class="badge hausregel" data-testid="formpruefung-hausregel-badge">Anforderung der Behörde</span></td>
+            <td><span class="badge fehlt">fehlt</span></td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">Die Maßstabsleiste ist keine BauVorlV-Pflicht, sondern eine zusätzliche
+        Anforderung der jeweiligen Behörde an die Einreichung — hier ausdrücklich so gekennzeichnet.</p>
+
+      <h3>Baubeschreibung</h3>
+      <table data-testid="formpruefung-tabelle-baubeschreibung">
+        <thead><tr><th>Merkmal</th><th>Vorhanden</th><th>Konfidenz</th><th>Fundort</th></tr></thead>
+        <tbody>
+          <tr><td>Gebäudeklasse</td><td><span class="badge nicht-pruefbar">nicht prüfbar</span></td><td>—</td><td>Dokument fehlt (siehe Fehlliste)</td></tr>
+          <tr><td>Höhe (Art. 2 Abs. 3 BayBO)</td><td><span class="badge nicht-pruefbar">nicht prüfbar</span></td><td>—</td><td>Dokument fehlt (siehe Fehlliste)</td></tr>
+          <tr><td>Baukosten</td><td><span class="badge nicht-pruefbar">nicht prüfbar</span></td><td>—</td><td>Dokument fehlt (siehe Fehlliste)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Konsistenz über alle Dokumente</h3>
+      <table data-testid="formpruefung-tabelle-konsistenz">
+        <thead><tr><th>Merkmal</th><th>Lageplan</th><th>Grundriss</th><th>Berechnung</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Bauherr</td><td>Muster GbR</td><td>Muster GbR</td><td>Muster GbR</td><td><span class="badge ok">konsistent</span></td></tr>
+          <tr><td>Flurstück</td><td>123/4</td><td>123/4</td><td>123/4</td><td><span class="badge ok">konsistent</span></td></tr>
+          <tr><td>Adresse</td><td>Musterstraße 5, Musterhausen</td><td>Musterstraße 5, Musterhausen</td><td>Musterstraße 5, Musterhausen</td><td><span class="badge ok">konsistent</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a href="#bericht" class="btn primary" data-testid="formpruefung-weiter">Weiter zum Bericht →</a>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Formprüfung, Konsistenzabgleich).</p>
+  </section>
+
+  <!-- ============================ 5 · BERICHT ============================ -->
+  <section data-screen="bericht" id="bericht">
+    <h2>Ergebnisbericht</h2>
+    <p class="purpose">Zusammenfassung aller Hinweise mit Konfidenz — zum Mitnehmen oder als
+      Grundlage für die eigentliche Einreichung im Antragsassistenten des Landes.</p>
+
+    <div class="panel">
+      <table data-testid="bericht-hinweisliste">
+        <thead><tr><th>Hinweis</th><th>Herkunft</th><th>Konfidenz</th></tr></thead>
+        <tbody>
+          <tr><td>Baubeschreibung fehlt</td><td>Fehlliste</td><td>—</td></tr>
+          <tr><td>Standsicherheitsnachweis fehlt (Sonderbau)</td><td>Fehlliste</td><td>—</td></tr>
+          <tr><td>Erschließungsangaben fehlen</td><td>Fehlliste</td><td>—</td></tr>
+          <tr><td>Brandschutznachweis unklar — Sammeldatei noch nicht aufgeteilt</td><td>Fehlliste</td><td>42&nbsp;%</td></tr>
+          <tr><td>Abweichungsantrag unklar — bitte manuell prüfen</td><td>Fehlliste</td><td>—</td></tr>
+          <tr><td>Maßstabsleiste fehlt (Anforderung der Behörde)</td><td>Formprüfung</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="#" class="btn ghost" data-testid="bericht-download-pdf" aria-disabled="true">⬇ Bericht als PDF herunterladen (Mock)</a>
+        <a href="#" class="btn primary" data-testid="bericht-weiter-landesassistent" aria-disabled="true">Weiter zum Antragsassistenten des Landes →</a>
+      </div>
+      <p class="note">Der Button „Weiter zum Antragsassistenten des Landes" ist eine
+        <strong>Attrappe ohne echtes Ziel</strong> — er schreibt nichts in ein Fachverfahren und
+        reicht nichts ein. Die verbindliche Einreichung bleibt Ihr eigener Schritt im
+        Antragsassistenten des Landes.</p>
+
+      <div class="banner info" style="margin-top:16px" data-testid="bericht-loeschfrist-hinweis">
+        🗑️ Ihre hochgeladenen Unterlagen werden <strong>14 Tage</strong> nach dem Upload
+        automatisch gelöscht.
+      </div>
+
+      <div class="checkline" style="margin-top:16px">
+        <input type="checkbox" id="ber-weitergabe" data-testid="bericht-weitergabe-checkbox">
+        <label for="ber-weitergabe">Bericht an die Sachbearbeitung weitergeben (optional)</label>
+      </div>
+      <p class="note">Sachbearbeitung sieht ausschließlich diesen Bericht — kein Zugriff auf
+        Upload, Sortierung, Fehlliste oder Formprüfung des Einreichers.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenzen: Prüfkern (Berichtsdaten),
+      Landes-Antragsassistent (Link-Attrappe).</p>
+  </section>
+
+</main>
+
+<!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
+<script>
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.1", klickdummy_class: "mock" };
+  window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
+</script>
+<script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>
+
+</body>
+</html>

@@ -62,7 +62,7 @@ dev:
 # KLICKDUMMY (platform:ADR-211) — ZENTRAL via iil-klickdummy
 # =============================================================================
 KLICKDUMMY_VENV := .venv-klickdummy
-KLICKDUMMIES    := klickdummy/projekt-ifc-upload/screens-spec.yaml:klickdummy/projekt-ifc-upload/screens-spec.schema.json
+KLICKDUMMIES    := klickdummy/projekt-ifc-upload/screens-spec.yaml:klickdummy/projekt-ifc-upload/screens-spec.schema.json klickdummy/bauantrag-vorpruefung/screens-spec.yaml:klickdummy/bauantrag-vorpruefung/screens-spec.schema.json
 
 klickdummy-install: ## Einmalig: venv + zentrales iil-klickdummy
 	@$(PYTHON) -m venv $(KLICKDUMMY_VENV) --clear 2>/dev/null || $(PYTHON) -m venv $(KLICKDUMMY_VENV)

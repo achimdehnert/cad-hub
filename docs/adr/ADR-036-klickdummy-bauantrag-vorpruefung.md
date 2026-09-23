@@ -1,0 +1,109 @@
+---
+title: "ADR-036: Klickdummy Bauantrag-Vorprüfung für Einreicher"
+status: Accepted
+date: 2026-09-23
+deciders: Achim Dehnert
+scope: cad-hub
+conforms_to: platform:ADR-211
+tags: [klickdummy]
+class: mock
+sunset_after: "2027-09-23"
+extension_review_required: true
+related: []
+---
+
+# ADR-036: Klickdummy Bauantrag-Vorprüfung für Einreicher
+
+## Kontext
+
+cad-hub#72 (K4) verankert ein gemeinsames Vorgangsmodell „Vorgang → Dokumente
+→ Befunde" für die Sachbearbeitung. Ein Owner-Kommentar auf #72 sowie Issue
+#77 erweitern den Scope: eine Behörde hat gegenüber IIL eine **zweite
+Reihenfolge** vorgetragen — die Prüfung soll **vor** der verbindlichen
+Einreichung stattfinden, ausgelöst vom Entwurfsverfasser/Einreicher selbst,
+nicht erst nach Eingang durch die Sachbearbeitung. #77 selbst bleibt bis zum
+Kill-Gate KONZ-meiki-010 (30.11.2026) und einem Herstellergespräch gesperrt
+— zulässig vorher ist ausdrücklich nur, das Vorgangsmodell so zu schneiden,
+dass eine Einreicher-Rolle und eine Löschfrist später ohne Umbau passen
+(bereits umgesetzt in #72 K4), sowie eine **Klick-Validierung** der
+Einreicher-Journey ohne echten Bau.
+
+Fachliche Grundlage ist die Bayerische Bauvorlagenverordnung (BauVorlV)
+§§ 3, 7, 8, 9: der Pflichtkatalog an Unterlagen ist **bedingt** (Verfahrensart,
+Bebauungsplan-Gebiet, Erschließung, Abstandsflächenübernahme), keine feste
+Liste je Verfahrensart. Diese Bedingtheit ist der Kern der Journey und lässt
+sich vor jedem Code nur an einem klickbaren Stand validieren.
+
+Dieses Repo ist **öffentlich** — der Klickdummy trägt keine Haus-, Personen-
+oder Herstellernamen; die konkrete Behörde und ihre Anforderungen im Detail
+bleiben in einem privaten Repo dokumentiert (Verweis nur über #77, nicht als
+Pfad).
+
+## Entscheidung
+
+Klasse **`mock`**: kein Backend, kein `?demo=`-Parameter, alle drei
+Systemgrenzen (Landes-Antragsassistent, Fachverfahren-Adapter, Prüfkern)
+sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
+nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
+`stub-demo`/`story`/`spec-demo` entsteht).
+
+5 Screens, aus der Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
+
+- `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
+  Bedingungen ankreuzen, Löschfrist-Hinweis, ausdrücklicher Hinweis „keine
+  Einreichung"
+- `sortierung` — erkannte Vorlagenart je Datei mit Konfidenz, Korrektur,
+  Sammeldatei-Aufteilung
+- `fehlliste` — bedingter Soll-Katalog (BauVorlV §3) gegen Ist, Status je
+  Zeile (vorhanden/fehlt/unklar), Aggregatzahl per CSS-Zähler aus den Zeilen
+  berechnet (kein Literal)
+- `formpruefung` — Merkmale je Vorlagenart mit Vorhandensein/Konfidenz/Fundort,
+  Maßstabsleiste ausdrücklich als **Anforderung der Behörde** (nicht
+  BauVorlV) gekennzeichnet, Konsistenzabgleich über Dokumente, explizit
+  **keine Zulässigkeitsprüfung**
+- `bericht` — Hinweisliste mit Konfidenz, PDF-Download (Mock), Button
+  „Weiter zum Antragsassistenten des Landes" als reine Link-Attrappe,
+  Löschfrist-Erinnerung, optionale Weitergabe an die Sachbearbeitung
+
+Zwei Personas: `entwurfsverfasser` (Einreicher, sieht alle 5 Screens) und
+`sachbearbeitung` (sekundär, sieht nur `bericht`).
+
+**Technische Umsetzung ohne Custom-JS** (Auftragsvorgabe, abweichend vom
+bisherigen `projekt-ifc-upload`-Klickdummy, der Navigation per Inline-JS
+löst): Screen-Wechsel über CSS `:target` (Nav-Links sind Anker `#<id>`),
+die Aggregatzahl auf `fehlliste` über CSS-Zähler (`counter-increment` auf
+`data-status="fehlt"`). Die einzigen `<script>`-Tags sind die
+Feedback-Widget-Konfiguration und der Widget-Include selbst.
+
+Erst-Einbindung des Feedback-Widgets in diesem Repo: `platform-snippets/klickdummy/feedback-widget/widget.js`
+existierte noch nicht (der bestehende Klickdummy hat es nie eingebunden) —
+per `klickdummy-install-snippets` nachgezogen, bewusst nur die
+`feedback-widget/`-Datei behalten, nicht die übrigen Snippets (genesor-sync,
+issue-templates u.a.), um den Diff auf das für AK7 Nötige zu beschränken.
+
+## Konsequenzen
+
+- Klick-Validierung der Einreicher-Journey ist möglich, bevor an #77 gebaut
+  wird — Owner-Entscheidung zur Reihenfolge (Einreicher zuerst vs.
+  Sachbearbeitung zuerst, #72) kann am Klickdummy geprüft werden.
+- Kein Code-Risiko: `class: mock` bedeutet keine reale Route, kein reales
+  Datenmodell ist von diesem PR betroffen — unabhängig von #72/PR #78.
+- Die Screens sind bewusst als **eine mögliche** Umsetzung der bedingten
+  BauVorlV-Logik modelliert (9 Katalogpunkte, ein Sonderbau-Szenario als
+  Demo-Zustand); ein realer Bau (hinter dem Kill-Gate) kann davon abweichen,
+  ohne dass dieser Klickdummy dafür Bestandsschutz beansprucht.
+- `platform-snippets/klickdummy/` ist damit erstmals im Repo — künftige
+  Klickdummies können den Include direkt übernehmen, ohne erneut
+  `klickdummy-install-snippets` laufen zu lassen.
+- Auto-Deploy-on-Merge (`deploy.yml`, kein `paths-ignore`) triggert bei einem
+  Merge dieses PRs einen echten Production-Deploy von cad-hub, obwohl nur
+  statische Dateien unter `klickdummy/`/`docs/`/`platform-snippets/`
+  geändert werden — unkritisch (kein App-Code betroffen), aber zu wissen vor
+  dem Merge.
+
+## Bezug
+
+- `platform:ADR-211` — Klickdummy-Konvention (Rev 13)
+- `cad-hub:ADR-035` — Schwester-Klickdummy `projekt-ifc-upload` (`sister_of`)
+- cad-hub#72 (K4 Vorgangsmodell), cad-hub#77 (Scope-Erweiterung Einreicher-Vorprüfung)
+- Bayerische Bauvorlagenverordnung (BauVorlV) §§ 3, 7, 8, 9
