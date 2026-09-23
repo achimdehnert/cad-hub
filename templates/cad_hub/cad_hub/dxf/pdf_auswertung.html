@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% comment %}
+Aufrufer fuer die beiden PDF-Endpunkte (Issue #68).
+
+Bis hierher waren `/dxf/pdf/lageplan/` und `/dxf/pdf/abstandsflaechen/` zwar
+geroutet und getestet, aber von nichts aufgerufen: kein Template, kein Skript.
+Ein `POST` von aussen scheiterte an der CSRF-Pruefung, weil niemand einen Token
+mitbrachte. Diese Seite ist der fehlende Aufrufer — sie holt den Token aus dem
+Kontext und schickt ihn als `X-CSRFToken` mit, wie `analysis.html` es fuer die
+DXF-Analyse tut.
+{% endcomment %}
+
+{% block title %}PDF-Auswertung{% endblock %}
+
+{% comment %}
+`templates/base.html` kennt genau diese Bloecke: title, extra_head, navbar,
+content, extra_scripts. `analysis.html` im selben Ordner nutzt zusaetzlich
+`page_title`, `extra_css` und `extra_js` — die gibt es dort nicht, ihr Inhalt
+wird still verworfen. Diese Seite haelt sich an die vorhandenen, sonst laeuft
+das Skript ins Leere und der Aufrufer waere wieder keiner.
+{% endcomment %}
+
+{% block content %}
+<h1 class="h3 mb-4">PDF-Auswertung</h1>
+<div class="row g-4">
+  <div class="col-12">
+    <p class="text-muted mb-0">
+      Liest Planangaben aus einem PDF. Die Auswertung nennt, was sie findet —
+      sie prueft nicht, ob die Angaben richtig sind.
+    </p>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><strong>Lageplan</strong></div>
+      <div class="card-body">
+        <p class="small text-muted">
+          Flurstueck, Gemarkung, Flaeche, Massstab, Nordrichtung, GRZ und GFZ,
+          Grenzabstaende, Stellplaetze.
+        </p>
+        <input type="file" class="form-control mb-2" id="datei-lageplan" accept="application/pdf">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="llm-lageplan">
+          <label class="form-check-label small" for="llm-lageplan">
+            Sprachmodell zusaetzlich befragen, wenn Felder fehlen
+          </label>
+        </div>
+        <button class="btn btn-primary" data-ziel="lageplan">Auswerten</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><strong>Abstandsflaechenplan</strong></div>
+      <div class="card-body">
+        <p class="small text-muted">
+          Wandhoehen, Abstandsflaechentiefen, Ueberschreitungen.
+        </p>
+        <input type="file" class="form-control mb-2" id="datei-abstand" accept="application/pdf">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="llm-abstand">
+          <label class="form-check-label small" for="llm-abstand">
+            Sprachmodell zusaetzlich befragen, wenn Felder fehlen
+          </label>
+        </div>
+        <button class="btn btn-primary" data-ziel="abstand">Auswerten</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div id="meldung"></div>
+    <pre id="ergebnis" class="bg-light p-3 rounded d-none" style="max-height: 28rem; overflow: auto;"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const ZIELE = {
+    lageplan: {
+      url: '{% url "dxf:pdf_lageplan" %}',
+      datei: 'datei-lageplan',
+      llm: 'llm-lageplan',
+    },
+    abstand: {
+      url: '{% url "dxf:pdf_abstandsflaechen" %}',
+      datei: 'datei-abstand',
+      llm: 'llm-abstand',
+    },
+  };
+
+  function melde(text, art) {
+    document.getElementById('meldung').innerHTML =
+      '<div class="alert alert-' + art + '">' + text + '</div>';
+  }
+
+  async function auswerten(schluessel) {
+    const ziel = ZIELE[schluessel];
+    const datei = document.getElementById(ziel.datei).files[0];
+    const ergebnis = document.getElementById('ergebnis');
+    ergebnis.classList.add('d-none');
+
+    if (!datei) {
+      melde('Bitte zuerst eine PDF-Datei waehlen.', 'warning');
+      return;
+    }
+
+    const daten = new FormData();
+    daten.append('file', datei);
+    if (document.getElementById(ziel.llm).checked) {
+      daten.append('use_llm', '1');
+    }
+
+    melde('Wird ausgewertet …', 'info');
+    try {
+      // Der Token ist der Punkt: ohne ihn weist die CSRF-Pruefung den POST ab,
+      // bevor der View ueberhaupt laeuft (Issue #68).
+      const antwort = await fetch(ziel.url, {
+        method: 'POST',
+        body: daten,
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      });
+      const inhalt = await antwort.json();
+      if (!antwort.ok) {
+        melde('Auswertung fehlgeschlagen: ' + (inhalt.errors || inhalt.error || antwort.status), 'danger');
+        return;
+      }
+      melde('Ausgewertet: ' + inhalt.filename, 'success');
+      ergebnis.textContent = JSON.stringify(inhalt, null, 2);
+      ergebnis.classList.remove('d-none');
+    } catch (fehler) {
+      melde('Auswertung fehlgeschlagen: ' + fehler, 'danger');
+    }
+  }
+
+  document.querySelectorAll('button[data-ziel]').forEach(function (knopf) {
+    knopf.addEventListener('click', function () {
+      auswerten(knopf.dataset.ziel);
+    });
+  });
+</script>
+{% endblock %}

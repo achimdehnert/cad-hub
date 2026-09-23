@@ -499,3 +499,15 @@ class PDFAbstandsflaechenAnalyzeView(_PDFHandlerViewBase):
 
     handler_class = PDFAbstandsflaechenHandler
     result_key = "abstandsflaechen"
+
+
+class PDFAuswertungView(TemplateView):
+    """Die Seite, die die beiden PDF-Endpunkte aufruft (Issue #68).
+
+    Ohne sie waren die Endpunkte geroutet, getestet — und unerreichbar: ein
+    ``POST`` von außen scheiterte in Produktion an der CSRF-Prüfung, weil es
+    keinen Aufrufer gab, der einen Token mitbringt. Gemessen am 2026-09-23
+    gegen nl2cad.de: ``GET`` 405, ``POST`` 403.
+    """
+
+    template_name = "cad_hub/dxf/pdf_auswertung.html"

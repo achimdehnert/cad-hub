@@ -101,4 +101,11 @@ urlpatterns = [
         views.PDFAbstandsflaechenAnalyzeView.as_view(),
         name="pdf_abstandsflaechen",
     ),
+    # Der Aufrufer der beiden Endpunkte. Ohne ihn waren sie geroutet und
+    # getestet, aber in Produktion nicht nutzbar (403 CSRF) — Issue #68.
+    path(
+        "pdf/",
+        views.PDFAuswertungView.as_view(),
+        name="pdf_auswertung",
+    ),
 ]
