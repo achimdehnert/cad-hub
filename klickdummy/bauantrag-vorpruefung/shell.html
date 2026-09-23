@@ -256,7 +256,22 @@
             <td>42&nbsp;%</td>
             <td>3</td>
             <td>
-              <a href="#" class="btn ghost" data-testid="sortierung-aufteilen" aria-disabled="true">✂️ Aufteilen (Mock)</a>
+              <details data-testid="sortierung-aufteilen">
+                <summary class="btn ghost" style="display:inline-block;cursor:pointer;list-style:none">✂️ Aufteilen (Mock)</summary>
+                <div class="panel" style="margin-top:var(--pui-space-2)" data-testid="sortierung-aufteilen-ergebnis">
+                  <p class="note" style="margin-top:0"><strong>Aufteilung vorgeschlagen</strong> — 3 Seiten, 3 Vorlagen erkannt. Jeder Teil wird als eigenes Dokument übernommen; die Sammeldatei bleibt als Original erhalten.</p>
+                  <table>
+                    <thead><tr><th>Teil</th><th>Seiten</th><th>Erkannte Vorlagenart</th><th>Konfidenz</th><th>Neuer Dateiname</th></tr></thead>
+                    <tbody>
+                      <tr data-testid="sortierung-aufteilen-teil-1"><td>1</td><td>1</td><td><span class="badge ok">Nachweis (Brandschutz)</span></td><td>81&nbsp;%</td><td>nachweis-brandschutz.pdf</td></tr>
+                      <tr data-testid="sortierung-aufteilen-teil-2"><td>2</td><td>2</td><td><span class="badge ok">Formular (Bauantrag)</span></td><td>77&nbsp;%</td><td>formular-bauantrag.pdf</td></tr>
+                      <tr data-testid="sortierung-aufteilen-teil-3"><td>3</td><td>3</td><td><span class="badge unklar">Unbekannt</span></td><td>38&nbsp;%</td><td>sammelmappe-teil-3.pdf</td></tr>
+                    </tbody>
+                  </table>
+                  <p class="note">Teil 3 bleibt „Unbekannt" und wird in der Fehlliste als „unklar" geführt, bis Sie die Vorlagenart setzen. Seitenbereiche lassen sich real per Klick verschieben (Mock: fest).</p>
+                  <a href="#fehlliste" class="btn ghost" data-testid="sortierung-aufteilen-uebernehmen">Aufteilung übernehmen →</a>
+                </div>
+              </details>
             </td>
           </tr>
         </tbody>

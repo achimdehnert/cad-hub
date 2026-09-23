@@ -80,3 +80,6 @@ klickdummy-i2: ## I2 Prod-Sicherheit — genau eine class deklariert (zentral)
 klickdummy-i3: ## I3 Off-Ramp — sunset/Status (zentral)
 	@$(KLICKDUMMY_VENV)/bin/klickdummy-i3 $(KLICKDUMMIES)
 
+klickdummy-sitemap: ## KD-Sitemap + kd-tree.json neu generieren (iil.pet/kd, platform:ADR-246)
+	@$(KLICKDUMMY_VENV)/bin/klickdummy-gen-sitemap . cad-hub:ADR-036 cad-hub
+
