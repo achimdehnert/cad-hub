@@ -1,0 +1,25 @@
+<tr id="befund-{{ befund.pk }}" data-status="{{ befund.status }}" class="border-t border-gray-200">
+  <td class="px-3 py-2">{{ befund.regel_id }}</td>
+  <td class="px-3 py-2">{{ befund.wert }}</td>
+  <td class="px-3 py-2">{{ befund.get_status_display }}</td>
+  <td class="px-3 py-2 space-x-2">
+    {% if befund.status != "bestaetigt" %}
+    <button
+      class="text-green-600 hover:underline text-sm"
+      hx-post="{% url 'vorgang:befund_status' befund.pk %}"
+      hx-vals='{"status": "bestaetigt"}'
+      hx-target="#befund-{{ befund.pk }}"
+      hx-swap="outerHTML"
+    >Bestätigen</button>
+    {% endif %}
+    {% if befund.status != "verworfen" %}
+    <button
+      class="text-red-600 hover:underline text-sm"
+      hx-post="{% url 'vorgang:befund_status' befund.pk %}"
+      hx-vals='{"status": "verworfen"}'
+      hx-target="#befund-{{ befund.pk }}"
+      hx-swap="outerHTML"
+    >Verwerfen</button>
+    {% endif %}
+  </td>
+</tr>

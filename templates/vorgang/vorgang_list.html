@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Vorgänge{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Vorgänge</h1>
+  <a href="{% url 'vorgang:vorgang_create' %}"
+     class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Neuer Vorgang</a>
+</div>
+
+{% if vorgaenge %}
+<table class="min-w-full bg-white shadow-sm rounded-md overflow-hidden">
+  <thead class="bg-gray-100">
+    <tr>
+      <th class="px-4 py-2 text-left">Titel</th>
+      <th class="px-4 py-2 text-left">Art</th>
+      <th class="px-4 py-2 text-left">Rolle</th>
+      <th class="px-4 py-2 text-left">Status</th>
+      <th class="px-4 py-2 text-left">Löschfrist</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for vorgang in vorgaenge %}
+    <tr class="border-t border-gray-200 hover:bg-gray-50">
+      <td class="px-4 py-2">
+        <a class="text-blue-600 hover:underline"
+           href="{% url 'vorgang:vorgang_detail' vorgang.pk %}">{{ vorgang.titel }}</a>
+      </td>
+      <td class="px-4 py-2">{{ vorgang.get_art_display }}</td>
+      <td class="px-4 py-2">{{ vorgang.get_eingereicht_von_rolle_display }}</td>
+      <td class="px-4 py-2">{{ vorgang.get_status_display }}</td>
+      <td class="px-4 py-2">{{ vorgang.loeschfrist_am|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-gray-500">Noch keine Vorgänge.</p>
+{% endif %}
+{% endblock %}

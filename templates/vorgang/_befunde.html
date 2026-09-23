@@ -1,0 +1,36 @@
+<div class="bg-white shadow-sm rounded-md p-6">
+  <h2 class="text-lg font-semibold mb-4">Dokumente</h2>
+  {% if dokumente %}
+  <ul class="mb-6 space-y-1">
+    {% for dokument in dokumente %}
+    <li class="text-sm text-gray-700">
+      {{ dokument.dateiname }} — {{ dokument.get_vorlagenart_display }}
+      ({{ dokument.seiten|default:"?" }} Seiten)
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-gray-500 mb-6">Noch keine Dokumente.</p>
+  {% endif %}
+
+  <h2 class="text-lg font-semibold mb-4">Befunde</h2>
+  {% if befunde %}
+  <table class="min-w-full">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-3 py-2 text-left">Regel</th>
+        <th class="px-3 py-2 text-left">Wert</th>
+        <th class="px-3 py-2 text-left">Status</th>
+        <th class="px-3 py-2 text-left"></th>
+      </tr>
+    </thead>
+    <tbody id="befund-liste">
+      {% for befund in befunde %}
+        {% include "vorgang/_befund_row.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-gray-500">Noch keine Befunde.</p>
+  {% endif %}
+</div>

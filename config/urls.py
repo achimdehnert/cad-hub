@@ -27,4 +27,6 @@ urlpatterns = [
     path("export/", include("apps.export.urls", namespace="export")),
     # Registry API — Modul-Katalog, Berufsprofile
     path("api/registry/", include("apps.registry.urls", namespace="registry")),
+    # Vorgang — Vorgang/Dokument/Befund (Issue #72 K4)
+    path("vorgang/", include("apps.vorgang.urls", namespace="vorgang")),
 ]

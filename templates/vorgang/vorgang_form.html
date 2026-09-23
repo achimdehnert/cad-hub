@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Neuer Vorgang{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Neuer Vorgang</h1>
+<form method="post" class="bg-white shadow-sm rounded-md p-6 max-w-lg space-y-4">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+    Anlegen
+  </button>
+</form>
+{% endblock %}

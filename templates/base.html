@@ -20,6 +20,7 @@
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
                     <a href="{% url 'ifc:dashboard' %}" class="text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="{% url 'vorgang:vorgang_list' %}" class="text-gray-600 hover:text-gray-900">Vorgänge</a>
                     <span class="text-gray-400">{{ user.username }}</span>
                     {% else %}
                     <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-800">Anmelden</a>
