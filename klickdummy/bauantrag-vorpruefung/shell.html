@@ -127,8 +127,9 @@
     </div>
 
     <div class="panel">
-      <label for="up-dateien">PDF-Satz (nur einzelne PDF-Dateien, keine Anhänge innerhalb der PDF)</label>
+      <label for="up-dateien">PDF-Satz — mehrere PDF-Dateien auf einmal auswählen oder hierher ziehen (jede Vorlage als eigene PDF, keine Anhänge innerhalb der PDF)</label>
       <input type="file" id="up-dateien" data-testid="upload-dateiauswahl" accept="application/pdf" multiple>
+      <p class="note" data-testid="upload-mehrfach-hinweis">Mehrfachauswahl: Strg/Cmd gedrückt halten oder den ganzen Ordnersatz ablegen — die Dateien werden gemeinsam sortiert und geprüft.</p>
       <ul class="file-list" data-testid="upload-datei-liste">
         <li>📄 lageplan-musterhausen.pdf</li>
         <li>📄 grundriss-eg.pdf</li>

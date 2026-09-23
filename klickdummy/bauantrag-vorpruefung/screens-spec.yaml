@@ -66,7 +66,7 @@ screens:
       die Bedingungen an, die den Pflichtkatalog steuern — vor jeder verbindlichen
       Einreichung, mit sichtbarer Löschfrist.
     datafields:
-      - { name: dateien, type: array, source: mock-demo, semantic: "Liste hochgeladener Einzel-PDF-Dateinamen, keine Sammeldatei-Anhänge" }
+      - { name: dateien, type: array, source: mock-demo, semantic: "Liste der in einem Schritt hochgeladenen PDF-Dateinamen (Mehrfachauswahl oder Ablegen eines ganzen Satzes); jede Vorlage als eigene PDF, keine Anhänge innerhalb der PDF" }
       - { name: verfahrensart, type: enum, source: mock-demo, semantic: "genehmigungsfreistellung | vereinfachtes_verfahren | sonderbau" }
       - { name: bedingungen, type: object, source: mock-demo, semantic: "im_bplan_gebiet, oeffentlich_erschlossen, abstandsflaechenuebernahme_noetig — je bool" }
       - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "Anzahl Tage bis zur automatischen Löschung der Unterlagen" }
@@ -74,7 +74,10 @@ screens:
       - "Prüfkern"
     parity_acceptance:
       - id: upload.nur_pdf
-        check: "Nur einzelne PDF-Dateien werden akzeptiert; andere Formate oder Dateianlagen innerhalb der PDF lösen eine Fehlermeldung aus"
+        check: "Nur PDF-Dateien werden akzeptiert; andere Formate oder Dateianlagen innerhalb der PDF lösen eine Fehlermeldung aus"
+        kind: behavioral-manual
+      - id: upload.mehrere_auf_einmal
+        check: "Mehrere PDF-Dateien lassen sich in einem Schritt hochladen (Mehrfachauswahl im Dateidialog und Ablegen eines ganzen Satzes); alle erscheinen in der Dateiliste, bevor der Nutzer fortfährt"
         kind: behavioral-manual
       - id: upload.keine_einreichung
         check: "Der Screen weist sichtbar aus, dass hier keine verbindliche Einreichung erfolgt, sondern nur eine freiwillige Vorprüfung"
