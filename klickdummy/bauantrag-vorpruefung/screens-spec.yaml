@@ -108,7 +108,7 @@ screens:
         check: "Der Nutzer kann die erkannte Vorlagenart je Datei manuell korrigieren"
         kind: behavioral-manual
       - id: sortierung.sammeldatei_aufteilung
-        check: "Eine als Sammeldatei erkannte Datei (mehrere Vorlagen in einer PDF) bietet eine Aufteilen-Aktion an"
+        check: "Eine als Sammeldatei erkannte Datei (mehrere Vorlagen in einer PDF) bietet eine Aufteilen-Aktion an; das Ergebnis zeigt je Teil Seitenbereich, erkannte Vorlagenart mit Konfidenz und neuen Dateinamen, ein Teil kann 'Unbekannt' bleiben, und die Aufteilung lässt sich übernehmen"
         kind: behavioral-manual
     off_ramp_status: static
 

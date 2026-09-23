@@ -1,0 +1,64 @@
+# platform:ADR-211 — I1 Spec (maschinenlesbar) — Sitemap-Knoten (Top-Level)
+# Konformität: klickdummy-i1 klickdummy/sitemap/screens-spec.yaml:<schema>
+# HTML-Renderer: klickdummy/sitemap/index.html (auto-generiert von klickdummy-gen-sitemap)
+$schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
+
+spec_id: cad-hub:klickdummy-spec-sitemap
+spec_version: "0.1"
+spec_date: "2026-09-23"
+spec_role: root
+title: "Klickdummy-Sitemap — Hauptmenü aller cad-hub KD-Bäume"
+
+adr:
+  local: cad-hub:ADR-036
+  conforms_to: platform:ADR-211
+
+class: mock
+class_evidence:
+  no_backend: true
+  no_demo_param: true
+  target_mocks_visible: true
+  systemgrenzen:
+    - "Auto-generiert aus allen screens-spec.yaml im Repo"
+    - "Keine interaktive Logik außer Links + Tour-Mode-Footer (via kd-nav.js)"
+
+grounding:
+  konzept: "platform:ADR-211 §I4 Hierarchie"
+  konzept_id: "platform:ADR-211"
+  konzept_version: "n/a"
+  pilot: "cad-hub Klickdummy-Baum (alle Specs)"
+  rechtsrahmen_kernnormen:
+    organisatorisch: "Übersicht aller KDs als Navigations- und Off-Ramp-Hilfsmittel"
+
+off_ramp:
+  policy: "platform:ADR-211"
+  unit: per-screen
+  rule: "Sitemap selbst ist immer static (mock-Klasse, kein App-Counterpart)"
+  doppelquell_grenze: prod-release
+  staging_doppelquell: allowed
+  parity_runner: "make klickdummy-i3"
+  status_overall: "Phase A — Sitemap permanent"
+
+personas:
+  alle:
+    label: "Alle Rollen"
+    rolle: "Stakeholder, Entwickler, DSB — wer auch immer einen Überblick braucht"
+    sieht:
+      - "Pro KD-Baum Tabelle mit Knoten, Rolle (root/branch), Off-Ramp-Status, Screens-Anzahl, Sprung-Link"
+      - "Waisen-Knoten (Branches ohne Root) als Warnung"
+      - "Tour-Mode-Hinweis"
+
+screens:
+  - id: sitemap-overview
+    title: "Sitemap-Übersicht aller KD-Bäume"
+    personas: [alle]
+    purpose: "Hauptmenü — auf einer Seite jeden Klickdummy mit Position im Baum, Off-Ramp-Status und Sprung-Link erreichen. Auto-generiert; spiegelt den aktuellen Stand der screens-spec.yaml-Dateien."
+    konzept_ref: ["platform:ADR-211#I4"]
+    parity_acceptance:
+      - { id: sitemap.roots-rendered,    check: "Pro effektiver Wurzel (spec_role=root, nicht als kd_children referenziert) existiert eine eigene Tabelle (tree-<id>) mit dem Teilbaum darunter." }
+      - { id: sitemap.no-duplicate-nodes, check: "Kein Knoten erscheint in mehr als einer Tabelle — als kd_children referenzierte Roots werden im Elternbaum verschachtelt (sub-root), nicht doppelt gerendert." }
+      - { id: sitemap.domains-grouped,   check: "Deklariert mindestens eine Wurzel-Spec domain:, gruppiert die Sitemap die Wurzeln unter Domänen-Überschriften (domain-<slug>); ohne domain: bleibt die flache Liste." }
+      - { id: sitemap.links-resolve,     check: "Alle Sprung-Links (link-<spec-id>) zeigen auf existierende Dateien." }
+      - { id: sitemap.orphans-flagged,   check: "Falls Branches ohne Root existieren, werden sie unter 'orphans' aufgelistet." }
+      - { id: sitemap.tour-hint-visible, check: "Hinweis auf Tour-Mode (?tour=1) ist sichtbar." }
+    off_ramp_status: static
