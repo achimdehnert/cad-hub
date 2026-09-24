@@ -47,7 +47,8 @@ sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
 nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
 `stub-demo`/`story`/`spec-demo` entsteht).
 
-5 Screens, aus der Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
+5 Screens (v0.1; seit Revision 2 sieben — siehe unten), aus der Einreicher-Journey
+abgeleitet, in Ablaufreihenfolge:
 
 - `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
   Bedingungen ankreuzen, Löschfrist-Hinweis, ausdrücklicher Hinweis „keine
@@ -100,6 +101,44 @@ issue-templates u.a.), um den Diff auf das für AK7 Nötige zu beschränken.
   statische Dateien unter `klickdummy/`/`docs/`/`platform-snippets/`
   geändert werden — unkritisch (kein App-Code betroffen), aber zu wissen vor
   dem Merge.
+
+## Revision 2 (2026-09-24) — Antragsteller-Einstieg: Vorhaben, Vorhabensnummer, Formular-Download
+
+**Anlass (Owner, Kapitäns-Kanal 2026-09-24):** „Antragsteller geht auf LRA-Seite → eröffnet
+neues Bauvorhaben (Auswahl aus Liste der Möglichkeiten), erhält Vorhabensnummer → gelangt auf
+seine Vorhabensseite → Infos zum Vorhaben plus Herunterladen (im Bulk?) der Anträge →
+Hochladen der Anträge → Prüfung auf Vollständigkeit … Rest ist bereits bekannt."
+
+**Erweiterung** (`extension_review_required: true` → hier dokumentiert), Spec v0.1 → v0.2,
+7 statt 5 Screens:
+
+- `vorhaben_anlegen` (neu, Screen 1) — Seite der Bauaufsichtsbehörde: Vorhabensart aus
+  **fester Liste** (kein Freitext), Verfahrensart **vorgeschlagen und änderbar** mit dem
+  Hinweis „keine Rechtsauskunft", Gemeinde/Flurstück (erfunden), die drei Bedingungen
+  (wandern von `upload` hierher), Button „Vorhaben anlegen". Die Vorhabensnummer
+  (`BV-<Jahr>-<6 Ziffern>`) erscheint erst **nach** dem Anlegen — im Mock über den
+  Anker-Sprung zur Vorhabensseite, ohne JS.
+- `vorhabensseite` (neu, Screen 2, Route `/vorhaben/{vorhabensnummer}`) — Nummer, Grunddaten,
+  Status (`angelegt → Unterlagen hochgeladen → vorgeprüft`; „eingereicht" wird hier **nie**
+  gesetzt), der aus Vorhabensart und Bedingungen abgeleitete Katalog der Anträge/Vorlagen
+  mit **Download je Formular und als ZIP-Paket** (Owner-Frage „im Bulk?" → beides; das Paket
+  enthält genau den angezeigten Katalog), Wiederaufruf per Nummer mit Löschfrist, Einstieg in
+  den Upload.
+- `upload` — an das Vorhaben gebunden: Nummer, Verfahrensart und Bedingungen sind übernommen
+  und hier **nur angezeigt** (`disabled`), Änderung auf der Vorhabensseite.
+- `fehlliste` — heißt jetzt sichtbar „Vollständigkeit", trägt die Vorhabensnummer und den
+  Rückweg zur Vorhabensseite (fehlende Formulare dort laden).
+- `bericht` — trägt die Vorhabensnummer.
+- Persona `antragsteller` (Bauherr/Bevollmächtigte) neu; sieht Vorhaben, Vorhabensseite, Upload,
+  Vollständigkeit, Bericht. `entwurfsverfasser` sieht zusätzlich Sortierung und Formprüfung.
+
+**Bewusst offen gelassen:** Wiederaufruf ohne Login nur per Nummer (kein BayernID-Bezug), weil
+der Vorab-Dienst nichts Verbindliches trägt und nach Löschfrist verfällt — ob die Behörde
+einen zweiten Faktor will, ist eine Frage an den Pilot; ebenso, ob die ZIP-Attrappe im echten
+Bau ein serverseitig gebautes Paket oder ein Verweis auf den Formularserver des Landes wird.
+
+**Nicht geändert:** Klasse `mock`, kein Backend, kein Custom-JS, Systemgrenzen, Löschfrist,
+alle bestehenden Parity-Checks (ein Text-Update bei `upload.bedingungen_erfassbar`).
 
 ## Bezug
 

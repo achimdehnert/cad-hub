@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.1 (Draft)</title>
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.2 (Draft)</title>
 <!--
   class: mock — Klickdummy zu cad-hub:ADR-036, Spec
   klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
@@ -56,7 +56,18 @@
      kein anderer Screen als Fragment aktiv ist. */
   section[data-screen] { display: none; }
   section[data-screen]:target { display: block; }
-  body:not(:has(section[data-screen]:target)) section[data-screen="upload"] { display: block; }
+  body:not(:has(section[data-screen]:target)) section[data-screen="vorhaben_anlegen"] { display: block; }
+
+  /* Vorhabensnummer: erscheint erst, wenn die Vorhabensseite aktiv ist (Anlegen = Anker-Sprung),
+     auf dem Anlege-Screen selbst bleibt sie unsichtbar — ohne JS, per :target. */
+  .vorhabensnummer { font-family: ui-monospace, monospace; font-size: 15px; font-weight: 700; color: var(--pui-primary-dk); background: var(--pui-success-bg); padding: 2px 10px; border-radius: var(--pui-radius); }
+  .status-pill { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--pui-neutral-bg); color: var(--pui-muted); }
+  .katalog-tabelle td .btn { margin-top: 0; padding: 4px 10px; font-size: 12px; }
+  .stamm { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pui-space-2) var(--pui-space-4); font-size: 13px; }
+  .stamm dt { color: var(--pui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .stamm dd { margin: 0 0 var(--pui-space-2); }
+  .readonly-line { font-size: 13px; padding: var(--pui-space-2) var(--pui-space-3); background: var(--pui-neutral-bg); border-radius: var(--pui-radius); margin: var(--pui-space-2) 0; }
+  input[type="text"] { width: 100%; font: inherit; font-size: 13px; padding: var(--pui-space-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); }
 
   h2 { font-size: 20px; margin: 0 0 var(--pui-space-1); color: var(--pui-primary-dk); }
   h3 { font-size: 14px; margin: var(--pui-space-4) 0 var(--pui-space-2); color: var(--pui-primary-dk); }
@@ -97,28 +108,164 @@
   .fehlliste-summary { background: var(--pui-danger-bg); border-radius: var(--pui-radius); padding: var(--pui-space-3) var(--pui-space-4); font-size: 13px; margin-top: 0; }
 </style>
 </head>
-<body data-persona="entwurfsverfasser">
+<body data-persona="antragsteller">
 
 <header>
   <h1>Bauantrag-Vorprüfung für Einreicher</h1>
-  <span class="badge-demo">mock · Entwurfsverfasser/in</span>
+  <span class="badge-demo">mock · Antragsteller/in · Entwurfsverfasser/in</span>
 </header>
 
 <nav>
-  <a href="#upload" data-testid="nav-upload">1. Upload</a>
-  <a href="#sortierung" data-testid="nav-sortierung">2. Sortierung</a>
-  <a href="#fehlliste" data-testid="nav-fehlliste">3. Fehlliste</a>
-  <a href="#formpruefung" data-testid="nav-formpruefung">4. Formprüfung</a>
-  <a href="#bericht" data-testid="nav-bericht">5. Bericht</a>
+  <a href="#vorhaben_anlegen" data-testid="nav-vorhaben-anlegen">1. Vorhaben anlegen</a>
+  <a href="#vorhabensseite" data-testid="nav-vorhabensseite">2. Vorhabensseite</a>
+  <a href="#upload" data-testid="nav-upload">3. Upload</a>
+  <a href="#sortierung" data-testid="nav-sortierung">4. Sortierung</a>
+  <a href="#fehlliste" data-testid="nav-fehlliste">5. Vollständigkeit</a>
+  <a href="#formpruefung" data-testid="nav-formpruefung">6. Formprüfung</a>
+  <a href="#bericht" data-testid="nav-bericht">7. Bericht</a>
 </nav>
 
 <main>
 
-  <!-- ============================ 1 · UPLOAD ============================ -->
+  <!-- ====================== 1 · VORHABEN ANLEGEN (Seite der Behörde) ====================== -->
+  <section data-screen="vorhaben_anlegen" id="vorhaben_anlegen">
+    <h2>Neues Bauvorhaben anlegen</h2>
+    <p class="purpose">Sie sind auf der Seite Ihrer Bauaufsichtsbehörde (Landratsamt). Wählen Sie
+      Ihr Vorhaben aus der Liste, machen Sie wenige Grundangaben — beim Anlegen erhalten Sie eine
+      Vorhabensnummer, unter der Sie Formulare herunterladen, Anträge hochladen und die
+      Vorprüfung abrufen.</p>
+
+    <div class="banner info" data-testid="vorhaben-keine-einreichung-hinweis">
+      ℹ️ Das Anlegen eines Vorhabens ist <strong>keine Einreichung</strong> und schreibt nichts in
+      ein Fachverfahren. Es ist der Vorab-Dienst der Behörde; die verbindliche Einreichung läuft
+      weiterhin über den Antragsassistenten des Landes.
+    </div>
+
+    <div class="panel">
+      <label for="vh-vorhabensart">Vorhabensart (Auswahl aus Liste)</label>
+      <select id="vh-vorhabensart" data-testid="vorhaben-vorhabensart">
+        <option value="neubau_wohngebaeude">Neubau Wohngebäude</option>
+        <option value="anbau_umbau">Anbau / Umbau / Aufstockung</option>
+        <option value="nutzungsaenderung">Nutzungsänderung</option>
+        <option value="garage_carport">Garage / Carport / Nebengebäude</option>
+        <option value="abbruch">Abbruch / Beseitigung</option>
+        <option value="werbeanlage">Werbeanlage</option>
+        <option value="sonderbau" selected>Sonderbau (z. B. Versammlungsstätte, Gewerbe &gt; 1600 m²)</option>
+        <option value="vorbescheid">Vorbescheid (Bauvoranfrage)</option>
+      </select>
+      <p class="note">Kein Freitext — die Liste steuert, welche Anträge und Vorlagen die Behörde
+        erwartet.</p>
+
+      <label for="vh-verfahrensart">Verfahrensart (aus der Vorhabensart vorgeschlagen, änderbar)</label>
+      <select id="vh-verfahrensart" data-testid="vorhaben-verfahrensart">
+        <option value="genehmigungsfreistellung">Genehmigungsfreistellung</option>
+        <option value="vereinfachtes_verfahren">Vereinfachtes Verfahren</option>
+        <option value="sonderbau" selected>Sonderbau (Vorschlag für Ihre Vorhabensart)</option>
+      </select>
+      <p class="note" data-testid="vorhaben-verfahrensart-hinweis">Der Vorschlag ist keine
+        Rechtsauskunft — die Behörde entscheidet über das Verfahren nach Eingang des Antrags.</p>
+
+      <label for="vh-gemeinde">Gemeinde</label>
+      <select id="vh-gemeinde" data-testid="vorhaben-gemeinde">
+        <option>Musterhausen</option>
+        <option>Beispielheim</option>
+        <option>Testdorf</option>
+      </select>
+
+      <label for="vh-flurstueck">Gemarkung / Flurstück</label>
+      <input type="text" id="vh-flurstueck" data-testid="vorhaben-flurstueck" value="Musterhausen 123/4 (Demo)">
+
+      <label>Bedingungen (steuern den Pflichtkatalog nach BauVorlV §3)</label>
+      <div class="checkline">
+        <input type="checkbox" id="vh-bplan" data-testid="vorhaben-bedingung-bplan" checked>
+        <label for="vh-bplan">Vorhaben liegt im Geltungsbereich eines Bebauungsplans</label>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="vh-erschlossen" data-testid="vorhaben-bedingung-erschlossen">
+        <label for="vh-erschlossen">Grundstück ist bereits öffentlich erschlossen</label>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="vh-abstandsflaeche" data-testid="vorhaben-bedingung-abstandsflaeche" checked>
+        <label for="vh-abstandsflaeche">Abstandsflächenübernahme von einem Nachbargrundstück ist nötig</label>
+      </div>
+
+      <a href="#vorhabensseite" class="btn primary" data-testid="vorhaben-anlegen">Vorhaben anlegen → Vorhabensnummer erhalten</a>
+      <p class="note">Die Vorhabensnummer erscheint erst nach dem Anlegen auf der Vorhabensseite —
+        hier ist noch keine Nummer sichtbar.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend, kein Login. Systemgrenze: Prüfkern (Katalog-Ableitung).</p>
+  </section>
+
+  <!-- ============================ 2 · VORHABENSSEITE ============================ -->
+  <section data-screen="vorhabensseite" id="vorhabensseite">
+    <h2>Vorhabensseite <span class="vorhabensnummer" data-testid="vorhaben-nummer">BV-2026-000123</span></h2>
+    <p class="purpose">Alles zu Ihrem Vorhaben an einem Ort: Grunddaten, die benötigten Anträge
+      und Vorlagen zum Herunterladen — einzeln oder als Paket —, der Stand der Bearbeitung und der
+      Weg zum Hochladen der ausgefüllten Anträge.</p>
+
+    <div class="banner info" data-testid="vorhaben-wiederaufruf-hinweis">
+      🔑 Notieren Sie sich die Vorhabensnummer <strong>BV-2026-000123</strong>. Mit ihr rufen Sie
+      diese Seite jederzeit wieder auf (Feld „Vorhaben aufrufen" auf der Behördenseite). Ohne
+      Aktivität werden Vorhaben und Unterlagen nach <strong>14 Tagen</strong> gelöscht — die
+      Nummer verfällt dann.
+    </div>
+
+    <div class="panel">
+      <h3>Grunddaten <span class="status-pill" data-testid="vorhaben-status">Status: angelegt</span></h3>
+      <dl class="stamm" data-testid="vorhaben-stammdaten">
+        <dt>Vorhabensart</dt><dd>Sonderbau</dd>
+        <dt>Verfahrensart</dt><dd>Sonderbau</dd>
+        <dt>Gemeinde</dt><dd>Musterhausen</dd>
+        <dt>Gemarkung / Flurstück</dt><dd>Musterhausen 123/4 (Demo)</dd>
+        <dt>Bedingungen</dt><dd>im B-Plan-Gebiet · nicht erschlossen · Abstandsflächenübernahme nötig</dd>
+        <dt>Angelegt</dt><dd>2026-09-24 (Demo)</dd>
+      </dl>
+      <a href="#vorhaben_anlegen" class="btn ghost" data-testid="vorhaben-stammdaten-aendern">Grunddaten ändern</a>
+      <p class="note">Der Status wechselt durch Ihre Schritte: <em>angelegt → Unterlagen hochgeladen →
+        vorgeprüft</em>. „Eingereicht" wird hier nie gesetzt — das geschieht nur im
+        Antragsassistenten des Landes.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Benötigte Anträge und Vorlagen (aus Vorhabensart und Bedingungen abgeleitet)</h3>
+      <table class="katalog-tabelle" data-testid="vorhaben-katalog">
+        <thead><tr><th>Formular / Vorlage</th><th>Pflicht</th><th>Bedingung</th><th>Download</th></tr></thead>
+        <tbody>
+          <tr data-testid="katalog-row-bauantrag"><td>Bauantrag (Antragsformular)</td><td><span class="badge ok">Pflicht</span></td><td>—</td><td><a href="#" class="btn ghost" aria-disabled="true" data-testid="download-bauantrag">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-baubeschreibung"><td>Baubeschreibung</td><td><span class="badge ok">Pflicht</span></td><td>—</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-lageplan"><td>Lageplan (Vorlage/Merkblatt)</td><td><span class="badge ok">Pflicht</span></td><td>—</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-bauzeichnungen"><td>Bauzeichnungen (Merkblatt Grundrisse, Schnitte, Ansichten)</td><td><span class="badge ok">Pflicht</span></td><td>—</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-standsicherheit"><td>Standsicherheitsnachweis — Erklärung</td><td><span class="badge unklar">bedingt</span></td><td>nur Sonderbau</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-brandschutz"><td>Brandschutznachweis — Erklärung</td><td><span class="badge unklar">bedingt</span></td><td>nur Sonderbau</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-erschliessung"><td>Erschließungsangaben</td><td><span class="badge unklar">bedingt</span></td><td>Grundstück nicht erschlossen</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-abstandsflaechen"><td>Abstandsflächenübernahme — Erklärung des Nachbarn</td><td><span class="badge unklar">bedingt</span></td><td>Übernahme nötig</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+          <tr data-testid="katalog-row-abweichung"><td>Antrag auf Abweichung</td><td><span class="badge unklar">bedingt</span></td><td>nur bei Abweichung vom B-Plan</td><td><a href="#" class="btn ghost" aria-disabled="true">⬇ PDF</a></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <a href="#" class="btn primary" aria-disabled="true" data-testid="vorhaben-download-alle">⬇ Alle 9 Formulare als ZIP herunterladen (Mock)</a>
+        <span class="note" style="margin:0" data-testid="vorhaben-download-alle-inhalt">Inhalt des Pakets = genau die 9 Zeilen oben; ändern sich Bedingungen, ändert sich das Paket.</span>
+      </div>
+      <p class="note">Formulare sind Attrappen (kein echter Download). Katalog nach BauVorlV §§ 3, 7, 8, 9 —
+        bedingte Zeilen nennen ihre Bedingung; die Fehlliste (Schritt 5) prüft später genau gegen diese Liste.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Nächster Schritt</h3>
+      <p style="font-size:13px; margin:0 0 8px">Füllen Sie die Anträge aus und laden Sie sie zusammen mit dem
+        PDF-Satz Ihres Entwurfsverfassers hoch. Verfahrensart und Bedingungen kennt der Upload
+        bereits aus diesem Vorhaben.</p>
+      <a href="#upload" class="btn primary" data-testid="vorhaben-weiter-upload">Ausgefüllte Anträge hochladen →</a>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenzen: Prüfkern (Katalog), Landes-Antragsassistent (Einreichung, hier nur genannt).</p>
+  </section>
+
+  <!-- ============================ 3 · UPLOAD ============================ -->
   <section data-screen="upload" id="upload">
-    <h2>PDF-Satz hochladen</h2>
-    <p class="purpose">Laden Sie Ihren PDF-Satz hoch, wählen Sie die Verfahrensart und beantworten
-      Sie die drei Bedingungen — daraus ergibt sich, welche Unterlagen Pflicht sind.</p>
+    <h2>Anträge und PDF-Satz hochladen</h2>
+    <p class="purpose">Laden Sie die ausgefüllten Anträge und den PDF-Satz zu Ihrem Vorhaben hoch.
+      Verfahrensart und Bedingungen sind aus dem Vorhaben übernommen — daraus ergibt sich, welche
+      Unterlagen Pflicht sind.</p>
 
     <div class="banner info" data-testid="upload-keine-einreichung-hinweis">
       ℹ️ Diese Vorprüfung ist freiwillig und <strong>ersetzt keine Einreichung</strong>. Sie
@@ -127,6 +274,11 @@
     </div>
 
     <div class="panel">
+      <div class="readonly-line" data-testid="upload-vorhaben-bindung">
+        Vorhaben <span class="vorhabensnummer">BV-2026-000123</span> · Verfahrensart: <strong>Sonderbau</strong> ·
+        Bedingungen: im B-Plan-Gebiet, nicht erschlossen, Abstandsflächenübernahme nötig
+        — <a href="#vorhabensseite" data-testid="upload-vorhaben-aendern">auf der Vorhabensseite ändern</a>
+      </div>
       <label for="up-dateien">PDF-Satz — mehrere PDF-Dateien auf einmal auswählen oder hierher ziehen (jede Vorlage als eigene PDF, keine Anhänge innerhalb der PDF)</label>
       <input type="file" id="up-dateien" data-testid="upload-dateiauswahl" accept="application/pdf" multiple>
       <p class="note" data-testid="upload-mehrfach-hinweis">Mehrfachauswahl: Strg/Cmd gedrückt halten oder den ganzen Ordnersatz ablegen — die Dateien werden gemeinsam sortiert und geprüft.</p>
@@ -141,26 +293,28 @@
       <p class="note">Demo-Auswahl (Mock) — real würden hier die tatsächlich ausgewählten Dateien
         erscheinen. Andere Formate als PDF werden abgewiesen.</p>
 
-      <label for="up-verfahrensart">Verfahrensart</label>
-      <select id="up-verfahrensart" data-testid="upload-verfahrensart">
+      <label for="up-verfahrensart">Verfahrensart (aus dem Vorhaben übernommen)</label>
+      <select id="up-verfahrensart" data-testid="upload-verfahrensart" disabled>
         <option value="genehmigungsfreistellung">Genehmigungsfreistellung</option>
         <option value="vereinfachtes_verfahren">Vereinfachtes Verfahren</option>
         <option value="sonderbau" selected>Sonderbau</option>
       </select>
 
-      <label>Bedingungen</label>
+      <label>Bedingungen (aus dem Vorhaben übernommen)</label>
       <div class="checkline">
-        <input type="checkbox" id="up-bplan" data-testid="upload-bedingung-bplan" checked>
+        <input type="checkbox" id="up-bplan" data-testid="upload-bedingung-bplan" checked disabled>
         <label for="up-bplan">Vorhaben liegt im Geltungsbereich eines Bebauungsplans</label>
       </div>
       <div class="checkline">
-        <input type="checkbox" id="up-erschlossen" data-testid="upload-bedingung-erschlossen">
+        <input type="checkbox" id="up-erschlossen" data-testid="upload-bedingung-erschlossen" disabled>
         <label for="up-erschlossen">Grundstück ist bereits öffentlich erschlossen</label>
       </div>
       <div class="checkline">
-        <input type="checkbox" id="up-abstandsflaeche" data-testid="upload-bedingung-abstandsflaeche" checked>
+        <input type="checkbox" id="up-abstandsflaeche" data-testid="upload-bedingung-abstandsflaeche" checked disabled>
         <label for="up-abstandsflaeche">Abstandsflächenübernahme von einem Nachbargrundstück ist nötig</label>
       </div>
+      <p class="note">Änderungen an Verfahrensart oder Bedingungen nehmen Sie auf der Vorhabensseite vor —
+        sie gelten dann für Katalog, Upload und Prüfung gleichermaßen.</p>
 
       <div class="banner info" data-testid="upload-loeschfrist-hinweis" style="margin-top:16px">
         🗑️ Ihre hochgeladenen Unterlagen werden <strong>14 Tage</strong> nach dem Upload
@@ -172,7 +326,7 @@
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Erkennung + Formprüfung).</p>
   </section>
 
-  <!-- ============================ 2 · SORTIERUNG ============================ -->
+  <!-- ============================ 4 · SORTIERUNG ============================ -->
   <section data-screen="sortierung" id="sortierung">
     <h2>Dokumente sortieren</h2>
     <p class="purpose">Je Datei die erkannte Vorlagenart mit Konfidenz — korrigierbar, Sammeldateien
@@ -281,12 +435,14 @@
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Klassifikation).</p>
   </section>
 
-  <!-- ============================ 3 · FEHLLISTE ============================ -->
+  <!-- ============================ 5 · FEHLLISTE ============================ -->
   <section data-screen="fehlliste" id="fehlliste">
-    <h2>Fehlliste gegen Soll-Katalog</h2>
-    <p class="purpose">Die Soll-Liste ergibt sich aus Verfahrensart (Sonderbau) und den angekreuzten
-      Bedingungen — kein fester Katalog. „Fehlt" heißt nur „nicht vorhanden", keine rechtliche
-      Wertung.</p>
+    <h2>Vollständigkeit: Fehlliste gegen Soll-Katalog <span class="vorhabensnummer" data-testid="fehlliste-vorhaben-nummer">BV-2026-000123</span></h2>
+    <p class="purpose">Die Soll-Liste ist der Katalog Ihrer Vorhabensseite (Verfahrensart Sonderbau
+      und die dort gesetzten Bedingungen) — kein fester Katalog. „Fehlt" heißt nur „nicht
+      vorhanden", keine rechtliche Wertung; fehlende Formulare laden Sie auf der
+      <a href="#vorhabensseite" data-testid="fehlliste-zurueck-vorhaben">Vorhabensseite</a> herunter,
+      deren Status danach „vorgeprüft" zeigt.</p>
 
     <div class="panel fehlliste-block">
       <table class="fehlliste-tabelle" data-testid="fehlliste-tabelle">
@@ -357,7 +513,7 @@
       Zeilen-Status berechnet, steht nicht als Text im Markup.</p>
   </section>
 
-  <!-- ============================ 4 · FORMPRÜFUNG ============================ -->
+  <!-- ============================ 6 · FORMPRÜFUNG ============================ -->
   <section data-screen="formpruefung" id="formpruefung">
     <h2>Formprüfung je Vorlagenart</h2>
     <p class="purpose">Merkmale je Vorlagenart mit Vorhandensein, Konfidenz und Fundort.</p>
@@ -420,9 +576,9 @@
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Formprüfung, Konsistenzabgleich).</p>
   </section>
 
-  <!-- ============================ 5 · BERICHT ============================ -->
+  <!-- ============================ 7 · BERICHT ============================ -->
   <section data-screen="bericht" id="bericht">
-    <h2>Ergebnisbericht</h2>
+    <h2>Ergebnisbericht <span class="vorhabensnummer" data-testid="bericht-vorhaben-nummer">BV-2026-000123</span></h2>
     <p class="purpose">Zusammenfassung aller Hinweise mit Konfidenz — zum Mitnehmen oder als
       Grundlage für die eigentliche Einreichung im Antragsassistenten des Landes.</p>
 
@@ -468,7 +624,7 @@
 
 <!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
 <script>
-  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.1", klickdummy_class: "mock" };
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.2", klickdummy_class: "mock" };
   window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
 </script>
 <script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>

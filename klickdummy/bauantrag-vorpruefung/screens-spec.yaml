@@ -7,10 +7,10 @@
 
 $schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
 spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
-spec_version: "0.1"
+spec_version: "0.2"
 spec_schema_version: "1.1"
-spec_date: "2026-09-23"
-title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77)"
+spec_date: "2026-09-24"
+title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77) · v0.2 mit Antragsteller-Einstieg (Vorhaben, Vorhabensnummer, Formular-Download)"
 
 adr:
   local: cad-hub:ADR-036
@@ -48,31 +48,112 @@ grounding:
     nicht-öffentlich, siehe #77.
 
 personas:
+  antragsteller:
+    label: "Antragsteller/in (Bauherr oder Bevollmächtigte/r)"
+    rolle: einreicher
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, fehlliste, bericht]
   entwurfsverfasser:
     label: "Entwurfsverfasser/in (Einreicher)"
     rolle: einreicher
-    sieht: [upload, sortierung, fehlliste, formpruefung, bericht]
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, sortierung, fehlliste, formpruefung, bericht]
   sachbearbeitung:
     label: "Sachbearbeitung"
     rolle: sachbearbeitung
     sieht: [bericht]
 
 screens:
-  - id: upload
-    title: "PDF-Satz hochladen"
-    personas: [entwurfsverfasser]
+  # ---- Antragsteller-Einstieg auf der Seite der Bauaufsichtsbehörde (v0.2, Owner 2026-09-24) ----
+  - id: vorhaben_anlegen
+    title: "Neues Bauvorhaben anlegen"
+    personas: [antragsteller, entwurfsverfasser]
     purpose: >-
-      Der Einreicher lädt den PDF-Satz hoch, wählt die Verfahrensart und kreuzt
-      die Bedingungen an, die den Pflichtkatalog steuern — vor jeder verbindlichen
-      Einreichung, mit sichtbarer Löschfrist.
+      Der Antragsteller kommt über die Seite der Bauaufsichtsbehörde (Landratsamt),
+      wählt sein Vorhaben aus einer festen Liste der Vorhabensarten, macht wenige
+      Grundangaben und erhält beim Anlegen eine Vorhabensnummer — der Anker für alle
+      weiteren Schritte. Kein Login, keine Einreichung, kein Fachverfahren.
     datafields:
+      - { name: vorhabensart, type: enum, source: mock-demo, semantic: "Auswahl aus fester Liste: neubau_wohngebaeude | anbau_umbau | nutzungsaenderung | garage_carport | abbruch | werbeanlage | sonderbau | vorbescheid — kein Freitext" }
+      - { name: verfahrensart, type: enum, source: mock-demo, semantic: "aus der Vorhabensart vorgeschlagen (genehmigungsfreistellung | vereinfachtes_verfahren | sonderbau), vom Antragsteller änderbar" }
+      - { name: gemeinde, type: enum, source: mock-demo, semantic: "Gemeinde im Zuständigkeitsbereich der Behörde (Mock-Liste, erfundene Namen)" }
+      - { name: flurstueck, type: string, source: mock-demo, semantic: "Gemarkung/Flurstück, erfunden; dient nur der Konsistenzprüfung in formpruefung" }
+      - { name: bedingungen, type: object, source: mock-demo, semantic: "im_bplan_gebiet, oeffentlich_erschlossen, abstandsflaechenuebernahme_noetig — je bool; steuern mit der Verfahrensart den Pflichtkatalog (BauVorlV §3)" }
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "beim Anlegen vergeben, Format BV-<Jahr>-<6 Ziffern>; im Mock ein fester Demo-Wert, kein Zähler" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: vorhaben_anlegen.liste_statt_freitext
+        check: "Die Vorhabensart wird aus einer festen Liste gewählt (Auswahlfeld), es gibt kein Freitextfeld dafür"
+        kind: behavioral-manual
+      - id: vorhaben_anlegen.verfahrensart_vorgeschlagen
+        check: "Nach Wahl der Vorhabensart ist eine Verfahrensart vorbelegt und bleibt änderbar; der Screen sagt, dass der Vorschlag keine Rechtsauskunft ist"
+        kind: behavioral-manual
+      - id: vorhaben_anlegen.nummer_nach_anlegen
+        check: "Erst nach 'Vorhaben anlegen' erscheint eine Vorhabensnummer im Format BV-<Jahr>-<6 Ziffern>; vor dem Anlegen ist keine Nummer sichtbar"
+        kind: behavioral-manual
+      - id: vorhaben_anlegen.keine_einreichung
+        check: "Der Screen weist sichtbar aus, dass das Anlegen eines Vorhabens keine Einreichung ist und nichts in ein Fachverfahren schreibt"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: vorhabensseite
+    title: "Vorhabensseite"
+    route: "/vorhaben/{vorhabensnummer}"
+    route_example: "/vorhaben/BV-2026-000123"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Die Seite zum Vorhaben: Nummer und Grunddaten, der aus Vorhabensart und
+      Bedingungen abgeleitete Katalog der benötigten Anträge und Vorlagen mit
+      Download je Formular und als Sammel-Download, der Status des Vorhabens und
+      der Einstieg in den Upload der ausgefüllten Anträge. Wiederaufruf über die
+      Vorhabensnummer, solange die Löschfrist läuft.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhaben_anlegen; zugleich Aufruf-Schlüssel der Seite" }
+      - { name: stammdaten, type: object, source: mock-demo, semantic: "vorhabensart, verfahrensart, gemeinde, flurstueck, bedingungen — aus vorhaben_anlegen übernommen, hier änderbar" }
+      - { name: status, type: enum, source: mock-demo, semantic: "angelegt | unterlagen_hochgeladen | vorgeprueft | eingereicht_im_landesportal (letzterer nur als Attrappe, wird nie gesetzt)" }
+      - { name: soll_katalog, type: array, source: mock-demo, semantic: "je Zeile: bezeichnung, formular_id, pflicht (pflicht|bedingt), bedingung, download (Einzel-Attrappe)" }
+      - { name: sammel_download, type: object, source: mock-demo, semantic: "ZIP-Attrappe mit genau den Formularen des aktuell zutreffenden Katalogs; Inhaltsliste sichtbar" }
+      - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "Tage bis zur Löschung des Vorhabens samt Unterlagen ohne weitere Aktivität" }
+    target_mocks:
+      - "Prüfkern"
+      - "Landes-Antragsassistent"
+    parity_acceptance:
+      - id: vorhabensseite.katalog_folgt_vorhaben
+        check: "Der angezeigte Formular-Katalog enthält nur die laut Vorhabensart, Verfahrensart und Bedingungen zutreffenden Anträge und Vorlagen; bedingte Zeilen nennen ihre Bedingung"
+        kind: behavioral-manual
+      - id: vorhabensseite.download_einzeln_und_gesamt
+        check: "Jedes Formular hat einen eigenen Download, zusätzlich gibt es einen Sammel-Download als ZIP-Attrappe, dessen Inhaltsliste genau dem angezeigten Katalog entspricht"
+        kind: behavioral-manual
+      - id: vorhabensseite.status_sichtbar
+        check: "Der Status des Vorhabens ist sichtbar und ändert sich erkennbar erst durch Upload bzw. Vorprüfung; 'eingereicht' wird hier nie gesetzt (Einreichung nur im Landes-Assistenten)"
+        kind: behavioral-manual
+      - id: vorhabensseite.wiederaufruf_per_nummer
+        check: "Die Seite zeigt, wie sie über die Vorhabensnummer erneut aufgerufen wird, und nennt die Löschfrist, nach der Nummer und Unterlagen verfallen"
+        kind: behavioral-manual
+      - id: vorhabensseite.weiter_zum_upload
+        check: "Von der Vorhabensseite führt genau ein Schritt zum Upload der ausgefüllten Anträge, der das Vorhaben (Nummer, Verfahrensart, Bedingungen) bereits kennt"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: upload
+    title: "Anträge und PDF-Satz hochladen"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Der Einreicher lädt die ausgefüllten Anträge und den PDF-Satz zum Vorhaben
+      hoch; Verfahrensart und Bedingungen sind aus dem Vorhaben übernommen und
+      werden dort geändert, nicht hier — vor jeder verbindlichen Einreichung, mit
+      sichtbarer Löschfrist.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhabensseite; jeder Upload gehört zu genau einem Vorhaben" }
       - { name: dateien, type: array, source: mock-demo, semantic: "Liste der in einem Schritt hochgeladenen PDF-Dateinamen (Mehrfachauswahl oder Ablegen eines ganzen Satzes); jede Vorlage als eigene PDF, keine Anhänge innerhalb der PDF" }
-      - { name: verfahrensart, type: enum, source: mock-demo, semantic: "genehmigungsfreistellung | vereinfachtes_verfahren | sonderbau" }
-      - { name: bedingungen, type: object, source: mock-demo, semantic: "im_bplan_gebiet, oeffentlich_erschlossen, abstandsflaechenuebernahme_noetig — je bool" }
+      - { name: verfahrensart, type: enum, source: mock-demo, semantic: "genehmigungsfreistellung | vereinfachtes_verfahren | sonderbau — aus dem Vorhaben übernommen, hier nur angezeigt" }
+      - { name: bedingungen, type: object, source: mock-demo, semantic: "im_bplan_gebiet, oeffentlich_erschlossen, abstandsflaechenuebernahme_noetig — je bool, aus dem Vorhaben übernommen, hier nur angezeigt" }
       - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "Anzahl Tage bis zur automatischen Löschung der Unterlagen" }
     target_mocks:
       - "Prüfkern"
     parity_acceptance:
+      - id: upload.vorhaben_bindung
+        check: "Der Screen zeigt die Vorhabensnummer sowie Verfahrensart und Bedingungen aus dem Vorhaben als übernommene Werte mit einem Verweis 'auf der Vorhabensseite ändern' — sie werden hier nicht neu erfasst"
+        kind: behavioral-manual
       - id: upload.nur_pdf
         check: "Nur PDF-Dateien werden akzeptiert; andere Formate oder Dateianlagen innerhalb der PDF lösen eine Fehlermeldung aus"
         kind: behavioral-manual
@@ -86,7 +167,7 @@ screens:
         check: "Die Löschfrist (in Tagen) ist sichtbar angezeigt, bevor der Nutzer fortfährt"
         kind: behavioral-manual
       - id: upload.bedingungen_erfassbar
-        check: "Verfahrensart und alle drei Bedingungs-Checkboxen sind vor dem Weiter auswählbar bzw. ankreuzbar"
+        check: "Verfahrensart und alle drei Bedingungen sind vor dem Weiter sichtbar (seit v0.2 aus dem Vorhaben übernommen; die Erfassung selbst liegt auf vorhaben_anlegen/vorhabensseite)"
         kind: behavioral-manual
     off_ramp_status: static
 
@@ -113,8 +194,8 @@ screens:
     off_ramp_status: static
 
   - id: fehlliste
-    title: "Fehlliste gegen Soll-Katalog"
-    personas: [entwurfsverfasser]
+    title: "Vollständigkeit: Fehlliste gegen Soll-Katalog"
+    personas: [antragsteller, entwurfsverfasser]
     purpose: >-
       Die Soll-Liste ergibt sich aus Verfahrensart und Bedingungen (bedingter
       Katalog nach BauVorlV §3) und wird gegen die sortierten Dokumente geprüft;
@@ -132,6 +213,9 @@ screens:
         kind: behavioral-manual
       - id: fehlliste.aggregat_berechnet
         check: "Die Kennzahl 'n fehlt von m' wird zur Laufzeit aus den angezeigten Zeilen ermittelt (CSS-Zähler über data-status), steht nicht als fester Text im Markup"
+        kind: behavioral-manual
+      - id: fehlliste.status_zurueck_zum_vorhaben
+        check: "Die Fehlliste nennt die Vorhabensnummer und bietet den Rückweg zur Vorhabensseite, deren Status danach 'vorgeprüft' zeigt; fehlende Formulare verweisen auf ihren Download dort"
         kind: behavioral-manual
     off_ramp_status: static
 
@@ -164,12 +248,13 @@ screens:
 
   - id: bericht
     title: "Ergebnisbericht"
-    personas: [entwurfsverfasser, sachbearbeitung]
+    personas: [antragsteller, entwurfsverfasser, sachbearbeitung]
     purpose: >-
       Zusammenfassender Hinweisbericht mit Konfidenzen, Download als PDF-Attrappe,
       Weiterleitung zum echten Landes-Antragsassistenten als reine Link-Attrappe,
       Hinweis auf Löschung nach Frist und optionale Weitergabe an die Sachbearbeitung.
     datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhabensseite; Kopfzeile des Berichts" }
       - { name: hinweise, type: array, source: mock-demo, semantic: "aggregiert aus fehlliste + formpruefung, je Hinweis mit Konfidenz" }
       - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "aus Screen upload übernommen" }
       - { name: weitergabe_an_sachbearbeitung, type: boolean, source: mock-demo, semantic: "optionale Aktion, Default aus" }
