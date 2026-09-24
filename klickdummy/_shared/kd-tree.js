@@ -14,11 +14,11 @@ window.__KD_TREE__ = {
   "nodes": {
     "cad-hub:klickdummy-spec-bauantrag-vorpruefung": {
       "spec_id": "cad-hub:klickdummy-spec-bauantrag-vorpruefung",
-      "title": "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77)",
+      "title": "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77) · v0.2 mit Antragsteller-Einstieg (Vorhaben, Vorhabensnummer, Formular-Download)",
       "role": "branch",
       "domain": null,
       "class": "mock",
-      "screens_count": 5,
+      "screens_count": 7,
       "off_ramp_status": "static",
       "off_ramp_overall": "",
       "path": "bauantrag-vorpruefung/shell.html",
