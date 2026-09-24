@@ -47,8 +47,8 @@ sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
 nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
 `stub-demo`/`story`/`spec-demo` entsteht).
 
-5 Screens (v0.1; seit Revision 2 sieben — siehe unten), aus der Einreicher-Journey
-abgeleitet, in Ablaufreihenfolge:
+5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn — siehe unten), aus der
+Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
 
 - `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
   Bedingungen ankreuzen, Löschfrist-Hinweis, ausdrücklicher Hinweis „keine
@@ -139,6 +139,46 @@ Bau ein serverseitig gebautes Paket oder ein Verweis auf den Formularserver des 
 
 **Nicht geändert:** Klasse `mock`, kein Backend, kein Custom-JS, Systemgrenzen, Löschfrist,
 alle bestehenden Parity-Checks (ein Text-Update bei `upload.bedingungen_erfassbar`).
+
+## Revision 3 (2026-09-24) — Feedback-Schleife: Unterlagen-Feedback, Freigabe, Bauamt, Rückmeldung, Nachbesserung
+
+**Anlass (Owner, Kapitäns-Kanal 2026-09-24, zweiter Zuruf):** „Antragsteller lädt Unterlagen
+hoch. Nach Hochladen erfolgt eine Prüfung auf Unterlagen-Ebene und ein Feedback für die
+einzelne Unterlage, ob sie komplett ist oder notwendige Informationen fehlen; dann gibt der
+Antragsteller Unterlagen zur Prüfung frei (Button ‚Unterlagen einreichen') → Das Bauamt prüft
+und gibt ebenfalls auf Ebene der Einzelanlage Feedback; nach Abschluss erhält der Antragsteller
+Nachricht und kann auf seiner Vorhabensseite das Feedback je Antragselement einsehen, die
+Anträge komplettieren und erneut einreichen."
+
+**Erweiterung**, Spec v0.2 → v0.3, 10 Screens (7 Prozess + 3 Detail):
+
+- `unterlagen_feedback` (neu, Screen 4) — je Unterlage genau ein Status (komplett /
+  unvollständig mit konkret benannten fehlenden Angaben / nicht zugeordnet), Katalogpunkte ohne
+  Unterlage, Links in die Detail-Screens; Button **„Unterlagen einreichen"** = Freigabe an den
+  Vorab-Dienst der Behörde (Runde 1), mit Warnung bei Lücken, aber ohne Sperre.
+- `pruefung_bauamt` (neu, Screen 5, Persona `sachbearbeitung`, Login angedeutet) — automatisches
+  Feedback und Bauamt-Urteil **je Einzelanlage** nebeneinander (in Ordnung / Nachbesserung /
+  nicht erforderlich) mit Hinweistext; „Prüfung abschließen" beendet die Runde und
+  benachrichtigt; ausdrücklich **kein Bescheid**, keine Zulässigkeit, kein Fachverfahren.
+- `rueckmeldung` (neu, Screen 6) — Nachricht (E-Mail-Attrappe **ohne Prüfinhalte**), Rückmeldung
+  je Antragselement, Aktionen „Ersetzen" (→ Upload) und „Ergänzen" (→ Formular auf der
+  Vorhabensseite), „Erneut einreichen" = Runde 2.
+- `vorhabensseite` — Statuskette erweitert (`zur_pruefung_freigegeben`, `rueckmeldung_liegt_vor`,
+  `erneut_freigegeben`), Rundenzähler, Nachrichten-Verlauf mit Sprung zur Rückmeldung.
+- `sortierung`, `fehlliste`, `formpruefung` werden **Detail-Screens** (Nav-Gruppe „Details"),
+  aus dem Unterlagen-Feedback verlinkt; `sachbearbeitung` sieht jetzt `pruefung_bauamt` und
+  `bericht`.
+
+**Begriffsentscheidung:** Der Owner-Button heißt „Unterlagen einreichen". Weil ADR-036 §Kontext
+und #77 die verbindliche Einreichung ausschließlich dem Landes-Assistenten zuweisen, trägt der
+Button den Zusatz „zur Prüfung an das Bauamt freigeben", der Status heißt
+`zur_pruefung_freigegeben`, und jeder betroffene Screen sagt, dass die Landes-Einreichung ein
+eigener Schritt bleibt. Der Rückkanal Bauamt → Antragsteller ist damit erstmals Teil des
+Klickdummys — als Vorab-Dienst, nicht als Fachverfahren (K3/K4 aus #77 bleiben getrennt).
+
+**Offen für den Pilot:** ob das Bauamt eine Runde auch ohne Freigabe sehen darf (Einblick vor
+„einreichen"), ob Nachrichten per E-Mail oder nur auf der Vorhabensseite laufen, und wie viele
+Runden zulässig sind, bevor auf die verbindliche Einreichung verwiesen wird.
 
 ## Bezug
 
