@@ -7,10 +7,10 @@
 
 $schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
 spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
-spec_version: "0.3"
+spec_version: "0.4"
 spec_schema_version: "1.1"
 spec_date: "2026-09-24"
-title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77) · v0.3 Antragsteller-Prozess (Vorhaben, Formular-Download, Unterlagen-Feedback, Freigabe, Bauamt-Rückmeldung, Nachbesserung)"
+title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1 + K3/K4, #77) · v0.4 Antragsteller-Prozess mit Feedback-Schleife und Übergabe an den Landes-Assistenten bei Vollständigkeit"
 
 adr:
   local: cad-hub:ADR-036
@@ -51,11 +51,11 @@ personas:
   antragsteller:
     label: "Antragsteller/in (Bauherr oder Bevollmächtigte/r)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, fehlliste, bericht]
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, fehlliste, bericht]
   entwurfsverfasser:
     label: "Entwurfsverfasser/in (Einreicher)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, sortierung, fehlliste, formpruefung, bericht]
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, sortierung, fehlliste, formpruefung, bericht]
   sachbearbeitung:
     label: "Sachbearbeitung (Bauamt)"
     rolle: sachbearbeitung
@@ -109,7 +109,7 @@ screens:
     datafields:
       - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhaben_anlegen; zugleich Aufruf-Schlüssel der Seite" }
       - { name: stammdaten, type: object, source: mock-demo, semantic: "vorhabensart, verfahrensart, gemeinde, flurstueck, bedingungen — aus vorhaben_anlegen übernommen, hier änderbar" }
-      - { name: status, type: enum, source: mock-demo, semantic: "angelegt | unterlagen_hochgeladen | vorgeprueft | zur_pruefung_freigegeben | rueckmeldung_liegt_vor | erneut_freigegeben — der Landes-Zustand 'eingereicht' wird hier nie gesetzt" }
+      - { name: status, type: enum, source: mock-demo, semantic: "angelegt | unterlagen_hochgeladen | vorgeprueft | zur_pruefung_freigegeben | rueckmeldung_liegt_vor | erneut_freigegeben | vollstaendig | an_landesassistent_uebergeben — der Landes-Zustand 'eingereicht' entsteht nur im Landes-Assistenten und wird hier nie gesetzt" }
       - { name: runde, type: integer, source: mock-demo, semantic: "Nummer der Prüfrunde (1 = erste Freigabe; jede Nachbesserung mit erneuter Freigabe zählt hoch)" }
       - { name: nachrichten, type: array, source: mock-demo, semantic: "chronologische Ereignisse zum Vorhaben (angelegt, hochgeladen, freigegeben, Rückmeldung des Bauamts liegt vor); der jüngste Eintrag verlinkt auf rueckmeldung" }
       - { name: soll_katalog, type: array, source: mock-demo, semantic: "je Zeile: bezeichnung, formular_id, pflicht (pflicht|bedingt), bedingung, download (Einzel-Attrappe)" }
@@ -270,6 +270,50 @@ screens:
         kind: behavioral-manual
       - id: rueckmeldung.erneute_freigabe_zaehlt_runde
         check: "'Erneut einreichen' ist als neue Runde erkennbar (Rundenzähler) und führt zurück in die Prüfung durch das Bauamt; die Landes-Einreichung bleibt davon unberührt"
+        kind: behavioral-manual
+      - id: rueckmeldung.vollstaendig_fuehrt_zur_uebergabe
+        check: "Sind alle Antragselemente 'in Ordnung' oder 'nicht erforderlich', zeigt die Rückmeldung den Zustand 'vollständig' und führt zur Übergabe an den Landes-Assistenten statt zu einer weiteren Runde"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  # ---- Abschluss K3/K4 (v0.4, Owner 2026-09-24): wenn vollständig → Übergabe an den Landes-Assistenten ----
+  - id: uebergabe_landesassistent
+    title: "Vollständig — Übergabe an den Antragsassistenten des Landes"
+    route: "/vorhaben/{vorhabensnummer}/uebergabe"
+    route_example: "/vorhaben/BV-2026-000123/uebergabe"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Erst wenn das Bauamt jedes Antragselement als „in Ordnung" oder „nicht erforderlich"
+      beurteilt hat, gilt das Vorhaben als vollständig. Dann stellt der Vorab-Dienst das
+      geprüfte Paket (PDF-Einzeldateien) bereit und übergibt es in den Antragsassistenten
+      des Landes, wo die verbindliche Einreichung mit BayernID erfolgt (K3). Die Befunde
+      gehen strukturiert an das Fachverfahren der Bauaufsicht (K4) — beides als Attrappe an
+      den Systemgrenzen Landes-Antragsassistent und Fachverfahren-Adapter.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "Kopf; dazu Runde, in der Vollständigkeit erreicht wurde, und Datum" }
+      - { name: vollstaendigkeit, type: object, source: mock-demo, semantic: "je Antragselement letztes Bauamt-Urteil; vollständig = kein Element mit 'Nachbesserung' oder ohne Unterlage — aus den Zeilen abgeleitet, kein gesetztes Flag" }
+      - { name: paket, type: array, source: mock-demo, semantic: "die übergebenen PDF-Einzeldateien mit Vorlagenart, Version (Runde) und Prüfstand; keine Sammeldateien" }
+      - { name: uebergabe_landesassistent, type: object, source: mock-demo, semantic: "Aktion 'Im Antragsassistenten des Landes einreichen' → Attrappe: Übergabe des Pakets, Weiterleitung zur Anmeldung mit BayernID; status an_landesassistent_uebergeben" }
+      - { name: befundpaket, type: object, source: mock-demo, semantic: "strukturierte Befunde (Regel-ID, Konfidenz, Fundort, Status je Element) für das Fachverfahren — Attrappe am Fachverfahren-Adapter, Inhalt sichtbar" }
+    target_mocks:
+      - "Landes-Antragsassistent"
+      - "Fachverfahren-Adapter"
+      - "Prüfkern"
+    parity_acceptance:
+      - id: uebergabe.nur_bei_vollstaendigkeit
+        check: "Die Übergabe ist nur möglich, wenn kein Antragselement mehr 'Nachbesserung' trägt oder ohne Unterlage ist; bei Lücken zeigt der Screen die offenen Elemente und verweist zurück in die Nachbesserung"
+        kind: behavioral-manual
+      - id: uebergabe.paket_einzel_pdf
+        check: "Das Paket listet jede Vorlage als eigene PDF mit Vorlagenart, Rundenstand und Prüfstand; Sammeldateien kommen nicht vor"
+        kind: behavioral-manual
+      - id: uebergabe.landesassistent_attrappe
+        check: "Der Button 'Im Antragsassistenten des Landes einreichen' ist als Attrappe erkennbar, nennt BayernID als Anmeldung dort und schreibt nichts in ein Fachverfahren; die verbindliche Einreichung findet erkennbar im Landes-Assistenten statt, nicht hier"
+        kind: behavioral-manual
+      - id: uebergabe.befunde_strukturiert_getrennt
+        check: "Die Übergabe der Befunde an das Fachverfahren ist ein eigener, sichtbar getrennter Schritt (Fachverfahren-Adapter, Attrappe) mit Regel-ID, Konfidenz, Fundort und Status je Element — nicht Teil des Pakets für den Landes-Assistenten"
+        kind: behavioral-manual
+      - id: uebergabe.status_und_loeschfrist
+        check: "Nach der Übergabe zeigt das Vorhaben den Status 'an den Landes-Assistenten übergeben' und nennt, wann die Unterlagen im Vorab-Dienst gelöscht werden"
         kind: behavioral-manual
     off_ramp_status: static
 

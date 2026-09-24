@@ -47,8 +47,8 @@ sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
 nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
 `stub-demo`/`story`/`spec-demo` entsteht).
 
-5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn — siehe unten), aus der
-Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
+5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn, seit Revision 4 elf — siehe
+unten), aus der Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
 
 - `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
   Bedingungen ankreuzen, Löschfrist-Hinweis, ausdrücklicher Hinweis „keine
@@ -179,6 +179,29 @@ Klickdummys — als Vorab-Dienst, nicht als Fachverfahren (K3/K4 aus #77 bleiben
 **Offen für den Pilot:** ob das Bauamt eine Runde auch ohne Freigabe sehen darf (Einblick vor
 „einreichen"), ob Nachrichten per E-Mail oder nur auf der Vorhabensseite laufen, und wie viele
 Runden zulässig sind, bevor auf die verbindliche Einreichung verwiesen wird.
+
+## Revision 4 (2026-09-24) — Abschluss K3/K4: bei Vollständigkeit Übergabe an den Landes-Assistenten
+
+**Anlass (Owner, Kapitäns-Kanal 2026-09-24, dritter Zuruf):** „K1 mit Feedbackschleife
+Einreicher–Bauamt; K3/K4 wenn vollständig → hochladen Landes-Assistent." Damit ist die
+Zuordnung zu #77 festgelegt: Screens 1–6 sind **K1** (Vorprüfung mit Rückkanal), Screen 7 ist
+**K3/K4** (Übergabe).
+
+**Erweiterung**, Spec v0.3 → v0.4, 11 Screens (8 Prozess + 3 Detail):
+
+- `uebergabe_landesassistent` (neu, Screen 7) — erreichbar erst, wenn das Bauamt jedes
+  Antragselement als „in Ordnung" oder „nicht erforderlich" beurteilt hat (aus den Zeilen
+  abgeleitet, kein gesetztes Flag; sonst Rückverweis in die Nachbesserung). Zeigt das Paket
+  der geprüften **PDF-Einzeldateien** mit Rundenstand, den Button „Im Antragsassistenten des
+  Landes einreichen" (Attrappe, BayernID dort — K3) und getrennt davon die **strukturierte
+  Befund-Übergabe** an das Fachverfahren (Regel-ID, Konfidenz, Fundort, Status; Attrappe am
+  Fachverfahren-Adapter — K4). Statuskette um `vollstaendig` und
+  `an_landesassistent_uebergeben` ergänzt, Löschfrist nach Übergabe genannt.
+- `rueckmeldung` — nennt das Ende der Schleife: vollständig → Übergabe statt weiterer Runde.
+
+**Grenze bleibt:** Der Vorab-Dienst reicht nicht selbst ein; er übergibt in den
+Landes-Assistenten, wo Anmeldung und verbindliche Einreichung liegen. Welcher Adapter die
+Befunde ins Fachverfahren trägt, entscheidet das Herstellergespräch (#77 K3/K4, Rahmen).
 
 ## Bezug
 

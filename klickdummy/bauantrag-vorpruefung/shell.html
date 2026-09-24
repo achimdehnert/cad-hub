@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.3 (Draft)</title>
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.4 (Draft)</title>
 <!--
   class: mock — Klickdummy zu cad-hub:ADR-036, Spec
   klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
@@ -123,6 +123,7 @@
   <a href="#unterlagen_feedback" data-testid="nav-unterlagen-feedback">4. Unterlagen-Feedback + Freigabe</a>
   <a href="#pruefung_bauamt" data-testid="nav-pruefung-bauamt">5. Prüfung Bauamt</a>
   <a href="#rueckmeldung" data-testid="nav-rueckmeldung">6. Rückmeldung + Nachbesserung</a>
+  <a href="#uebergabe_landesassistent" data-testid="nav-uebergabe">7. Vollständig → Landes-Assistent</a>
   <span class="note" style="align-self:center; margin:0 4px">Details (Entwurfsverfasser):</span>
   <a href="#sortierung" data-testid="nav-sortierung">Sortierung</a>
   <a href="#fehlliste" data-testid="nav-fehlliste">Vollständigkeit</a>
@@ -456,8 +457,79 @@
       <a href="#pruefung_bauamt" class="btn primary" data-testid="rueckmeldung-erneut-einreichen">Erneut einreichen — Runde 2 zur Prüfung an das Bauamt freigeben</a>
       <p class="note">Erst sinnvoll, wenn mindestens ein Element ersetzt oder ergänzt wurde. Die verbindliche
         Einreichung im Antragsassistenten des Landes bleibt davon unberührt.</p>
+      <p class="note" data-testid="rueckmeldung-vollstaendig-hinweis">Sobald alle Elemente „in Ordnung" oder „nicht erforderlich" sind, endet die Schleife:
+        das Vorhaben gilt als vollständig und geht in die <a href="#uebergabe_landesassistent">Übergabe an den Landes-Assistenten</a> (Schritt 7).</p>
     </div>
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern.</p>
+  </section>
+
+  <!-- ============ 7 · VOLLSTÄNDIG → ÜBERGABE AN DEN LANDES-ASSISTENTEN (K3/K4) ============ -->
+  <section data-screen="uebergabe_landesassistent" id="uebergabe_landesassistent">
+    <h2>Vollständig — Übergabe an den Antragsassistenten des Landes <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">vollständig seit Runde 2 · 2026-10-06</span></h2>
+    <p class="purpose">Das Bauamt hat in Runde 2 jedes Antragselement als „in Ordnung" oder „nicht erforderlich"
+      beurteilt. Der Vorab-Dienst stellt das geprüfte Paket bereit und übergibt es in den
+      Antragsassistenten des Landes — dort erfolgt die verbindliche Einreichung mit BayernID.</p>
+
+    <div class="banner info" data-testid="uebergabe-hinweis">
+      ℹ️ Die Übergabe ist eine <strong>Attrappe</strong>: Sie öffnet den Antragsassistenten des Landes und reicht
+      das Paket dort ein — hier wird nichts verbindlich eingereicht und nichts in ein Fachverfahren
+      geschrieben. Anmeldung im Landes-Assistenten mit <strong>BayernID</strong>.
+    </div>
+
+    <div class="panel">
+      <h3>Vollständigkeit (letztes Urteil des Bauamts je Antragselement)</h3>
+      <table data-testid="uebergabe-vollstaendigkeit">
+        <thead><tr><th>Antragselement</th><th>Urteil Runde 1</th><th>Urteil Runde 2</th></tr></thead>
+        <tbody>
+          <tr><td>Bauantrag</td><td><span class="badge ok">in Ordnung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Baubeschreibung</td><td><span class="badge fehlt">Nachbesserung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Lageplan</td><td><span class="badge fehlt">Nachbesserung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Bauzeichnungen</td><td><span class="badge ok">in Ordnung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Brandschutznachweis</td><td><span class="badge fehlt">Nachbesserung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Standsicherheitsnachweis — Erklärung</td><td><span class="badge fehlt">Nachbesserung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+          <tr><td>Erschließungsangaben</td><td><span class="badge hausregel">nicht erforderlich</span></td><td><span class="badge hausregel">nicht erforderlich</span></td></tr>
+          <tr><td>Abstandsflächenübernahme</td><td><span class="badge fehlt">Nachbesserung</span></td><td><span class="badge ok">in Ordnung</span></td></tr>
+        </tbody>
+      </table>
+      <p class="note" data-testid="uebergabe-vollstaendig-regel">Vollständig heißt: kein Element trägt „Nachbesserung", keines ist ohne Unterlage — aus den
+        Zeilen abgeleitet, kein gesetztes Häkchen. Solange ein Element offen ist, führt dieser Screen zurück in die
+        <a href="#rueckmeldung">Nachbesserung</a> und die Übergabe ist nicht möglich.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Paket für den Landes-Assistenten (PDF-Einzeldateien, geprüfter Stand)</h3>
+      <ul class="file-list" data-testid="uebergabe-paket">
+        <li>📄 bauantrag-ausgefuellt.pdf — Bauantrag · Runde 1 · geprüft</li>
+        <li>📄 baubeschreibung-v2.pdf — Baubeschreibung · Runde 2 · geprüft</li>
+        <li>📄 lageplan-musterhausen-v2.pdf — Lageplan · Runde 2 · geprüft</li>
+        <li>📄 grundriss-eg.pdf — Bauzeichnung · Runde 1 · geprüft</li>
+        <li>📄 schnitt-a-a.pdf — Bauzeichnung · Runde 1 · geprüft</li>
+        <li>📄 brandschutznachweis.pdf — Brandschutznachweis · Runde 2 · geprüft (aus Sammelmappe aufgeteilt)</li>
+        <li>📄 standsicherheit-erklaerung.pdf — Standsicherheitsnachweis · Runde 2 · geprüft</li>
+        <li>📄 abstandsflaechen-erklaerung-nachbar.pdf — Abstandsflächenübernahme · Runde 2 · geprüft</li>
+      </ul>
+      <p class="note">8 Einzeldateien, keine Sammeldatei — so, wie der Antragsassistent des Landes sie annimmt.</p>
+      <a href="#" class="btn primary" aria-disabled="true" data-testid="uebergabe-landesassistent-einreichen">Im Antragsassistenten des Landes einreichen → (Attrappe, BayernID dort)</a>
+      <p class="note">Nach der Übergabe: Status „an den Landes-Assistenten übergeben"; die Unterlagen im Vorab-Dienst
+        werden <strong>14 Tage</strong> nach der Übergabe gelöscht. Die Vorhabensnummer bleibt bis dahin zum Nachlesen gültig.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Befunde strukturiert an das Fachverfahren (K4, getrennter Schritt)</h3>
+      <table data-testid="uebergabe-befundpaket">
+        <thead><tr><th>Element</th><th>Regel-ID</th><th>Status</th><th>Konfidenz</th><th>Fundort</th></tr></thead>
+        <tbody>
+          <tr><td>Lageplan</td><td>FORM-LP-03 (Maßstabsleiste, Anforderung der Behörde)</td><td>erfüllt (Runde 2)</td><td>91&nbsp;%</td><td>Seite 1</td></tr>
+          <tr><td>Baubeschreibung</td><td>FORM-BB-07 (Abschnitt 3 Nutzung)</td><td>erfüllt (Runde 2)</td><td>88&nbsp;%</td><td>Seite 2</td></tr>
+          <tr><td>Brandschutznachweis</td><td>SORT-01 (eigene PDF je Vorlage)</td><td>erfüllt (Runde 2)</td><td>—</td><td>—</td></tr>
+          <tr><td>Alle Elemente</td><td>KONS-01 (Bauherr/Flurstück/Adresse konsistent)</td><td>erfüllt</td><td>95&nbsp;%</td><td>alle Dokumente</td></tr>
+        </tbody>
+      </table>
+      <a href="#" class="btn ghost" aria-disabled="true" data-testid="uebergabe-befunde-fachverfahren">Befunde an das Fachverfahren übergeben (Attrappe · Fachverfahren-Adapter)</a>
+      <p class="note">Getrennt vom Paket für den Landes-Assistenten: Adapter je nach Herstellerantwort (Importer-Vorstufe,
+        Bauakte-Upload, XBau/XTA — offen in #77 K3/K4). Hier nur der Befund-Vertrag, nichts ist verdrahtet.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenzen: Landes-Antragsassistent, Fachverfahren-Adapter, Prüfkern.</p>
   </section>
 
   <!-- ==================== 7 · SORTIERUNG (Detail) ==================== -->
@@ -758,7 +830,7 @@
 
 <!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
 <script>
-  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.3", klickdummy_class: "mock" };
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.4", klickdummy_class: "mock" };
   window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
 </script>
 <script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>
