@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.4 (Draft)</title>
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.5 (Draft)</title>
 <!--
   class: mock — Klickdummy zu cad-hub:ADR-036, Spec
   klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
@@ -56,7 +56,7 @@
      kein anderer Screen als Fragment aktiv ist. */
   section[data-screen] { display: none; }
   section[data-screen]:target { display: block; }
-  body:not(:has(section[data-screen]:target)) section[data-screen="vorhaben_anlegen"] { display: block; }
+  body:not(:has(section[data-screen]:target)) section[data-screen="vorhaben_uebersicht"] { display: block; }
 
   /* Vorhabensnummer: erscheint erst, wenn die Vorhabensseite aktiv ist (Anlegen = Anker-Sprung),
      auf dem Anlege-Screen selbst bleibt sie unsichtbar — ohne JS, per :target. */
@@ -117,13 +117,14 @@
 </header>
 
 <nav>
-  <a href="#vorhaben_anlegen" data-testid="nav-vorhaben-anlegen">1. Vorhaben anlegen</a>
-  <a href="#vorhabensseite" data-testid="nav-vorhabensseite">2. Vorhabensseite</a>
-  <a href="#upload" data-testid="nav-upload">3. Upload</a>
-  <a href="#unterlagen_feedback" data-testid="nav-unterlagen-feedback">4. Unterlagen-Feedback + Freigabe</a>
-  <a href="#pruefung_bauamt" data-testid="nav-pruefung-bauamt">5. Prüfung Bauamt</a>
-  <a href="#rueckmeldung" data-testid="nav-rueckmeldung">6. Rückmeldung + Nachbesserung</a>
-  <a href="#uebergabe_landesassistent" data-testid="nav-uebergabe">7. Vollständig → Landes-Assistent</a>
+  <a href="#vorhaben_uebersicht" data-testid="nav-vorhaben-uebersicht">1. Meine Vorhaben</a>
+  <a href="#vorhaben_anlegen" data-testid="nav-vorhaben-anlegen">2. Vorhaben anlegen</a>
+  <a href="#vorhabensseite" data-testid="nav-vorhabensseite">3. Vorhabensseite</a>
+  <a href="#upload" data-testid="nav-upload">4. Upload</a>
+  <a href="#unterlagen_feedback" data-testid="nav-unterlagen-feedback">5. Unterlagen-Feedback + Freigabe</a>
+  <a href="#pruefung_bauamt" data-testid="nav-pruefung-bauamt">6. Prüfung Bauamt</a>
+  <a href="#rueckmeldung" data-testid="nav-rueckmeldung">7. Rückmeldung + Verbessern</a>
+  <a href="#uebergabe_landesassistent" data-testid="nav-uebergabe">8. Vollständig → Landes-Assistent</a>
   <span class="note" style="align-self:center; margin:0 4px">Details (Entwurfsverfasser):</span>
   <a href="#sortierung" data-testid="nav-sortierung">Sortierung</a>
   <a href="#fehlliste" data-testid="nav-fehlliste">Vollständigkeit</a>
@@ -133,7 +134,33 @@
 
 <main>
 
-  <!-- ====================== 1 · VORHABEN ANLEGEN (Seite der Behörde) ====================== -->
+  <!-- ====================== 1 · ÜBERSICHT MEINE VORHABEN ====================== -->
+  <section data-screen="vorhaben_uebersicht" id="vorhaben_uebersicht">
+    <h2>Meine Bauvorhaben</h2>
+    <p class="purpose">Alle Ihre Vorhaben bei dieser Bauaufsichtsbehörde auf einen Blick — mit Stand und
+      nächstem Schritt. Ein Klick öffnet die Vorhabensseite.</p>
+
+    <div class="panel">
+      <table data-testid="uebersicht-tabelle">
+        <thead><tr><th>Vorhabensnummer</th><th>Vorhaben</th><th>Gemeinde</th><th>Status</th><th>Nächster Schritt</th></tr></thead>
+        <tbody>
+          <tr data-testid="uebersicht-row-000123"><td><a href="#vorhabensseite" class="vorhabensnummer">BV-2026-000123</a></td><td>Sonderbau</td><td>Musterhausen</td><td><span class="badge fehlt">Rückmeldung liegt vor (Runde 1)</span></td><td><a href="#vorhabensseite">Verbessern →</a></td></tr>
+          <tr data-testid="uebersicht-row-000131"><td><a href="#vorhabensseite" class="vorhabensnummer">BV-2026-000131</a></td><td>Garage / Carport</td><td>Beispielheim</td><td><span class="badge unklar">zur Prüfung freigegeben</span></td><td>warten auf Bauamt</td></tr>
+          <tr data-testid="uebersicht-row-000140"><td><a href="#vorhabensseite" class="vorhabensnummer">BV-2026-000140</a></td><td>Anbau / Umbau</td><td>Testdorf</td><td><span class="badge hausregel">angelegt</span></td><td><a href="#vorhabensseite">Anträge herunterladen →</a></td></tr>
+          <tr data-testid="uebersicht-row-000098"><td><a href="#vorhabensseite" class="vorhabensnummer">BV-2026-000098</a></td><td>Neubau Wohngebäude</td><td>Musterhausen</td><td><span class="badge ok">an Landes-Assistent übergeben</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="#vorhaben_anlegen" class="btn primary" data-testid="uebersicht-neu">+ Neues Vorhaben anlegen</a>
+        <span class="note" style="margin:0; align-self:center">Vorhaben ohne Aktivität werden nach 14 Tagen gelöscht.</span>
+      </div>
+      <p class="note" data-testid="uebersicht-zugang-hinweis">Offene Pilotfrage: Eine Übersicht mehrerer Vorhaben braucht eine Anmeldung
+        (z. B. BayernID oder Konto beim Vorab-Dienst) — der Wiederaufruf nur per Vorhabensnummer reicht dafür nicht.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Alle Nummern, Gemeinden und Vorhaben erfunden.</p>
+  </section>
+
+  <!-- ====================== 2 · VORHABEN ANLEGEN (Seite der Behörde) ====================== -->
   <section data-screen="vorhaben_anlegen" id="vorhaben_anlegen">
     <h2>Neues Bauvorhaben anlegen</h2>
     <p class="purpose">Sie sind auf der Seite Ihrer Bauaufsichtsbehörde (Landratsamt). Wählen Sie
@@ -202,7 +229,7 @@
     <p class="note">Mock-Daten, kein Backend, kein Login. Systemgrenze: Prüfkern (Katalog-Ableitung).</p>
   </section>
 
-  <!-- ============================ 2 · VORHABENSSEITE ============================ -->
+  <!-- ============================ 3 · VORHABENSSEITE ============================ -->
   <section data-screen="vorhabensseite" id="vorhabensseite">
     <h2>Vorhabensseite <span class="vorhabensnummer" data-testid="vorhaben-nummer">BV-2026-000123</span></h2>
     <p class="purpose">Alles zu Ihrem Vorhaben an einem Ort: Grunddaten, die benötigten Anträge
@@ -217,7 +244,7 @@
     </div>
 
     <div class="panel">
-      <h3>Grunddaten <span class="status-pill" data-testid="vorhaben-status">Status: angelegt</span></h3>
+      <h3>Grunddaten <span class="status-pill" data-testid="vorhaben-status">Status: Rückmeldung liegt vor (Runde 1)</span></h3>
       <dl class="stamm" data-testid="vorhaben-stammdaten">
         <dt>Vorhabensart</dt><dd>Sonderbau</dd>
         <dt>Verfahrensart</dt><dd>Sonderbau</dd>
@@ -231,21 +258,6 @@
         vorgeprüft → zur Prüfung freigegeben → Rückmeldung liegt vor → erneut freigegeben</em>.
         Der Landes-Zustand „eingereicht" wird hier nie gesetzt — das geschieht nur im
         Antragsassistenten des Landes.</p>
-    </div>
-
-    <div class="panel">
-      <h3>Nachrichten zum Vorhaben</h3>
-      <table data-testid="vorhaben-nachrichten">
-        <thead><tr><th>Datum</th><th>Ereignis</th><th></th></tr></thead>
-        <tbody>
-          <tr><td>2026-09-24</td><td>Vorhaben angelegt, Vorhabensnummer vergeben</td><td></td></tr>
-          <tr><td>2026-09-25</td><td>6 Unterlagen hochgeladen, automatisch geprüft (2 unvollständig)</td><td><a href="#unterlagen_feedback">Feedback</a></td></tr>
-          <tr><td>2026-09-25</td><td>Unterlagen zur Prüfung durch das Bauamt freigegeben (Runde 1)</td><td></td></tr>
-          <tr data-testid="vorhaben-nachricht-rueckmeldung"><td>2026-09-29</td><td><strong>Rückmeldung des Bauamts liegt vor (Runde 1)</strong> — 3 Elemente nachbessern</td><td><a href="#rueckmeldung" class="btn primary" style="margin:0" data-testid="vorhaben-zur-rueckmeldung">Rückmeldung ansehen →</a></td></tr>
-        </tbody>
-      </table>
-      <p class="note">Demo-Verlauf (Mock). Die Nachricht per E-Mail nennt nur Vorhabensnummer und
-        Link — die Inhalte der Rückmeldung stehen ausschließlich hier.</p>
     </div>
 
     <div class="panel">
@@ -278,6 +290,39 @@
         PDF-Satz Ihres Entwurfsverfassers hoch. Verfahrensart und Bedingungen kennt der Upload
         bereits aus diesem Vorhaben.</p>
       <a href="#upload" class="btn primary" data-testid="vorhaben-weiter-upload">Ausgefüllte Anträge hochladen →</a>
+      <p class="note">Liegt eine Rückmeldung des Bauamts vor, ist der nächste Schritt „Verbessern" — siehe unten.</p>
+    </div>
+
+    <div class="panel" data-testid="vorhaben-rueckmeldung-kurz">
+      <h3>Rückmeldung des Bauamts <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">Runde 1 · 2026-09-29</span></h3>
+      <table>
+        <thead><tr><th>Antragselement</th><th>Urteil Bauamt</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Baubeschreibung</td><td><span class="badge fehlt">Nachbesserung</span></td><td><a href="#upload">Verbessern</a></td></tr>
+          <tr><td>Lageplan</td><td><span class="badge fehlt">Nachbesserung</span></td><td><a href="#upload">Verbessern</a></td></tr>
+          <tr><td>Brandschutznachweis</td><td><span class="badge fehlt">Nachbesserung</span></td><td><a href="#upload">Verbessern</a></td></tr>
+          <tr><td>Standsicherheitsnachweis — Erklärung</td><td><span class="badge fehlt">Nachbesserung</span></td><td><a href="#upload">Verbessern</a></td></tr>
+          <tr><td>Abstandsflächenübernahme</td><td><span class="badge fehlt">Nachbesserung</span></td><td><a href="#upload">Verbessern</a></td></tr>
+          <tr><td>Bauantrag, Bauzeichnungen</td><td><span class="badge ok">in Ordnung</span></td><td></td></tr>
+          <tr><td>Erschließungsangaben</td><td><span class="badge hausregel">nicht erforderlich</span></td><td></td></tr>
+        </tbody>
+      </table>
+      <a href="#rueckmeldung" class="btn primary" data-testid="vorhaben-zur-rueckmeldung">Rückmeldung mit Hinweisen ansehen und verbessern →</a>
+    </div>
+
+    <div class="panel">
+      <h3>Nachrichten zum Vorhaben</h3>
+      <table data-testid="vorhaben-nachrichten">
+        <thead><tr><th>Datum</th><th>Ereignis</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>2026-09-24</td><td>Vorhaben angelegt, Vorhabensnummer vergeben</td><td></td></tr>
+          <tr><td>2026-09-25</td><td>6 Unterlagen hochgeladen, automatisch geprüft (2 unvollständig)</td><td><a href="#unterlagen_feedback">Feedback</a></td></tr>
+          <tr><td>2026-09-25</td><td>Unterlagen zur Prüfung durch das Bauamt freigegeben (Runde 1)</td><td></td></tr>
+          <tr data-testid="vorhaben-nachricht-rueckmeldung"><td>2026-09-29</td><td><strong>Rückmeldung des Bauamts liegt vor (Runde 1)</strong> — 5 Elemente verbessern</td><td><a href="#rueckmeldung">Rückmeldung</a></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Demo-Verlauf (Mock). Die Nachricht per E-Mail nennt nur Vorhabensnummer und
+        Link — die Inhalte der Rückmeldung stehen ausschließlich auf dieser Seite.</p>
     </div>
     <p class="note">Mock-Daten, kein Backend. Systemgrenzen: Prüfkern (Katalog), Landes-Antragsassistent (Einreichung, hier nur genannt).</p>
   </section>
@@ -440,7 +485,7 @@
 
     <div class="panel">
       <table data-testid="rueckmeldung-tabelle">
-        <thead><tr><th>Antragselement</th><th>Automatisch</th><th>Urteil Bauamt</th><th>Hinweis</th><th>Aktion</th></tr></thead>
+        <thead><tr><th>Antragselement</th><th>Automatisch</th><th>Urteil Bauamt</th><th>Hinweis</th><th>Verbessern</th></tr></thead>
         <tbody>
           <tr data-testid="rueckmeldung-row-bauantrag"><td>Bauantrag</td><td><span class="badge ok">komplett</span></td><td><span class="badge ok">in Ordnung</span></td><td>—</td><td>—</td></tr>
           <tr data-testid="rueckmeldung-row-baubeschreibung"><td>Baubeschreibung</td><td><span class="badge fehlt">unvollständig</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Abschnitt 3 (Nutzung) ausfüllen, Unterschrift Bauherr nachreichen.</td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px" data-testid="rueckmeldung-ersetzen-baubeschreibung">Ersetzen</a></td></tr>
@@ -830,7 +875,7 @@
 
 <!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
 <script>
-  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.4", klickdummy_class: "mock" };
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.5", klickdummy_class: "mock" };
   window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
 </script>
 <script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>

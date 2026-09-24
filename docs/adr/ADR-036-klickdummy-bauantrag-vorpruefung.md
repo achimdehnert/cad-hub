@@ -47,7 +47,7 @@ sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
 nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
 `stub-demo`/`story`/`spec-demo` entsteht).
 
-5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn, seit Revision 4 elf — siehe
+5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn, seit Revision 4 elf, seit Revision 5 zwölf — siehe
 unten), aus der Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
 
 - `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
@@ -202,6 +202,25 @@ Zuordnung zu #77 festgelegt: Screens 1–6 sind **K1** (Vorprüfung mit Rückkan
 **Grenze bleibt:** Der Vorab-Dienst reicht nicht selbst ein; er übergibt in den
 Landes-Assistenten, wo Anmeldung und verbindliche Einreichung liegen. Welcher Adapter die
 Befunde ins Fachverfahren trägt, entscheidet das Herstellergespräch (#77 K3/K4, Rahmen).
+
+## Revision 5 (2026-09-24) — Übersicht mehrerer Vorhaben, Reihenfolge der Vorhabensseite
+
+**Anlass (Owner, Kapitäns-Kanal 2026-09-24, nach Sichtung des veröffentlichten KD):** „Reihenfolge
+der Screens: 1. Übersicht der Vorhaben (können mehrere sein) → Vorhaben: → Grunddaten → Benötigte
+Anträge und Vorlagen → Nächster Schritt → Rückmeldung des Bauamts → Nachrichten zum Vorhaben →
+verbessern → Rückmeldung des Bauamts → Prüfung abschließen → Antragsteller benachrichtigen."
+
+**Änderung**, Spec v0.4 → v0.5, 12 Screens:
+
+- `vorhaben_uebersicht` (neu, Screen 1, Default beim Aufruf) — mehrere Vorhaben mit Status und
+  nächstem Schritt, „Neues Vorhaben anlegen". Benennt als Pilotfrage: eine Übersicht braucht eine
+  **Anmeldung**; Wiederaufruf per Nummer allein genügt dafür nicht.
+- `vorhabensseite` — Blöcke in Owner-Reihenfolge: Grunddaten → Benötigte Anträge → Nächster
+  Schritt → **Rückmeldung des Bauamts** (Kurzfassung je Element mit „Verbessern") → Nachrichten.
+- `rueckmeldung` — Aktionsspalte heißt „Verbessern"; Schleife bleibt Verbessern → erneut
+  einreichen → Prüfung Bauamt → „Prüfung abschließen → Antragsteller benachrichtigen" →
+  Rückmeldung (nächste Runde).
+- Navigation 1–8 neu nummeriert.
 
 ## Bezug
 
