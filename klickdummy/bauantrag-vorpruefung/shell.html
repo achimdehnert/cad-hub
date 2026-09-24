@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.2 (Draft)</title>
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.3 (Draft)</title>
 <!--
   class: mock — Klickdummy zu cad-hub:ADR-036, Spec
   klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
@@ -67,6 +67,7 @@
   .stamm dt { color: var(--pui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
   .stamm dd { margin: 0 0 var(--pui-space-2); }
   .readonly-line { font-size: 13px; padding: var(--pui-space-2) var(--pui-space-3); background: var(--pui-neutral-bg); border-radius: var(--pui-radius); margin: var(--pui-space-2) 0; }
+  table select { width: auto; min-width: 170px; }
   input[type="text"] { width: 100%; font: inherit; font-size: 13px; padding: var(--pui-space-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); }
 
   h2 { font-size: 20px; margin: 0 0 var(--pui-space-1); color: var(--pui-primary-dk); }
@@ -119,10 +120,14 @@
   <a href="#vorhaben_anlegen" data-testid="nav-vorhaben-anlegen">1. Vorhaben anlegen</a>
   <a href="#vorhabensseite" data-testid="nav-vorhabensseite">2. Vorhabensseite</a>
   <a href="#upload" data-testid="nav-upload">3. Upload</a>
-  <a href="#sortierung" data-testid="nav-sortierung">4. Sortierung</a>
-  <a href="#fehlliste" data-testid="nav-fehlliste">5. Vollständigkeit</a>
-  <a href="#formpruefung" data-testid="nav-formpruefung">6. Formprüfung</a>
-  <a href="#bericht" data-testid="nav-bericht">7. Bericht</a>
+  <a href="#unterlagen_feedback" data-testid="nav-unterlagen-feedback">4. Unterlagen-Feedback + Freigabe</a>
+  <a href="#pruefung_bauamt" data-testid="nav-pruefung-bauamt">5. Prüfung Bauamt</a>
+  <a href="#rueckmeldung" data-testid="nav-rueckmeldung">6. Rückmeldung + Nachbesserung</a>
+  <span class="note" style="align-self:center; margin:0 4px">Details (Entwurfsverfasser):</span>
+  <a href="#sortierung" data-testid="nav-sortierung">Sortierung</a>
+  <a href="#fehlliste" data-testid="nav-fehlliste">Vollständigkeit</a>
+  <a href="#formpruefung" data-testid="nav-formpruefung">Formprüfung</a>
+  <a href="#bericht" data-testid="nav-bericht">Bericht</a>
 </nav>
 
 <main>
@@ -222,8 +227,24 @@
       </dl>
       <a href="#vorhaben_anlegen" class="btn ghost" data-testid="vorhaben-stammdaten-aendern">Grunddaten ändern</a>
       <p class="note">Der Status wechselt durch Ihre Schritte: <em>angelegt → Unterlagen hochgeladen →
-        vorgeprüft</em>. „Eingereicht" wird hier nie gesetzt — das geschieht nur im
+        vorgeprüft → zur Prüfung freigegeben → Rückmeldung liegt vor → erneut freigegeben</em>.
+        Der Landes-Zustand „eingereicht" wird hier nie gesetzt — das geschieht nur im
         Antragsassistenten des Landes.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Nachrichten zum Vorhaben</h3>
+      <table data-testid="vorhaben-nachrichten">
+        <thead><tr><th>Datum</th><th>Ereignis</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>2026-09-24</td><td>Vorhaben angelegt, Vorhabensnummer vergeben</td><td></td></tr>
+          <tr><td>2026-09-25</td><td>6 Unterlagen hochgeladen, automatisch geprüft (2 unvollständig)</td><td><a href="#unterlagen_feedback">Feedback</a></td></tr>
+          <tr><td>2026-09-25</td><td>Unterlagen zur Prüfung durch das Bauamt freigegeben (Runde 1)</td><td></td></tr>
+          <tr data-testid="vorhaben-nachricht-rueckmeldung"><td>2026-09-29</td><td><strong>Rückmeldung des Bauamts liegt vor (Runde 1)</strong> — 3 Elemente nachbessern</td><td><a href="#rueckmeldung" class="btn primary" style="margin:0" data-testid="vorhaben-zur-rueckmeldung">Rückmeldung ansehen →</a></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Demo-Verlauf (Mock). Die Nachricht per E-Mail nennt nur Vorhabensnummer und
+        Link — die Inhalte der Rückmeldung stehen ausschließlich hier.</p>
     </div>
 
     <div class="panel">
@@ -321,12 +342,125 @@
         automatisch gelöscht — unabhängig davon, ob Sie die Prüfung abschließen.
       </div>
 
-      <a href="#sortierung" class="btn primary" data-testid="upload-weiter">Weiter zur Sortierung →</a>
+      <a href="#unterlagen_feedback" class="btn primary" data-testid="upload-weiter">Hochladen und Unterlagen prüfen lassen →</a>
     </div>
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Erkennung + Formprüfung).</p>
   </section>
 
-  <!-- ============================ 4 · SORTIERUNG ============================ -->
+  <!-- ==================== 4 · UNTERLAGEN-FEEDBACK + FREIGABE (Antragsteller) ==================== -->
+  <section data-screen="unterlagen_feedback" id="unterlagen_feedback">
+    <h2>Unterlagen-Feedback und Freigabe <span class="vorhabensnummer">BV-2026-000123</span></h2>
+    <p class="purpose">Direkt nach dem Hochladen: je Unterlage, ob sie komplett ist oder welche Angaben
+      fehlen. Danach geben Sie die Unterlagen zur Prüfung durch das Bauamt frei.</p>
+
+    <div class="panel">
+      <table data-testid="feedback-tabelle">
+        <thead><tr><th>Unterlage</th><th>Zugeordnet als</th><th>Status</th><th>Fehlende Angaben</th><th>Details</th><th></th></tr></thead>
+        <tbody>
+          <tr data-testid="feedback-row-bauantrag"><td>bauantrag-ausgefuellt.pdf</td><td>Bauantrag</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
+          <tr data-testid="feedback-row-baubeschreibung"><td>baubeschreibung.pdf</td><td>Baubeschreibung</td><td><span class="badge fehlt">unvollständig</span></td><td>Angaben zur Nutzung (Abschnitt 3) fehlen; Unterschrift des Bauherrn fehlt</td><td><a href="#formpruefung">Formprüfung</a></td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px" data-testid="feedback-ersetzen-baubeschreibung">Ersetzen</a></td></tr>
+          <tr data-testid="feedback-row-lageplan"><td>lageplan-musterhausen.pdf</td><td>Lageplan</td><td><span class="badge fehlt">unvollständig</span></td><td>Maßstabsleiste fehlt (Anforderung der Behörde); Flurstücksnummer nicht lesbar</td><td><a href="#formpruefung">Formprüfung</a></td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ersetzen</a></td></tr>
+          <tr data-testid="feedback-row-grundriss"><td>grundriss-eg.pdf</td><td>Bauzeichnung</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
+          <tr data-testid="feedback-row-schnitt"><td>schnitt-a-a.pdf</td><td>Bauzeichnung</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
+          <tr data-testid="feedback-row-sammelmappe"><td>sammelmappe-brandschutz-teil.pdf</td><td><em>nicht zugeordnet</em></td><td><span class="badge unklar">nicht zugeordnet</span></td><td>Sammeldatei — bitte aufteilen oder Vorlagenart wählen</td><td><a href="#sortierung">Sortierung</a></td><td></td></tr>
+        </tbody>
+      </table>
+      <h3>Noch ohne Unterlage (aus Ihrem Katalog)</h3>
+      <ul class="file-list" data-testid="feedback-katalog-luecken">
+        <li>⚠️ Standsicherheitsnachweis — Erklärung (bedingt: Sonderbau) — <a href="#vorhabensseite">Formular laden</a></li>
+        <li>⚠️ Erschließungsangaben (bedingt: Grundstück nicht erschlossen) — <a href="#vorhabensseite">Formular laden</a></li>
+        <li>⚠️ Abstandsflächenübernahme — Erklärung des Nachbarn — <a href="#vorhabensseite">Formular laden</a></li>
+      </ul>
+      <p class="note">Details zur automatischen Prüfung: <a href="#sortierung">Sortierung</a> ·
+        <a href="#fehlliste">Vollständigkeit</a> · <a href="#formpruefung">Formprüfung</a> (vor allem für Entwurfsverfasser).</p>
+    </div>
+
+    <div class="panel">
+      <h3>Zur Prüfung durch das Bauamt freigeben</h3>
+      <div class="banner warn" data-testid="feedback-freigabe-warnung">
+        ⚠️ 2 Unterlagen sind unvollständig, 1 ist nicht zugeordnet, 3 Katalogpunkte haben noch keine
+        Unterlage. Sie können trotzdem freigeben — das Bauamt sieht dieselben Lücken.
+      </div>
+      <a href="#pruefung_bauamt" class="btn primary" data-testid="feedback-unterlagen-einreichen">Unterlagen einreichen — zur Prüfung an das Bauamt freigeben (Runde 1)</a>
+      <p class="note" data-testid="feedback-freigabe-hinweis">„Einreichen" heißt hier: Freigabe an den Vorab-Dienst Ihrer Bauaufsichtsbehörde.
+        Die <strong>verbindliche Einreichung</strong> des Bauantrags bleibt Ihr eigener Schritt im
+        Antragsassistenten des Landes — nichts wird in ein Fachverfahren geschrieben.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Unterlagen-Feedback).</p>
+  </section>
+
+  <!-- ========================= 5 · PRÜFUNG DURCH DAS BAUAMT (Sachbearbeitung) ========================= -->
+  <section data-screen="pruefung_bauamt" id="pruefung_bauamt">
+    <h2>Prüfung durch das Bauamt <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">Runde 1 · freigegeben 2026-09-25</span></h2>
+    <p class="purpose">Sicht der Sachbearbeitung (Login, Mock): freigegebene Unterlagen mit dem
+      automatischen Feedback; je Einzelanlage ein eigenes Urteil mit Hinweis. „Prüfung abschließen"
+      schließt die Runde ab und benachrichtigt den Antragsteller.</p>
+
+    <div class="banner info" data-testid="bauamt-kein-bescheid-hinweis">
+      ℹ️ Vorprüfung im Vorab-Dienst — <strong>kein Bescheid</strong>, keine Zulässigkeitsentscheidung,
+      keine Übergabe an das Fachverfahren. Vorhabensart Sonderbau · Verfahrensart Sonderbau · Gemeinde Musterhausen.
+    </div>
+
+    <div class="panel">
+      <table data-testid="bauamt-tabelle">
+        <thead><tr><th>Einzelanlage</th><th>Automatisch</th><th>Urteil Bauamt</th><th>Hinweis an den Antragsteller</th></tr></thead>
+        <tbody>
+          <tr data-testid="bauamt-row-bauantrag"><td>Bauantrag (bauantrag-ausgefuellt.pdf)</td><td><span class="badge ok">komplett</span></td><td><select data-testid="bauamt-urteil-bauantrag"><option selected>in Ordnung</option><option>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>—</td></tr>
+          <tr data-testid="bauamt-row-baubeschreibung"><td>Baubeschreibung</td><td><span class="badge fehlt">unvollständig</span></td><td><select><option>in Ordnung</option><option selected>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>Abschnitt 3 (Nutzung) ausfüllen, Unterschrift Bauherr nachreichen.</td></tr>
+          <tr data-testid="bauamt-row-lageplan"><td>Lageplan</td><td><span class="badge fehlt">unvollständig</span></td><td><select><option>in Ordnung</option><option selected>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>Maßstabsleiste ergänzen; Flurstücksnummer lesbar eintragen.</td></tr>
+          <tr data-testid="bauamt-row-bauzeichnungen"><td>Bauzeichnungen (Grundriss EG, Schnitt A-A)</td><td><span class="badge ok">komplett</span></td><td><select><option selected>in Ordnung</option><option>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>—</td></tr>
+          <tr data-testid="bauamt-row-brandschutz"><td>Brandschutznachweis (Sammelmappe, nicht zugeordnet)</td><td><span class="badge unklar">nicht zugeordnet</span></td><td><select><option>in Ordnung</option><option selected>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>Nachweis als eigene PDF einreichen, nicht als Teil einer Sammelmappe.</td></tr>
+          <tr data-testid="bauamt-row-standsicherheit"><td>Standsicherheitsnachweis — Erklärung</td><td><span class="badge fehlt">fehlt</span></td><td><select><option>in Ordnung</option><option selected>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>Erklärung fehlt (Sonderbau) — Formular auf der Vorhabensseite.</td></tr>
+          <tr data-testid="bauamt-row-erschliessung"><td>Erschließungsangaben</td><td><span class="badge fehlt">fehlt</span></td><td><select><option>in Ordnung</option><option>Nachbesserung</option><option selected>nicht erforderlich</option></select></td><td>Erschließung ist laut Gemeinde gesichert — entfällt für dieses Vorhaben.</td></tr>
+          <tr data-testid="bauamt-row-abstandsflaechen"><td>Abstandsflächenübernahme — Erklärung des Nachbarn</td><td><span class="badge fehlt">fehlt</span></td><td><select><option>in Ordnung</option><option selected>Nachbesserung</option><option>nicht erforderlich</option></select></td><td>Erklärung des Nachbarn nachreichen.</td></tr>
+        </tbody>
+      </table>
+      <p class="note" data-testid="bauamt-automatik-hinweis">Spalte „Automatisch" ist das Feedback des Prüfkerns und bleibt stehen —
+        das Urteil des Bauamts ersetzt es nicht, sondern steht daneben. Bearbeitet von: Rolle Sachbearbeitung (kein Name).</p>
+      <a href="#rueckmeldung" class="btn primary" data-testid="bauamt-pruefung-abschliessen">Prüfung abschließen → Antragsteller benachrichtigen</a>
+      <p class="note">Beim Abschluss erhält der Antragsteller eine Nachricht (E-Mail-Attrappe, kein Versand)
+        mit Vorhabensnummer und Link; die Inhalte stehen auf seiner Vorhabensseite. Status des
+        Vorhabens wird „Rückmeldung liegt vor (Runde 1)".</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend, Login nur angedeutet. Systemgrenzen: Prüfkern, Fachverfahren-Adapter (nicht verdrahtet).</p>
+  </section>
+
+  <!-- ==================== 6 · RÜCKMELDUNG JE ANTRAGSELEMENT + NACHBESSERUNG (Antragsteller) ==================== -->
+  <section data-screen="rueckmeldung" id="rueckmeldung">
+    <h2>Rückmeldung des Bauamts <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">Runde 1 · abgeschlossen 2026-09-29</span></h2>
+    <p class="purpose">Sie wurden benachrichtigt. Hier sehen Sie je Antragselement das Urteil des
+      Bauamts mit Hinweis, ersetzen oder ergänzen die betroffenen Unterlagen und geben erneut frei.</p>
+
+    <div class="banner info" data-testid="rueckmeldung-nachricht">
+      ✉️ <strong>Nachricht (Attrappe):</strong> „Zu Ihrem Vorhaben BV-2026-000123 liegt eine Rückmeldung der
+      Bauaufsichtsbehörde vor. Melden Sie sich mit Ihrer Vorhabensnummer auf Ihrer Vorhabensseite an."
+      — die Nachricht selbst enthält keine Prüfinhalte.
+    </div>
+
+    <div class="panel">
+      <table data-testid="rueckmeldung-tabelle">
+        <thead><tr><th>Antragselement</th><th>Automatisch</th><th>Urteil Bauamt</th><th>Hinweis</th><th>Aktion</th></tr></thead>
+        <tbody>
+          <tr data-testid="rueckmeldung-row-bauantrag"><td>Bauantrag</td><td><span class="badge ok">komplett</span></td><td><span class="badge ok">in Ordnung</span></td><td>—</td><td>—</td></tr>
+          <tr data-testid="rueckmeldung-row-baubeschreibung"><td>Baubeschreibung</td><td><span class="badge fehlt">unvollständig</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Abschnitt 3 (Nutzung) ausfüllen, Unterschrift Bauherr nachreichen.</td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px" data-testid="rueckmeldung-ersetzen-baubeschreibung">Ersetzen</a></td></tr>
+          <tr><td>Lageplan</td><td><span class="badge fehlt">unvollständig</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Maßstabsleiste ergänzen; Flurstücksnummer lesbar eintragen.</td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ersetzen</a></td></tr>
+          <tr><td>Bauzeichnungen</td><td><span class="badge ok">komplett</span></td><td><span class="badge ok">in Ordnung</span></td><td>—</td><td>—</td></tr>
+          <tr><td>Brandschutznachweis</td><td><span class="badge unklar">nicht zugeordnet</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Als eigene PDF einreichen.</td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ersetzen</a></td></tr>
+          <tr><td>Standsicherheitsnachweis — Erklärung</td><td><span class="badge fehlt">fehlt</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Formular auf der Vorhabensseite laden und ausgefüllt hochladen.</td><td><a href="#vorhabensseite" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px" data-testid="rueckmeldung-ergaenzen-standsicherheit">Ergänzen</a></td></tr>
+          <tr><td>Erschließungsangaben</td><td><span class="badge fehlt">fehlt</span></td><td><span class="badge hausregel">nicht erforderlich</span></td><td>Erschließung laut Gemeinde gesichert — entfällt.</td><td>—</td></tr>
+          <tr><td>Abstandsflächenübernahme</td><td><span class="badge fehlt">fehlt</span></td><td><span class="badge fehlt">Nachbesserung</span></td><td>Erklärung des Nachbarn nachreichen.</td><td><a href="#vorhabensseite" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ergänzen</a></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Runde 1: 5 Elemente nachbessern, 2 in Ordnung, 1 nicht erforderlich. Der Rundenzähler
+        steigt mit jeder erneuten Freigabe.</p>
+      <a href="#pruefung_bauamt" class="btn primary" data-testid="rueckmeldung-erneut-einreichen">Erneut einreichen — Runde 2 zur Prüfung an das Bauamt freigeben</a>
+      <p class="note">Erst sinnvoll, wenn mindestens ein Element ersetzt oder ergänzt wurde. Die verbindliche
+        Einreichung im Antragsassistenten des Landes bleibt davon unberührt.</p>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern.</p>
+  </section>
+
+  <!-- ==================== 7 · SORTIERUNG (Detail) ==================== -->
   <section data-screen="sortierung" id="sortierung">
     <h2>Dokumente sortieren</h2>
     <p class="purpose">Je Datei die erkannte Vorlagenart mit Konfidenz — korrigierbar, Sammeldateien
@@ -435,7 +569,7 @@
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Klassifikation).</p>
   </section>
 
-  <!-- ============================ 5 · FEHLLISTE ============================ -->
+  <!-- ==================== 8 · FEHLLISTE (Detail) ==================== -->
   <section data-screen="fehlliste" id="fehlliste">
     <h2>Vollständigkeit: Fehlliste gegen Soll-Katalog <span class="vorhabensnummer" data-testid="fehlliste-vorhaben-nummer">BV-2026-000123</span></h2>
     <p class="purpose">Die Soll-Liste ist der Katalog Ihrer Vorhabensseite (Verfahrensart Sonderbau
@@ -513,7 +647,7 @@
       Zeilen-Status berechnet, steht nicht als Text im Markup.</p>
   </section>
 
-  <!-- ============================ 6 · FORMPRÜFUNG ============================ -->
+  <!-- ==================== 9 · FORMPRÜFUNG (Detail) ==================== -->
   <section data-screen="formpruefung" id="formpruefung">
     <h2>Formprüfung je Vorlagenart</h2>
     <p class="purpose">Merkmale je Vorlagenart mit Vorhandensein, Konfidenz und Fundort.</p>
@@ -576,7 +710,7 @@
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Formprüfung, Konsistenzabgleich).</p>
   </section>
 
-  <!-- ============================ 7 · BERICHT ============================ -->
+  <!-- ==================== 10 · BERICHT ==================== -->
   <section data-screen="bericht" id="bericht">
     <h2>Ergebnisbericht <span class="vorhabensnummer" data-testid="bericht-vorhaben-nummer">BV-2026-000123</span></h2>
     <p class="purpose">Zusammenfassung aller Hinweise mit Konfidenz — zum Mitnehmen oder als
@@ -624,7 +758,7 @@
 
 <!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
 <script>
-  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.2", klickdummy_class: "mock" };
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.3", klickdummy_class: "mock" };
   window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
 </script>
 <script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>
