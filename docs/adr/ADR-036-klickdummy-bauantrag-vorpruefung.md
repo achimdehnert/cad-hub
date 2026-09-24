@@ -47,7 +47,7 @@ sind als Mocks sichtbar, nichts davon ist real verdrahtet. Kein I2-Guard
 nötig (`no_backend: true` ersetzt die Prod-Guard-Frage, die nur bei
 `stub-demo`/`story`/`spec-demo` entsteht).
 
-5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn, seit Revision 4 elf, seit Revision 5 zwölf — siehe
+5 Screens (v0.1; seit Revision 2 sieben, seit Revision 3 zehn, seit Revision 4 elf, seit Revision 5 zwölf, seit Revision 6 dreizehn — siehe
 unten), aus der Einreicher-Journey abgeleitet, in Ablaufreihenfolge:
 
 - `upload` — PDF-Satz hochladen (nur Einzel-PDF), Verfahrensart wählen,
@@ -221,6 +221,24 @@ verbessern → Rückmeldung des Bauamts → Prüfung abschließen → Antragstel
   einreichen → Prüfung Bauamt → „Prüfung abschließen → Antragsteller benachrichtigen" →
   Rückmeldung (nächste Runde).
 - Navigation 1–8 neu nummeriert.
+
+## Revision 6 (2026-09-24) — Eigene Prüfung in Ausbaustufen bis „Pläne auslesen", finales Hochladen an das Land
+
+**Anlass (Owner, Kapitäns-Kanal 2026-09-24):** „Nach ‚Anträge und PDF-Satz hochladen' → eigene
+Prüfung (mehrere Ausbaustufen … bis hin zu ‚Pläne auslesen') → fehlt: final an Land hochladen."
+
+**Änderung**, Spec v0.5 → v0.6, 13 Screens:
+
+- `unterlagen_feedback` — neuer Block „Eigene Prüfung — Ausbaustufen": **S1** Sortieren, **S2**
+  Vollständigkeit + Form, **S3** Pläne auslesen, je Stufe Kurzergebnis und Link; Hinweis, dass
+  spätere Stufen im Pilot abgeschaltet sein können. Stufen entsprechen cad-hub#72 (Stufe 1–3).
+- `plaene_auslesen` (neu, Stufe 3) — gelesene Werte aus Lageplan/Bauzeichnungen (Flurstück,
+  Maßstab, Fläche, Grenzabstände, GRZ, Geschosse) mit Konfidenz, Fundort und Abgleich gegen
+  Grunddaten/Antrag; „unsicher" ist nie ein Befund; keine Zulässigkeitsprüfung.
+- `upload` — zeigt die ganze Prozesskette bis „final an das Land hochladen".
+- `uebergabe_landesassistent` heißt jetzt sichtbar **„Final an das Land hochladen"** (Nav 8);
+  `rueckmeldung` führt mit einem eigenen Button dorthin, aktiv erst bei Vollständigkeit.
+- Navigation: Detail-Gruppe heißt „Eigene Prüfung — Stufen" (S1, S2, S3).
 
 ## Bezug
 

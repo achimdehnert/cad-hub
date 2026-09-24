@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.5 (Draft)</title>
+<title>cad-hub · Bauantrag-Vorprüfung für Einreicher — Klick-Dummy v0.6 (Draft)</title>
 <!--
   class: mock — Klickdummy zu cad-hub:ADR-036, Spec
   klickdummy/bauantrag-vorpruefung/screens-spec.yaml. Grundlage: cad-hub#72 (K4),
@@ -124,11 +124,12 @@
   <a href="#unterlagen_feedback" data-testid="nav-unterlagen-feedback">5. Unterlagen-Feedback + Freigabe</a>
   <a href="#pruefung_bauamt" data-testid="nav-pruefung-bauamt">6. Prüfung Bauamt</a>
   <a href="#rueckmeldung" data-testid="nav-rueckmeldung">7. Rückmeldung + Verbessern</a>
-  <a href="#uebergabe_landesassistent" data-testid="nav-uebergabe">8. Vollständig → Landes-Assistent</a>
-  <span class="note" style="align-self:center; margin:0 4px">Details (Entwurfsverfasser):</span>
-  <a href="#sortierung" data-testid="nav-sortierung">Sortierung</a>
-  <a href="#fehlliste" data-testid="nav-fehlliste">Vollständigkeit</a>
-  <a href="#formpruefung" data-testid="nav-formpruefung">Formprüfung</a>
+  <a href="#uebergabe_landesassistent" data-testid="nav-uebergabe">8. Final an das Land hochladen</a>
+  <span class="note" style="align-self:center; margin:0 4px">Eigene Prüfung — Stufen:</span>
+  <a href="#sortierung" data-testid="nav-sortierung">S1 Sortierung</a>
+  <a href="#fehlliste" data-testid="nav-fehlliste">S2 Vollständigkeit</a>
+  <a href="#formpruefung" data-testid="nav-formpruefung">S2 Formprüfung</a>
+  <a href="#plaene_auslesen" data-testid="nav-plaene-auslesen">S3 Pläne auslesen</a>
   <a href="#bericht" data-testid="nav-bericht">Bericht</a>
 </nav>
 
@@ -388,6 +389,8 @@
         automatisch gelöscht — unabhängig davon, ob Sie die Prüfung abschließen.
       </div>
 
+      <div class="readonly-line" data-testid="upload-prozesskette">Danach: <strong>eigene Prüfung</strong> (S1 Sortieren · S2 Vollständigkeit + Form · S3 Pläne auslesen)
+        → Freigabe an das Bauamt → Rückmeldung je Element → Verbessern → … → <strong>final an das Land hochladen</strong> (Antragsassistent, BayernID).</div>
       <a href="#unterlagen_feedback" class="btn primary" data-testid="upload-weiter">Hochladen und Unterlagen prüfen lassen →</a>
     </div>
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Vorlagenart-Erkennung + Formprüfung).</p>
@@ -396,16 +399,32 @@
   <!-- ==================== 4 · UNTERLAGEN-FEEDBACK + FREIGABE (Antragsteller) ==================== -->
   <section data-screen="unterlagen_feedback" id="unterlagen_feedback">
     <h2>Unterlagen-Feedback und Freigabe <span class="vorhabensnummer">BV-2026-000123</span></h2>
-    <p class="purpose">Direkt nach dem Hochladen: je Unterlage, ob sie komplett ist oder welche Angaben
-      fehlen. Danach geben Sie die Unterlagen zur Prüfung durch das Bauamt frei.</p>
+    <p class="purpose">Direkt nach dem Hochladen läuft die eigene Prüfung des Vorab-Dienstes in Stufen —
+      je Unterlage sehen Sie, ob sie komplett ist oder welche Angaben fehlen. Danach geben Sie die
+      Unterlagen zur Prüfung durch das Bauamt frei.</p>
+
+    <div class="panel" data-testid="feedback-pruefstufen">
+      <h3>Eigene Prüfung — Ausbaustufen</h3>
+      <table>
+        <thead><tr><th>Stufe</th><th>Was geprüft wird</th><th>Ergebnis hier</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td><strong>S1</strong> Sortieren</td><td>Vorlagenart je PDF erkennen, Sammeldateien aufteilen</td><td>5 zugeordnet, 1 Sammeldatei</td><td><a href="#sortierung">Sortierung</a></td></tr>
+          <tr><td><strong>S2</strong> Vollständigkeit + Form</td><td>Pflichtkatalog aus Vorhaben gegen Unterlagen; Pflichtmerkmale je Vorlage (Unterschrift, Maßstab, Abschnitte)</td><td>3 Katalogpunkte fehlen, 2 Unterlagen unvollständig</td><td><a href="#fehlliste">Vollständigkeit</a> · <a href="#formpruefung">Formprüfung</a></td></tr>
+          <tr><td><strong>S3</strong> Pläne auslesen</td><td>Werte aus Lageplan und Bauzeichnungen lesen (Flurstück, Grundstücksfläche, Grenzabstände, GRZ, Geschosse) und gegen Grunddaten und Antrag abgleichen</td><td>Flurstück abweichend, 1 Wert unsicher</td><td><a href="#plaene_auslesen">Pläne auslesen</a></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Ausbaustufen: S1–S3 laufen nacheinander; spätere Stufen können im Pilot abgeschaltet sein. Geprüft wird
+        Vorhandensein und Übereinstimmung, nie Zulässigkeit. Verarbeitung im Haus, kein Cloud-LLM.</p>
+    </div>
 
     <div class="panel">
+      <h3>Ergebnis je Unterlage</h3>
       <table data-testid="feedback-tabelle">
         <thead><tr><th>Unterlage</th><th>Zugeordnet als</th><th>Status</th><th>Fehlende Angaben</th><th>Details</th><th></th></tr></thead>
         <tbody>
           <tr data-testid="feedback-row-bauantrag"><td>bauantrag-ausgefuellt.pdf</td><td>Bauantrag</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
           <tr data-testid="feedback-row-baubeschreibung"><td>baubeschreibung.pdf</td><td>Baubeschreibung</td><td><span class="badge fehlt">unvollständig</span></td><td>Angaben zur Nutzung (Abschnitt 3) fehlen; Unterschrift des Bauherrn fehlt</td><td><a href="#formpruefung">Formprüfung</a></td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px" data-testid="feedback-ersetzen-baubeschreibung">Ersetzen</a></td></tr>
-          <tr data-testid="feedback-row-lageplan"><td>lageplan-musterhausen.pdf</td><td>Lageplan</td><td><span class="badge fehlt">unvollständig</span></td><td>Maßstabsleiste fehlt (Anforderung der Behörde); Flurstücksnummer nicht lesbar</td><td><a href="#formpruefung">Formprüfung</a></td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ersetzen</a></td></tr>
+          <tr data-testid="feedback-row-lageplan"><td>lageplan-musterhausen.pdf</td><td>Lageplan</td><td><span class="badge fehlt">unvollständig</span></td><td>Maßstabsleiste fehlt (Anforderung der Behörde); Flurstück im Plan „123/5" statt „123/4" laut Grunddaten</td><td><a href="#formpruefung">Formprüfung</a> · <a href="#plaene_auslesen">Pläne</a></td><td><a href="#upload" class="btn ghost" style="margin:0;padding:4px 10px;font-size:12px">Ersetzen</a></td></tr>
           <tr data-testid="feedback-row-grundriss"><td>grundriss-eg.pdf</td><td>Bauzeichnung</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
           <tr data-testid="feedback-row-schnitt"><td>schnitt-a-a.pdf</td><td>Bauzeichnung</td><td><span class="badge ok">komplett</span></td><td>—</td><td><a href="#formpruefung">Formprüfung</a></td><td></td></tr>
           <tr data-testid="feedback-row-sammelmappe"><td>sammelmappe-brandschutz-teil.pdf</td><td><em>nicht zugeordnet</em></td><td><span class="badge unklar">nicht zugeordnet</span></td><td>Sammeldatei — bitte aufteilen oder Vorlagenart wählen</td><td><a href="#sortierung">Sortierung</a></td><td></td></tr>
@@ -503,14 +522,15 @@
       <p class="note">Erst sinnvoll, wenn mindestens ein Element ersetzt oder ergänzt wurde. Die verbindliche
         Einreichung im Antragsassistenten des Landes bleibt davon unberührt.</p>
       <p class="note" data-testid="rueckmeldung-vollstaendig-hinweis">Sobald alle Elemente „in Ordnung" oder „nicht erforderlich" sind, endet die Schleife:
-        das Vorhaben gilt als vollständig und geht in die <a href="#uebergabe_landesassistent">Übergabe an den Landes-Assistenten</a> (Schritt 7).</p>
+        das Vorhaben gilt als vollständig und geht in den letzten Schritt: <a href="#uebergabe_landesassistent">final an das Land hochladen</a> (Schritt 8).</p>
+      <a href="#uebergabe_landesassistent" class="btn ghost" data-testid="rueckmeldung-final-land">Final an das Land hochladen → (erst bei Vollständigkeit aktiv)</a>
     </div>
     <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern.</p>
   </section>
 
-  <!-- ============ 7 · VOLLSTÄNDIG → ÜBERGABE AN DEN LANDES-ASSISTENTEN (K3/K4) ============ -->
+  <!-- ============ 8 · FINAL AN DAS LAND HOCHLADEN (K3/K4) ============ -->
   <section data-screen="uebergabe_landesassistent" id="uebergabe_landesassistent">
-    <h2>Vollständig — Übergabe an den Antragsassistenten des Landes <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">vollständig seit Runde 2 · 2026-10-06</span></h2>
+    <h2>Final an das Land hochladen <span class="vorhabensnummer">BV-2026-000123</span> <span class="status-pill">vollständig seit Runde 2 · 2026-10-06</span></h2>
     <p class="purpose">Das Bauamt hat in Runde 2 jedes Antragselement als „in Ordnung" oder „nicht erforderlich"
       beurteilt. Der Vorab-Dienst stellt das geprüfte Paket bereit und übergibt es in den
       Antragsassistenten des Landes — dort erfolgt die verbindliche Einreichung mit BayernID.</p>
@@ -764,6 +784,37 @@
       Zeilen-Status berechnet, steht nicht als Text im Markup.</p>
   </section>
 
+  <!-- ==================== S3 · PLÄNE AUSLESEN (Detail) ==================== -->
+  <section data-screen="plaene_auslesen" id="plaene_auslesen">
+    <h2>Stufe 3 — Pläne auslesen <span class="vorhabensnummer">BV-2026-000123</span></h2>
+    <p class="purpose">Aus Lageplan und Bauzeichnungen gelesene Werte mit Konfidenz und Fundort, abgeglichen mit
+      Grunddaten und Antrag. Abweichungen sind Hinweise, keine rechtliche Wertung.</p>
+
+    <div class="banner info" data-testid="plaene-keine-zulaessigkeit">
+      ℹ️ Stufe 3 liest und vergleicht nur. Ob Grenzabstände oder GRZ zulässig sind, entscheidet das Bauamt —
+      hier wird keine Abstandsflächen- oder Zulässigkeitsprüfung gemacht.
+    </div>
+
+    <div class="panel">
+      <table data-testid="plaene-werte">
+        <thead><tr><th>Wert</th><th>Gelesen aus Plan</th><th>Vergleich</th><th>Abgleich</th><th>Konfidenz</th><th>Fundort</th></tr></thead>
+        <tbody>
+          <tr data-testid="plaene-row-flurstueck"><td>Flurstück</td><td>Musterhausen 123/5</td><td>Grunddaten: 123/4</td><td><span class="badge fehlt">abweichend</span></td><td>93&nbsp;%</td><td>Lageplan S. 1, Schriftfeld</td></tr>
+          <tr><td>Maßstab</td><td>1 : 500</td><td>Merkblatt: 1 : 500 oder 1 : 1000</td><td><span class="badge ok">passt</span></td><td>97&nbsp;%</td><td>Lageplan S. 1</td></tr>
+          <tr><td>Grundstücksfläche</td><td>1 240 m²</td><td>Bauantrag: 1 240 m²</td><td><span class="badge ok">passt</span></td><td>89&nbsp;%</td><td>Lageplan S. 1, Legende</td></tr>
+          <tr><td>Grenzabstand Nord</td><td>3,10 m</td><td>—</td><td><span class="badge hausregel">nur gelesen</span></td><td>81&nbsp;%</td><td>Lageplan S. 1, Bemaßung</td></tr>
+          <tr><td>Grenzabstand Ost</td><td>2,4? m</td><td>—</td><td><span class="badge unklar">unsicher</span></td><td>54&nbsp;%</td><td>Lageplan S. 1 — bitte prüfen</td></tr>
+          <tr><td>GRZ</td><td>0,38</td><td>Berechnung GRZ/GFZ: 0,38</td><td><span class="badge ok">passt</span></td><td>90&nbsp;%</td><td>Lageplan S. 1 / Berechnung S. 2</td></tr>
+          <tr><td>Geschosse</td><td>II</td><td>Baubeschreibung: II</td><td><span class="badge ok">passt</span></td><td>95&nbsp;%</td><td>Schnitt A-A</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Lesen im Haus (Text-Layer, OCR-Fallback bei Scans), kein Cloud-LLM. Werte unter 60&nbsp;% Konfidenz
+        erscheinen als „unsicher" und werden nie als Befund gewertet.</p>
+      <a href="#unterlagen_feedback" class="btn ghost">← zurück zum Unterlagen-Feedback</a>
+    </div>
+    <p class="note">Mock-Daten, kein Backend. Systemgrenze: Prüfkern (Stufe 3, Plan-Auslesung — Ausbaustufe).</p>
+  </section>
+
   <!-- ==================== 9 · FORMPRÜFUNG (Detail) ==================== -->
   <section data-screen="formpruefung" id="formpruefung">
     <h2>Formprüfung je Vorlagenart</h2>
@@ -875,7 +926,7 @@
 
 <!-- Feedback-Widget — opt-in per ?feedback=on (Default aus), G9/G7 -->
 <script>
-  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.5", klickdummy_class: "mock" };
+  window.KLICKDUMMY_SPEC = { id: "cad-hub:klickdummy-spec-bauantrag-vorpruefung", version: "0.6", klickdummy_class: "mock" };
   window.KLICKDUMMY_FEEDBACK_REPO = "achimdehnert/cad-hub";
 </script>
 <script src="../../platform-snippets/klickdummy/feedback-widget/widget.js" defer></script>
