@@ -7,10 +7,10 @@
 
 $schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
 spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
-spec_version: "0.2"
+spec_version: "0.3"
 spec_schema_version: "1.1"
 spec_date: "2026-09-24"
-title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77) · v0.2 mit Antragsteller-Einstieg (Vorhaben, Vorhabensnummer, Formular-Download)"
+title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1, #77) · v0.3 Antragsteller-Prozess (Vorhaben, Formular-Download, Unterlagen-Feedback, Freigabe, Bauamt-Rückmeldung, Nachbesserung)"
 
 adr:
   local: cad-hub:ADR-036
@@ -51,15 +51,15 @@ personas:
   antragsteller:
     label: "Antragsteller/in (Bauherr oder Bevollmächtigte/r)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, fehlliste, bericht]
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, fehlliste, bericht]
   entwurfsverfasser:
     label: "Entwurfsverfasser/in (Einreicher)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, sortierung, fehlliste, formpruefung, bericht]
+    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, sortierung, fehlliste, formpruefung, bericht]
   sachbearbeitung:
-    label: "Sachbearbeitung"
+    label: "Sachbearbeitung (Bauamt)"
     rolle: sachbearbeitung
-    sieht: [bericht]
+    sieht: [pruefung_bauamt, bericht]
 
 screens:
   # ---- Antragsteller-Einstieg auf der Seite der Bauaufsichtsbehörde (v0.2, Owner 2026-09-24) ----
@@ -109,7 +109,9 @@ screens:
     datafields:
       - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhaben_anlegen; zugleich Aufruf-Schlüssel der Seite" }
       - { name: stammdaten, type: object, source: mock-demo, semantic: "vorhabensart, verfahrensart, gemeinde, flurstueck, bedingungen — aus vorhaben_anlegen übernommen, hier änderbar" }
-      - { name: status, type: enum, source: mock-demo, semantic: "angelegt | unterlagen_hochgeladen | vorgeprueft | eingereicht_im_landesportal (letzterer nur als Attrappe, wird nie gesetzt)" }
+      - { name: status, type: enum, source: mock-demo, semantic: "angelegt | unterlagen_hochgeladen | vorgeprueft | zur_pruefung_freigegeben | rueckmeldung_liegt_vor | erneut_freigegeben — der Landes-Zustand 'eingereicht' wird hier nie gesetzt" }
+      - { name: runde, type: integer, source: mock-demo, semantic: "Nummer der Prüfrunde (1 = erste Freigabe; jede Nachbesserung mit erneuter Freigabe zählt hoch)" }
+      - { name: nachrichten, type: array, source: mock-demo, semantic: "chronologische Ereignisse zum Vorhaben (angelegt, hochgeladen, freigegeben, Rückmeldung des Bauamts liegt vor); der jüngste Eintrag verlinkt auf rueckmeldung" }
       - { name: soll_katalog, type: array, source: mock-demo, semantic: "je Zeile: bezeichnung, formular_id, pflicht (pflicht|bedingt), bedingung, download (Einzel-Attrappe)" }
       - { name: sammel_download, type: object, source: mock-demo, semantic: "ZIP-Attrappe mit genau den Formularen des aktuell zutreffenden Katalogs; Inhaltsliste sichtbar" }
       - { name: loeschfrist_tage, type: integer, source: mock-demo, semantic: "Tage bis zur Löschung des Vorhabens samt Unterlagen ohne weitere Aktivität" }
@@ -124,7 +126,10 @@ screens:
         check: "Jedes Formular hat einen eigenen Download, zusätzlich gibt es einen Sammel-Download als ZIP-Attrappe, dessen Inhaltsliste genau dem angezeigten Katalog entspricht"
         kind: behavioral-manual
       - id: vorhabensseite.status_sichtbar
-        check: "Der Status des Vorhabens ist sichtbar und ändert sich erkennbar erst durch Upload bzw. Vorprüfung; 'eingereicht' wird hier nie gesetzt (Einreichung nur im Landes-Assistenten)"
+        check: "Der Status des Vorhabens ist sichtbar und folgt der Kette angelegt → hochgeladen → vorgeprüft → zur Prüfung freigegeben → Rückmeldung liegt vor → erneut freigegeben; der Landes-Zustand 'eingereicht' wird hier nie gesetzt"
+        kind: behavioral-manual
+      - id: vorhabensseite.nachricht_zur_rueckmeldung
+        check: "Liegt eine Rückmeldung des Bauamts vor, zeigt die Vorhabensseite eine Nachricht mit Runde und Datum, die direkt zur Rückmeldung je Antragselement führt"
         kind: behavioral-manual
       - id: vorhabensseite.wiederaufruf_per_nummer
         check: "Die Seite zeigt, wie sie über die Vorhabensnummer erneut aufgerufen wird, und nennt die Löschfrist, nach der Nummer und Unterlagen verfallen"
@@ -171,6 +176,104 @@ screens:
         kind: behavioral-manual
     off_ramp_status: static
 
+  # ---- Feedback-Schleife (v0.3, Owner 2026-09-24): Unterlagen-Feedback → Freigabe → Bauamt → Rückmeldung → Nachbesserung ----
+  - id: unterlagen_feedback
+    title: "Unterlagen-Feedback und Freigabe"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Direkt nach dem Hochladen erhält der Antragsteller je Unterlage ein Feedback des
+      Prüfkerns: komplett, notwendige Angaben fehlen (welche), oder keiner Vorlagenart
+      zugeordnet. Von hier gibt er die Unterlagen mit „Unterlagen einreichen" zur Prüfung
+      durch das Bauamt frei — das ist die Freigabe an den Vorab-Dienst der Behörde, nicht
+      die verbindliche Einreichung im Landes-Assistenten.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "aus vorhabensseite" }
+      - { name: unterlagen, type: array, source: mock-demo, semantic: "je Zeile: dateiname, zugeordnet_als (Vorlagenart oder 'nicht zugeordnet'), status (komplett | unvollstaendig | nicht_zugeordnet), fehlende_angaben (Liste), details_link (sortierung|fehlliste|formpruefung)" }
+      - { name: katalog_luecken, type: array, source: mock-demo, semantic: "Katalogpunkte ohne zugehörige Unterlage (aus fehlliste), damit die Freigabe die Lücke ausweist" }
+      - { name: freigabe, type: object, source: mock-demo, semantic: "Aktion 'Unterlagen einreichen' → status zur_pruefung_freigegeben, runde +1; mit Warnung, wenn unvollständige Unterlagen dabei sind" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: unterlagen_feedback.status_je_unterlage
+        check: "Jede hochgeladene Unterlage trägt genau einen Status (komplett, unvollständig oder nicht zugeordnet); bei 'unvollständig' sind die fehlenden Angaben je Unterlage konkret benannt"
+        kind: behavioral-manual
+      - id: unterlagen_feedback.details_verlinkt
+        check: "Von jeder Zeile führt ein Link zu den Detail-Screens (Sortierung, Vollständigkeit, Formprüfung); die Detail-Screens bleiben für Entwurfsverfasser erreichbar"
+        kind: behavioral-manual
+      - id: unterlagen_feedback.freigabe_ist_nicht_landes_einreichung
+        check: "Der Button 'Unterlagen einreichen' ist als Freigabe zur Prüfung durch das Bauamt (Vorab-Dienst) beschriftet und erklärt, dass die verbindliche Einreichung im Landes-Assistenten ein eigener Schritt bleibt"
+        kind: behavioral-manual
+      - id: unterlagen_feedback.freigabe_mit_luecken_warnt
+        check: "Sind Unterlagen unvollständig oder Katalogpunkte ohne Unterlage, warnt der Screen vor der Freigabe sichtbar (Anzahl), verhindert sie aber nicht"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: pruefung_bauamt
+    title: "Prüfung durch das Bauamt"
+    route: "/bauamt/vorhaben/{vorhabensnummer}/pruefung"
+    route_example: "/bauamt/vorhaben/BV-2026-000123/pruefung"
+    login_required: true
+    personas: [sachbearbeitung]
+    purpose: >-
+      Die Sachbearbeitung sieht die freigegebenen Unterlagen eines Vorhabens mit dem
+      automatischen Feedback und gibt je Einzelanlage ein eigenes Urteil mit Hinweistext.
+      „Prüfung abschließen" schließt die Runde ab und benachrichtigt den Antragsteller.
+      Weiterhin Vorab-Dienst: kein Bescheid, kein Fachverfahren.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "Kopf; dazu Vorhabensart, Verfahrensart, Runde, Freigabedatum" }
+      - { name: unterlagen, type: array, source: mock-demo, semantic: "je Zeile: bezeichnung/dateiname, status_automatisch, urteil_bauamt (in_ordnung | nachbesserung | nicht_erforderlich), hinweis (Freitext), bearbeitet_von (Rolle, kein Name)" }
+      - { name: abschluss, type: object, source: mock-demo, semantic: "Aktion 'Prüfung abschließen' → status rueckmeldung_liegt_vor, Nachricht an den Antragsteller (Attrappe)" }
+    target_mocks:
+      - "Prüfkern"
+      - "Fachverfahren-Adapter"
+    parity_acceptance:
+      - id: pruefung_bauamt.urteil_je_einzelanlage
+        check: "Je Unterlage gibt es ein eigenes Bauamt-Urteil (in Ordnung, Nachbesserung, nicht erforderlich) mit Hinweistext; es gibt kein pauschales Gesamturteil ohne Zeilen"
+        kind: behavioral-manual
+      - id: pruefung_bauamt.automatik_sichtbar_getrennt
+        check: "Das automatische Feedback des Prüfkerns steht je Zeile sichtbar neben dem Bauamt-Urteil und wird von ihm nicht überschrieben"
+        kind: behavioral-manual
+      - id: pruefung_bauamt.abschluss_benachrichtigt
+        check: "'Prüfung abschließen' ist als Abschluss der Runde erkennbar und kündigt die Nachricht an den Antragsteller an (Attrappe, kein Versand); nichts wird in ein Fachverfahren geschrieben"
+        kind: behavioral-manual
+      - id: pruefung_bauamt.kein_bescheid
+        check: "Der Screen weist aus, dass die Rückmeldung eine Vorprüfung ist und kein Bescheid, keine Zulässigkeitsentscheidung"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  - id: rueckmeldung
+    title: "Rückmeldung des Bauamts je Antragselement"
+    route: "/vorhaben/{vorhabensnummer}/rueckmeldung"
+    route_example: "/vorhaben/BV-2026-000123/rueckmeldung"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Nach Abschluss der Prüfung erhält der Antragsteller eine Nachricht und sieht auf der
+      Vorhabensseite die Rückmeldung je Antragselement: Urteil und Hinweis des Bauamts neben
+      dem automatischen Status. Er ersetzt nachzubessernde Unterlagen, ergänzt fehlende und
+      gibt erneut frei — die nächste Runde.
+    datafields:
+      - { name: vorhabensnummer, type: string, source: mock-demo, semantic: "Kopf; dazu Runde und Abschlussdatum der Prüfung" }
+      - { name: nachricht, type: object, source: mock-demo, semantic: "Benachrichtigung (E-Mail-Attrappe): Betreff mit Vorhabensnummer, Kurztext, Link zur Vorhabensseite — enthält keine Prüfinhalte" }
+      - { name: elemente, type: array, source: mock-demo, semantic: "je Antragselement: bezeichnung, status_automatisch, urteil_bauamt, hinweis, aktion (ersetzen | ergaenzen | keine)" }
+      - { name: erneut_freigeben, type: object, source: mock-demo, semantic: "Aktion 'Erneut einreichen' → status erneut_freigegeben, runde +1; nur sinnvoll, wenn mindestens ein Element geändert wurde" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: rueckmeldung.je_antragselement
+        check: "Die Rückmeldung ist je Antragselement aufgeschlüsselt (Urteil, Hinweis, automatischer Status), nicht nur als Gesamttext"
+        kind: behavioral-manual
+      - id: rueckmeldung.nachricht_ohne_inhalt
+        check: "Die Nachricht an den Antragsteller nennt Vorhabensnummer und Link, aber keine Prüfinhalte — die stehen nur auf der Vorhabensseite"
+        kind: behavioral-manual
+      - id: rueckmeldung.aktion_je_element
+        check: "Jedes Element mit Urteil 'Nachbesserung' oder ohne Unterlage bietet eine Aktion (ersetzen bzw. ergänzen), die zum Upload dieses Vorhabens führt"
+        kind: behavioral-manual
+      - id: rueckmeldung.erneute_freigabe_zaehlt_runde
+        check: "'Erneut einreichen' ist als neue Runde erkennbar (Rundenzähler) und führt zurück in die Prüfung durch das Bauamt; die Landes-Einreichung bleibt davon unberührt"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  # ---- Detail-Screens (v0.1), aus unterlagen_feedback verlinkt ----
   - id: sortierung
     title: "Dokumente sortieren"
     personas: [entwurfsverfasser]
