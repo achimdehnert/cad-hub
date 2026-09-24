@@ -13,11 +13,11 @@
   "nodes": {
     "cad-hub:klickdummy-spec-bauantrag-vorpruefung": {
       "spec_id": "cad-hub:klickdummy-spec-bauantrag-vorpruefung",
-      "title": "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1 + K3/K4, #77) · v0.4 Antragsteller-Prozess mit Feedback-Schleife und Übergabe an den Landes-Assistenten bei Vollständigkeit",
+      "title": "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1 + K3/K4, #77) · v0.6 mit Vorhaben-Übersicht, eigener Prüfung in Stufen S1–S3 (bis Pläne auslesen), Feedback-Schleife und finalem Hochladen an das Land",
       "role": "branch",
       "domain": null,
       "class": "mock",
-      "screens_count": 11,
+      "screens_count": 13,
       "off_ramp_status": "static",
       "off_ramp_overall": "",
       "path": "bauantrag-vorpruefung/shell.html",

@@ -7,10 +7,10 @@
 
 $schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
 spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
-spec_version: "0.4"
+spec_version: "0.6"
 spec_schema_version: "1.1"
 spec_date: "2026-09-24"
-title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1 + K3/K4, #77) · v0.4 Antragsteller-Prozess mit Feedback-Schleife und Übergabe an den Landes-Assistenten bei Vollständigkeit"
+title: "Bauantrag-Vorprüfung für Einreicher — Klickdummy (K1 + K3/K4, #77) · v0.6 mit Vorhaben-Übersicht, eigener Prüfung in Stufen S1–S3 (bis Pläne auslesen), Feedback-Schleife und finalem Hochladen an das Land"
 
 adr:
   local: cad-hub:ADR-036
@@ -51,17 +51,45 @@ personas:
   antragsteller:
     label: "Antragsteller/in (Bauherr oder Bevollmächtigte/r)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, fehlliste, bericht]
+    sieht: [vorhaben_uebersicht, vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, fehlliste, plaene_auslesen, bericht]
   entwurfsverfasser:
     label: "Entwurfsverfasser/in (Einreicher)"
     rolle: einreicher
-    sieht: [vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, sortierung, fehlliste, formpruefung, bericht]
+    sieht: [vorhaben_uebersicht, vorhaben_anlegen, vorhabensseite, upload, unterlagen_feedback, rueckmeldung, uebergabe_landesassistent, sortierung, fehlliste, formpruefung, plaene_auslesen, bericht]
   sachbearbeitung:
     label: "Sachbearbeitung (Bauamt)"
     rolle: sachbearbeitung
     sieht: [pruefung_bauamt, bericht]
 
 screens:
+  # ---- Übersicht (v0.5, Owner 2026-09-24): ein Antragsteller kann mehrere Vorhaben haben ----
+  - id: vorhaben_uebersicht
+    title: "Meine Bauvorhaben"
+    route: "/vorhaben"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Einstieg: alle Vorhaben des Antragstellers bei dieser Behörde mit Nummer, Vorhabensart,
+      Gemeinde, Status und nächstem Schritt; ein Klick öffnet die Vorhabensseite, ein Button legt
+      ein neues Vorhaben an.
+    datafields:
+      - { name: vorhaben, type: array, source: mock-demo, semantic: "je Zeile: vorhabensnummer, vorhabensart, gemeinde, status (wie vorhabensseite.status), naechster_schritt" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: vorhaben_uebersicht.mehrere_vorhaben
+        check: "Die Übersicht zeigt mehrere Vorhaben mit unterschiedlichem Status; jede Zeile führt zur jeweiligen Vorhabensseite"
+        kind: behavioral-manual
+      - id: vorhaben_uebersicht.naechster_schritt_je_vorhaben
+        check: "Je Vorhaben ist der nächste Schritt benannt (z. B. Anträge herunterladen, Verbessern, warten auf Bauamt)"
+        kind: behavioral-manual
+      - id: vorhaben_uebersicht.neues_vorhaben
+        check: "Von der Übersicht führt ein Button zu 'Neues Vorhaben anlegen'"
+        kind: behavioral-manual
+      - id: vorhaben_uebersicht.zugang_benannt
+        check: "Der Screen benennt, dass eine Übersicht mehrerer Vorhaben eine Anmeldung voraussetzt (offene Pilotfrage), statt Wiederaufruf per Nummer"
+        kind: behavioral-manual
+    off_ramp_status: static
+
   # ---- Antragsteller-Einstieg auf der Seite der Bauaufsichtsbehörde (v0.2, Owner 2026-09-24) ----
   - id: vorhaben_anlegen
     title: "Neues Bauvorhaben anlegen"
@@ -133,6 +161,9 @@ screens:
         kind: behavioral-manual
       - id: vorhabensseite.wiederaufruf_per_nummer
         check: "Die Seite zeigt, wie sie über die Vorhabensnummer erneut aufgerufen wird, und nennt die Löschfrist, nach der Nummer und Unterlagen verfallen"
+        kind: behavioral-manual
+      - id: vorhabensseite.reihenfolge
+        check: "Die Blöcke stehen in dieser Reihenfolge: Grunddaten → Benötigte Anträge und Vorlagen → Nächster Schritt → Rückmeldung des Bauamts (je Element mit 'Verbessern') → Nachrichten zum Vorhaben"
         kind: behavioral-manual
       - id: vorhabensseite.weiter_zum_upload
         check: "Von der Vorhabensseite führt genau ein Schritt zum Upload der ausgefüllten Anträge, der das Vorhaben (Nummer, Verfahrensart, Bedingungen) bereits kennt"
@@ -206,6 +237,9 @@ screens:
       - id: unterlagen_feedback.freigabe_mit_luecken_warnt
         check: "Sind Unterlagen unvollständig oder Katalogpunkte ohne Unterlage, warnt der Screen vor der Freigabe sichtbar (Anzahl), verhindert sie aber nicht"
         kind: behavioral-manual
+      - id: unterlagen_feedback.pruefstufen_sichtbar
+        check: "Die eigene Prüfung ist als Stufenmodell sichtbar — S1 Sortieren, S2 Vollständigkeit + Form, S3 Pläne auslesen — je Stufe mit Kurzergebnis und Link zum Detail-Screen; der Screen sagt, dass spätere Stufen im Pilot abgeschaltet sein können"
+        kind: behavioral-manual
     off_ramp_status: static
 
   - id: pruefung_bauamt
@@ -278,7 +312,7 @@ screens:
 
   # ---- Abschluss K3/K4 (v0.4, Owner 2026-09-24): wenn vollständig → Übergabe an den Landes-Assistenten ----
   - id: uebergabe_landesassistent
-    title: "Vollständig — Übergabe an den Antragsassistenten des Landes"
+    title: "Final an das Land hochladen (Übergabe an den Antragsassistenten des Landes)"
     route: "/vorhaben/{vorhabensnummer}/uebergabe"
     route_example: "/vorhaben/BV-2026-000123/uebergabe"
     personas: [antragsteller, entwurfsverfasser]
@@ -314,6 +348,34 @@ screens:
         kind: behavioral-manual
       - id: uebergabe.status_und_loeschfrist
         check: "Nach der Übergabe zeigt das Vorhaben den Status 'an den Landes-Assistenten übergeben' und nennt, wann die Unterlagen im Vorab-Dienst gelöscht werden"
+        kind: behavioral-manual
+    off_ramp_status: static
+
+  # ---- Eigene Prüfung Stufe 3 (v0.6, Owner 2026-09-24: „mehrere Ausbaustufen bis hin zu Pläne auslesen") ----
+  - id: plaene_auslesen
+    title: "Stufe 3 — Pläne auslesen"
+    personas: [antragsteller, entwurfsverfasser]
+    purpose: >-
+      Werte aus Lageplan und Bauzeichnungen lesen (Flurstück, Maßstab, Grundstücksfläche,
+      Grenzabstände, GRZ, Geschosse) und mit Grunddaten und Antrag abgleichen — je Wert mit
+      Konfidenz und Fundort. Lesen und Vergleichen, keine Zulässigkeitsprüfung. Grundlage:
+      cad-hub#72 Stufe 3 (Lageplan-Handler: Wert, Konfidenz, Seite; OCR-Fallback; kein Cloud-LLM).
+    datafields:
+      - { name: werte, type: array, source: mock-demo, semantic: "je Zeile: wert, gelesen, vergleich (Quelle + Wert), abgleich (passt | abweichend | nur_gelesen | unsicher), konfidenz, fundort" }
+    target_mocks:
+      - "Prüfkern"
+    parity_acceptance:
+      - id: plaene_auslesen.wert_konfidenz_fundort
+        check: "Jeder gelesene Wert zeigt Konfidenz und Fundort (Plan, Seite, Stelle)"
+        kind: behavioral-manual
+      - id: plaene_auslesen.abgleich_gegen_grunddaten
+        check: "Werte mit Gegenstück (Flurstück, Fläche, GRZ, Geschosse) werden gegen Grunddaten bzw. Antrag abgeglichen; Abweichungen sind sichtbar markiert und erscheinen im Unterlagen-Feedback der betroffenen Unterlage"
+        kind: behavioral-manual
+      - id: plaene_auslesen.unsicher_kein_befund
+        check: "Werte unter der Konfidenzschwelle erscheinen als 'unsicher' und werden nie als Befund gewertet"
+        kind: behavioral-manual
+      - id: plaene_auslesen.keine_zulaessigkeit
+        check: "Der Screen weist aus, dass Grenzabstände und GRZ nur gelesen, nicht auf Zulässigkeit geprüft werden"
         kind: behavioral-manual
     off_ramp_status: static
 
