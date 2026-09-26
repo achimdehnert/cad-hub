@@ -1,7 +1,7 @@
 # Project Facts: cad-hub
 
 > Auto-generiert von `platform/.github/scripts/push_project_facts.py`
-> Letzte Aktualisierung: 2026-06-08 — bei Änderungen: `platform/gen-project-facts.yml` triggern
+> Letzte Aktualisierung: 2026-09-21 — bei Änderungen: `platform/gen-project-facts.yml` triggern
 
 ## Meta
 
@@ -11,10 +11,10 @@
 
 ## Lokale Umgebung (Dev Desktop — adehnert)
 
-- **Pfad**: `~/CascadeProjects/cad-hub` → `$GITHUB_DIR` = `~/CascadeProjects`
+- **Pfad**: `~/github/cad-hub` → `$GITHUB_DIR` = `~/github`
 - **src_root**: `./` (root) — `manage.py` liegt dort
 - **pythonpath**: `./`
-- **Venv**: `~/CascadeProjects/cad-hub/.venv/bin/python`
+- **Venv**: `~/github/cad-hub/.venv/bin/python`
 - **MCP aktiv**: `mcp0_` = github · `mcp1_` = orchestrator
 
 ## Settings
