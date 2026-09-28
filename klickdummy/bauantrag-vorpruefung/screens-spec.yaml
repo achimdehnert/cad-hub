@@ -5,7 +5,7 @@
 # Dieses Repo ist ÖFFENTLICH — keine Haus-, Personen- oder Herstellernamen.
 # =============================================================================
 
-$schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
+$schema: https://raw.githubusercontent.com/iilgmbh/iil-klickdummy/main/src/iil_klickdummy/schemas/screens-spec.schema.json
 spec_id: cad-hub:klickdummy-spec-bauantrag-vorpruefung
 spec_version: "0.6"
 spec_schema_version: "1.1"
